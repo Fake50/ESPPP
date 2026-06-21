@@ -1,0 +1,558 @@
+-- ============================================
+--          PRO MENU - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ
+-- ============================================
+
+local runService = game:GetService("RunService")
+local coreGui = game:GetService("CoreGui")
+local players = game:GetService("Players")
+local localPlayer = players.LocalPlayer
+local camera = workspace.CurrentCamera
+local userInputService = game:GetService("UserInputService")
+
+-- ============================================
+--          ЕДИНСТВЕННЫЙ КЛЮЧ
+-- ============================================
+local VALID_KEY = "FISAYBOSIN"
+
+-- ============================================
+--          СОСТОЯНИЯ
+-- ============================================
+local isKeyValid = false
+local espEnabled = false
+local speedEnabled = false
+local currentSpeed = 16
+local guiVisible = true
+local isDragging = false
+local dragStart = Vector2.new()
+local dragOffset = Vector2.new()
+local isExpanded = true
+local menuSize = UDim2.new(0, 320, 0, 450)
+local compactSize = UDim2.new(0, 280, 0, 50)
+local espLabels = {} -- Храним GUI элементы ESP
+
+-- ============================================
+--          СОЗДАНИЕ GUI
+-- ============================================
+local screenGui = Instance.new("ScreenGui", coreGui)
+screenGui.Name = "ProMenuGUI"
+screenGui.ResetOnSpawn = false
+
+-- Основное окно
+local mainFrame = Instance.new("Frame", screenGui)
+mainFrame.Size = UDim2.new(0, 340, 0, 250)
+mainFrame.Position = UDim2.new(0.5, -170, 0.5, -125)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 10, 50)
+mainFrame.BackgroundTransparency = 0.15
+mainFrame.Active = true
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 15)
+
+-- Градиент
+local gradient = Instance.new("UIGradient", mainFrame)
+gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 0, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200, 0, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 0, 200))
+})
+
+-- ============================================
+--          ЭКРАН АКТИВАЦИИ
+-- ============================================
+local activationFrame = Instance.new("Frame", mainFrame)
+activationFrame.Size = UDim2.new(1, 0, 1, 0)
+activationFrame.BackgroundTransparency = 1
+
+local activationTitle = Instance.new("TextLabel", activationFrame)
+activationTitle.Size = UDim2.new(1, 0, 0, 50)
+activationTitle.Position = UDim2.new(0, 0, 0, 20)
+activationTitle.BackgroundTransparency = 1
+activationTitle.Text = "🔐 PRO MENU"
+activationTitle.TextColor3 = Color3.new(1, 1, 1)
+activationTitle.Font = Enum.Font.GothamBold
+activationTitle.TextSize = 30
+
+local activationSub = Instance.new("TextLabel", activationFrame)
+activationSub.Size = UDim2.new(1, 0, 0, 30)
+activationSub.Position = UDim2.new(0, 0, 0, 70)
+activationSub.BackgroundTransparency = 1
+activationSub.Text = "Введите ключ для активации"
+activationSub.TextColor3 = Color3.fromRGB(200, 150, 255)
+activationSub.Font = Enum.Font.Gotham
+activationSub.TextSize = 16
+
+-- Поле ввода ключа
+local keyInput = Instance.new("TextBox", activationFrame)
+keyInput.Size = UDim2.new(0.7, 0, 0, 45)
+keyInput.Position = UDim2.new(0.15, 0, 0, 120)
+keyInput.BackgroundColor3 = Color3.fromRGB(50, 20, 70)
+keyInput.TextColor3 = Color3.new(1, 1, 1)
+keyInput.Font = Enum.Font.GothamBold
+keyInput.TextSize = 18
+keyInput.PlaceholderText = "Введите ключ..."
+keyInput.PlaceholderColor3 = Color3.fromRGB(150, 120, 180)
+Instance.new("UICorner", keyInput).CornerRadius = UDim.new(0, 8)
+
+-- Кнопка активации
+local activateBtn = Instance.new("TextButton", activationFrame)
+activateBtn.Size = UDim2.new(0.5, 0, 0, 45)
+activateBtn.Position = UDim2.new(0.25, 0, 0, 180)
+activateBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 200)
+activateBtn.Text = "АКТИВИРОВАТЬ"
+activateBtn.TextColor3 = Color3.new(1, 1, 1)
+activateBtn.Font = Enum.Font.GothamBold
+activateBtn.TextSize = 18
+Instance.new("UICorner", activateBtn).CornerRadius = UDim.new(0, 8)
+
+-- Статус
+local statusLabel = Instance.new("TextLabel", activationFrame)
+statusLabel.Size = UDim2.new(1, 0, 0, 30)
+statusLabel.Position = UDim2.new(0, 0, 0,235)
+statusLabel.
+BackgroundTransparency = 1
+statusLabel.Text = "Введите ключ для активации"
+statusLabel.TextColor3 = Color3.fromRGB(200, 180, 255)
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 14
+
+-- ============================================
+--          ОСНОВНОЙ КОНТЕНТ
+-- ============================================
+local contentFrame = Instance.new("Frame", mainFrame)
+contentFrame.Size = UDim2.new(1, 0, 1, 0)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Visible = false
+
+-- Заголовок
+local titleBar = Instance.new("Frame", contentFrame)
+titleBar.Size = UDim2.new(1, 0, 0, 40)
+titleBar.Position = UDim2.new(0, 0, 0, 0)
+titleBar.BackgroundTransparency = 1
+titleBar.Active = true
+
+local title = Instance.new("TextLabel", titleBar)
+title.Size = UDim2.new(0.7, 0, 1, 0)
+title.Position = UDim2.new(0.05, 0, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "★ PRO MENU ★"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Кнопки управления
+local toggleSizeBtn = Instance.new("TextButton", titleBar)
+toggleSizeBtn.Size = UDim2.new(0, 30, 0, 30)
+toggleSizeBtn.Position = UDim2.new(0.85, 0, 0.05, 0)
+toggleSizeBtn.BackgroundColor3 = Color3.fromRGB(80, 40, 120)
+toggleSizeBtn.Text = "◻"
+toggleSizeBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleSizeBtn.Font = Enum.Font.GothamBold
+toggleSizeBtn.TextSize = 16
+Instance.new("UICorner", toggleSizeBtn).CornerRadius = UDim.new(0, 6)
+
+local closeBtn = Instance.new("TextButton", titleBar)
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(0.93, 0, 0.05, 0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(150, 30, 30)
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 16
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+
+-- Контейнер содержимого
+local contentContainer = Instance.new("Frame", contentFrame)
+contentContainer.Size = UDim2.new(1, 0, 1, -40)
+contentContainer.Position = UDim2.new(0, 0, 0, 40)
+contentContainer.BackgroundTransparency = 1
+contentContainer.Visible = true
+
+-- Подзаголовок
+local subtitle = Instance.new("TextLabel", contentContainer)
+subtitle.Size = UDim2.new(1, 0, 0, 30)
+subtitle.Position = UDim2.new(0, 0, 0, 5)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "нажми K для скрытия • перетащи заголовок"
+subtitle.TextColor3 = Color3.fromRGB(200, 150, 255)
+subtitle.Font = Enum.Font.Gotham
+subtitle.TextSize = 12
+
+-- Разделитель
+local divider = Instance.new("Frame", contentContainer)
+divider.Size = UDim2.new(0.9, 0, 0, 2)
+divider.Position = UDim2.new(0.05, 0, 0, 40)
+divider.BackgroundColor3 = Color3.fromRGB(180, 100, 255)
+divider.BackgroundTransparency = 0.5
+
+-- ESP Блок
+local espFrame = Instance.new("Frame", contentContainer)
+espFrame.Size = UDim2.new(0.9, 0, 0, 90)
+espFrame.Position = UDim2.new(0.05, 0, 0, 50)
+espFrame.BackgroundTransparency = 0.3
+espFrame.BackgroundColor3 = Color3.fromRGB(40, 20, 60)
+Instance.new("UICorner", espFrame).CornerRadius = UDim.new(0, 8)
+
+local espLabel = Instance.new("TextLabel", espFrame)
+espLabel.Size = UDim2.new(0.5, 0, 0, 30)
+espLabel.Position = UDim2.new(0, 10, 0, 5)
+espLabel.BackgroundTransparency = 1
+espLabel.Text = "📱 ESP iPhone"
+espLabel.TextColor3 = Color3.new(1, 1, 1)
+espLabel.Font = Enum.Font.GothamBold
+espLabel.TextSize = 16
+espLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local espBtn = Instance.new("TextButton", espFrame)
+espBtn.Size = UDim2.new(0, 80, 0, 35)
+espBtn.Position = UDim2.new(0.7, 0, 0.1, 0)
+espBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+espBtn.Text = "ВЫКЛ"
+espBtn.TextColor3 = Color3.new(1, 1, 1)
+espBtn.Font = Enum.Font.GothamBold
+espBtn.TextSize = 14
+Instance.new("UICorner", espBtn).CornerRadius = UDim.new(0, 6)
+
+local espInfo = Instance.new("TextLabel", espFrame)
+espInfo.Size = UDim2.new(0.7, 0, 0, 25)
+espInfo.Position = UDim2.new(0.05, 0, 0.65, 0)
+espInfo.BackgroundTransparency = 1
+espInfo.Text = "Ближайший: нет"
+espInfo.TextColor3 = Color3.fromRGB(200, 180, 255)
+espInfo.Font = Enum.Font.Gotham
+espInfo.TextSize = 12
+espInfo.
+TextXAlignment = Enum.TextXAlignment.Left
+
+-- Speed Блок
+local speedFrame = Instance.new("Frame", contentContainer)
+speedFrame.Size = UDim2.new(0.9, 0, 0, 120)
+speedFrame.Position = UDim2.new(0.05, 0, 0, 150)
+speedFrame.BackgroundTransparency = 0.3
+speedFrame.BackgroundColor3 = Color3.fromRGB(40, 20, 60)
+Instance.new("UICorner", speedFrame).CornerRadius = UDim.new(0, 8)
+
+local speedLabel = Instance.new("TextLabel", speedFrame)
+speedLabel.Size = UDim2.new(0.5, 0, 0, 30)
+speedLabel.Position = UDim2.new(0, 10, 0, 5)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "⚡ Скорость"
+speedLabel.TextColor3 = Color3.new(1, 1, 1)
+speedLabel.Font = Enum.Font.GothamBold
+speedLabel.TextSize = 16
+speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local speedValue = Instance.new("TextLabel", speedFrame)
+speedValue.Size = UDim2.new(0.2, 0, 0, 30)
+speedValue.Position = UDim2.new(0.75, 0, 0, 5)
+speedValue.BackgroundTransparency = 1
+speedValue.Text = "16"
+speedValue.TextColor3 = Color3.fromRGB(200, 150, 255)
+speedValue.Font = Enum.Font.GothamBold
+speedValue.TextSize = 16
+
+local sliderBg = Instance.new("Frame", speedFrame)
+sliderBg.Size = UDim2.new(0.8, 0, 0, 8)
+sliderBg.Position = UDim2.new(0.1, 0, 0.35, 0)
+sliderBg.BackgroundColor3 = Color3.fromRGB(60, 30, 80)
+Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0)
+
+local sliderFill = Instance.new("Frame", sliderBg)
+sliderFill.Size = UDim2.new(0.16, 0, 1, 0)
+sliderFill.BackgroundColor3 = Color3.fromRGB(180, 100, 255)
+Instance.new("UICorner", sliderFill).CornerRadius = UDim.new(1, 0)
+
+local speedBtn = Instance.new("TextButton", speedFrame)
+speedBtn.Size = UDim2.new(0.7, 0, 0, 35)
+speedBtn.Position = UDim2.new(0.15, 0, 0.55, 0)
+speedBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+speedBtn.Text = "СПИДХАК: ВЫКЛ"
+speedBtn.TextColor3 = Color3.new(1, 1, 1)
+speedBtn.Font = Enum.Font.GothamBold
+speedBtn.TextSize = 14
+Instance.new("UICorner", speedBtn).CornerRadius = UDim.new(0, 6)
+
+local speedInfo = Instance.new("TextLabel", speedFrame)
+speedInfo.Size = UDim2.new(0.7, 0, 0, 20)
+speedInfo.Position = UDim2.new(0.15, 0, 0.85, 0)
+speedInfo.BackgroundTransparency = 1
+speedInfo.Text = "диапазон: 1-100"
+speedInfo.TextColor3 = Color3.fromRGB(180, 160, 200)
+speedInfo.Font = Enum.Font.Gotham
+speedInfo.TextSize = 10
+speedInfo.TextXAlignment = Enum.TextXAlignment.Center
+
+-- ============================================
+--          ФУНКЦИИ ПЕРЕТАСКИВАНИЯ
+-- ============================================
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = true
+        dragStart = input.Position
+        dragOffset = Vector2.new(mainFrame.AbsolutePosition.X - input.Position.X, mainFrame.AbsolutePosition.Y - input.Position.Y)
+        titleBar.BackgroundTransparency = 0.3
+        titleBar.BackgroundColor3 = Color3.fromRGB(80, 40, 120)
+    end
+end)
+
+userInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = false
+        titleBar.BackgroundTransparency = 1
+    end
+end)
+
+userInputService.InputChanged:Connect(function(input)
+    if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local newX = input.Position.X + dragOffset.X
+        local newY = input.Position.Y + dragOffset.Y
+        local screenSize = camera.ViewportSize
+        local frameSize = mainFrame.AbsoluteSize
+        newX = math.clamp(newX, 0, screenSize.X - frameSize.X)
+        newY = math.clamp(newY, 0, screenSize.Y - frameSize.Y)
+        mainFrame.Position = UDim2.new(0, newX, 0, newY)
+    end
+end)
+
+-- ============================================
+--          ФУНКЦИИ УПРАВЛЕНИЯ
+-- ============================================
+toggleSizeBtn.MouseButton1Click:Connect(function()
+    isExpanded = not isExpanded
+    if isExpanded then
+        toggleSizeBtn.Text = "◻"
+        contentContainer.Visible = true
+        mainFrame.Size = menuSize
+        local screenSize = camera.ViewportSize
+mainFrame.Position = UDim2.new(0, (screenSize.X - mainFrame.Size.X.
+Offset) / 2, 0, (screenSize.Y - mainFrame.Size.Y.Offset) / 2)
+    else
+        toggleSizeBtn.Text = "◻"
+        contentContainer.Visible = false
+        mainFrame.Size = compactSize
+    end
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    guiVisible = false
+    mainFrame.Visible = false
+end)
+
+-- ============================================
+--          АКТИВАЦИЯ КЛЮЧА
+-- ============================================
+activateBtn.MouseButton1Click:Connect(function()
+    local inputKey = string.upper(keyInput.Text)
+    inputKey = string.gsub(inputKey, "%s+", "")
+    
+    if inputKey == VALID_KEY then
+        isKeyValid = true
+        activationFrame.Visible = false
+        contentFrame.Visible = true
+        mainFrame.Size = menuSize
+        statusLabel.Text = "✅ Ключ активирован! Добро пожаловать!"
+        statusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+        print("✅ PRO MENU успешно активирован!")
+        print("🔑 Использован ключ: " .. inputKey)
+    else
+        statusLabel.Text = "❌ НЕВЕРНЫЙ КЛЮЧ! Попробуйте снова"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+        keyInput.Text = ""
+        keyInput.PlaceholderText = "Неверный ключ!"
+        wait(1)
+        keyInput.PlaceholderText = "Введите ключ..."
+    end
+end)
+
+-- Активация по Enter
+keyInput.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        activateBtn.MouseButton1Click:Fire()
+    end
+end)
+
+-- ============================================
+--          ФУНКЦИИ ОБНОВЛЕНИЯ СКОРОСТИ
+-- ============================================
+local function updateSpeed(value)
+    currentSpeed = math.clamp(value, 1, 100)
+    sliderFill.Size = UDim2.new(currentSpeed / 100, 0, 1, 0)
+    speedValue.Text = tostring(math.floor(currentSpeed))
+    
+    if speedEnabled then
+        local char = localPlayer.Character
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            if hum then
+                hum.WalkSpeed = currentSpeed
+            end
+        end
+    end
+end
+
+sliderBg.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local x = (input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X
+        updateSpeed(x * 100)
+    end
+end)
+
+sliderBg.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and userInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+        local x = (input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X
+        updateSpeed(x * 100)
+    end
+end)
+
+-- ============================================
+--          КНОПКИ ESP И SPEED
+-- ============================================
+espBtn.MouseButton1Click:Connect(function()
+    if not isKeyValid then return end
+    espEnabled = not espEnabled
+    espBtn.Text = espEnabled and "ВКЛ" or "ВЫКЛ"
+    espBtn.BackgroundColor3 = espEnabled and Color3.fromRGB(0, 100, 0) or Color3.fromRGB(100, 0, 0)
+    if not espEnabled then
+        -- Удаляем все ESP метки
+        for _, label in pairs(espLabels) do
+            pcall(function() label:Destroy() end)
+        end
+        espLabels = {}
+        espInfo.Text = "Ближайший: нет"
+    end
+end)
+
+speedBtn.MouseButton1Click:Connect(function()
+    if not isKeyValid then return end
+    speedEnabled = not speedEnabled
+    speedBtn.Text = speedEnabled and "СПИДХАК: ВКЛ" or "СПИДХАК: ВЫКЛ"
+    speedBtn.BackgroundColor3 = speedEnabled and Color3.fromRGB(0, 100, 0) or Color3.fromRGB(100, 0, 0)
+    
+    local char = localPlayer.Character
+    if char then
+        local hum = char:FindFirstChild("Humanoid")
+        if hum then
+            if speedEnabled then
+                hum.WalkSpeed = currentSpeed
+            else
+                hum.WalkSpeed = 16
+            end
+        end
+    end
+end)
+
+-- ============================================
+--          ESP ФУНКЦИИ (БЕЗ DRAWING)
+-- ============================================
+local function createESPLabel(part, name, dist)
+    local label = Instance.new("BillboardGui", coreGui)
+    label.Size = UDim2.
+new(0, 200, 0, 50)
+    label.Adornee = part
+    label.AlwaysOnTop = true
+    label.StudsOffset = Vector3.new(0, 2, 0)
+    
+    local frame = Instance.new("Frame", label)
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundTransparency = 0.3
+    frame.BackgroundColor3 = Color3.fromRGB(20, 10, 40)
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+    
+    local text = Instance.new("TextLabel", frame)
+    text.Size = UDim2.new(1, 0, 0.7, 0)
+    text.Position = UDim2.new(0, 0, 0.15, 0)
+    text.BackgroundTransparency = 1
+    text.Text = name .. " (" .. math.floor(dist) .. "м)"
+    text.TextColor3 = Color3.fromRGB(255, 215, 0)
+    text.Font = Enum.Font.GothamBold
+    text.TextSize = 14
+    text.TextScaled = true
+    
+    return label
+end
+
+-- Обновление ESP
+local lastScan = 0
+local SCAN_INTERVAL = 3
+local foundPhones = {}
+
+runService.RenderStepped:Connect(function()
+    if not isKeyValid or not espEnabled then
+        return
+    end
+    
+    local myPos = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") and localPlayer.Character.HumanoidRootPart.Position or Vector3.new(0,0,0)
+    
+    -- Сканирование раз в 3 секунды
+    if tick() - lastScan > SCAN_INTERVAL then
+        lastScan = tick()
+        
+        -- Удаляем старые метки
+        for _, label in pairs(espLabels) do
+            pcall(function() label:Destroy() end)
+        end
+        espLabels = {}
+        foundPhones = {}
+        
+        -- Поиск iPhone
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("Model") and obj.Name:lower():find("iphone") then
+                local part = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+                if part then
+                    table.insert(foundPhones, {
+                        obj = obj,
+                        part = part
+                    })
+                end
+            end
+        end
+    end
+    
+    -- Обновление меток для найденных телефонов
+    local closestDist = math.huge
+    local closestName = "нет"
+    
+    for _, data in pairs(foundPhones) do
+        local part = data.part
+        if part and part.Parent then
+            local dist = (myPos - part.Position).Magnitude
+            
+            if dist < closestDist then 
+                closestDist = dist
+                closestName = data.obj.Name
+            end
+            
+            -- Создаем метку если её нет
+            if not espLabels[data.obj] then
+                espLabels[data.obj] = createESPLabel(part, data.obj.Name, dist)
+            end
+        end
+    end
+    
+    -- Обновляем информацию о ближайшем
+    espInfo.Text = closestName ~= "нет" and ("Ближайший: " .. closestName .. " (" .. math.floor(closestDist) .. "м)") or "Ближайший: нет"
+end)
+
+-- ============================================
+--          КЛАВИШИ
+-- ============================================
+userInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.K and isKeyValid then
+        guiVisible = not guiVisible
+        mainFrame.Visible = guiVisible
+    end
+end)
+
+-- ============================================
+--          ОЧИСТКА ПРИ ВЫХОДЕ
+-- ============================================
+localPlayer:GetPropertyChangedSignal("Character"):Connect(function()
+    if not localPlayer.Character then
+        for _, label in pairs(espLabels) do
+            pcall(function() label:Destroy() end)
+        end
+        espLabels = {}
+    end
+end)
+
+print("✅ PRO MENU загружен! Введите ключ для активации")
+print("🔑 Ключ: FISAYBOSIN")
+print("⚠️ Используется оптимизированная версия без Drawing объектов")
