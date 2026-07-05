@@ -606,7 +606,7 @@
         end
     end
 
-    local function enableESP()
+    function enableESP()
         if espEnabled then return end
         espEnabled = true
         
@@ -767,7 +767,7 @@
         print("✅ ESP включен! Найдено:", found)
     end
 
-    local function disableESP()
+    function disableESP()
         espEnabled = false
         clearESP()
         print("❌ ESP выключен")
@@ -1566,7 +1566,7 @@
     end
 
     -- Автобай всех найденных вещей
-    local function startAutoBuy()
+    function startAutoBuy()
         if not espEnabled then
             return false, "Сначала включи ESP!"
         end
@@ -1747,13 +1747,13 @@
         return true, "Автобай запущен"
     end
 
-    local function stopAutoBuy()
+    function stopAutoBuy()
         autoBuyEnabled = false
         print("⏹️ Автобай остановлен")
     end
 
     -- Очистить список купленных предметов
-    local function clearPurchasedList()
+    function clearPurchasedList()
         local count = 0
         for _ in pairs(purchasedSlots) do
             count = count + 1
@@ -1763,7 +1763,7 @@
         return count
     end
 
-  -- ============================================
+-- ============================================
 -- ПРОСТОЕ GUI (без Rayfield)
 -- ============================================
 print("🎨 Создаю GUI...")
@@ -1773,6 +1773,7 @@ task.wait(2)
 local playerGui = player:WaitForChild("PlayerGui", 10)
 if not playerGui then
     warn("❌ Ошибка загрузки GUI - Перезагрузи скрипт")
+    return
 end
 
 pcall(function()
