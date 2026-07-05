@@ -944,6 +944,9 @@ local function advancedSafeTeleport(startCF, endCF, distance)
         activeTween = nil
     end
     
+    -- ИСПРАВЛЕНИЕ: Сохраняем текущую ориентацию персонажа
+    local currentLookVector = startCF.LookVector
+    
     -- Вычисляем безопасную скорость (оптимизированная)
     local maxSpeed = 25 -- Скорость для обхода детекта (чуть быстрее)
     local calculatedDuration = distance / maxSpeed
@@ -982,8 +985,9 @@ local function advancedSafeTeleport(startCF, endCF, distance)
             segmentEnd = segmentEnd + randomOffset
         end
         
-        local segmentStartCF = CFrame.new(segmentStart)
-        local segmentEndCF = CFrame.new(segmentEnd)
+        -- ИСПРАВЛЕНИЕ: Создаем CFrame с сохранением направления взгляда
+        local segmentStartCF = CFrame.new(segmentStart, segmentStart + currentLookVector)
+        local segmentEndCF = CFrame.new(segmentEnd, segmentEnd + currentLookVector)
         
         -- Создаем твин для сегмента
         local tweenInfo = TweenInfo.new(
@@ -1006,8 +1010,8 @@ local function advancedSafeTeleport(startCF, endCF, distance)
         end
     end
     
-    -- Финальная точная установка позиции
-    hrp.CFrame = endCF
+    -- ИСПРАВЛЕНИЕ: Финальная точная установка позиции с сохранением ориентации
+    hrp.CFrame = CFrame.new(endCF.Position, endCF.Position + currentLookVector)
     activeTween = nil
     
     return true
@@ -1026,6 +1030,12 @@ local function smoothTweenTeleport(startCF, endCF, duration, easingStyle)
         activeTween = nil
     end
     
+    -- ИСПРАВЛЕНИЕ: Сохраняем текущую ориентацию персонажа (только Y поворот)
+    local currentLookVector = startCF.LookVector
+    local targetPosition = endCF.Position
+    -- Создаем новый CFrame с сохранением направления взгляда
+    local correctedEndCF = CFrame.new(targetPosition, targetPosition + currentLookVector)
+    
     -- Создаем TweenInfo
     local tweenInfo = TweenInfo.new(
         duration,                    -- Длительность
@@ -1036,8 +1046,8 @@ local function smoothTweenTeleport(startCF, endCF, duration, easingStyle)
         0                            -- Задержка
     )
     
-    -- Создаем твин для CFrame
-    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = endCF})
+    -- Создаем твин для CFrame с сохраненной ориентацией
+    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = correctedEndCF})
     activeTween = tween
     
     -- Запускаем анимацию
@@ -1057,12 +1067,15 @@ local function smoothTeleport(startPos, endPos, steps, delayBetweenSteps)
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
     
+    -- ИСПРАВЛЕНИЕ: Сохраняем текущую ориентацию
+    local currentLookVector = hrp.CFrame.LookVector
+    
     -- Вычисляем расстояние и направление
     local distance = (endPos - startPos).Magnitude
     
     -- Если расстояние маленькое, просто телепортируемся
     if distance < 10 then
-        hrp.CFrame = CFrame.new(endPos)
+        hrp.CFrame = CFrame.new(endPos, endPos + currentLookVector)
         return true
     end
     
@@ -1071,17 +1084,17 @@ local function smoothTeleport(startPos, endPos, steps, delayBetweenSteps)
         local alpha = i / steps
         local nextPos = startPos:Lerp(endPos, alpha)
         
-        -- Безопасная установка позиции
+        -- Безопасная установка позиции с сохранением ориентации
         pcall(function()
-            hrp.CFrame = CFrame.new(nextPos)
+            hrp.CFrame = CFrame.new(nextPos, nextPos + currentLookVector)
         end)
         
         task.wait(delayBetweenSteps)
     end
     
-    -- Финальная установка точной позиции
+    -- Финальная установка точной позиции с сохранением ориентации
     pcall(function()
-        hrp.CFrame = CFrame.new(endPos)
+        hrp.CFrame = CFrame.new(endPos, endPos + currentLookVector)
     end)
     
     return true
@@ -1097,14 +1110,15 @@ local function teleportTo(position)
     
     local currentPos = hrp.Position
     local currentCF = hrp.CFrame
-    local targetCF = CFrame.new(position)
+    local currentLookVector = currentCF.LookVector -- Сохраняем направление взгляда
+    local targetCF = CFrame.new(position, position + currentLookVector) -- Создаем целевой CFrame с сохранением ориентации
     local distance = (position - currentPos).Magnitude
     
     print("📏 Расстояние до цели:", math.floor(distance), "стадов")
     
     -- Выбираем метод телепорта в зависимости от расстояния
     if distance < 10 then
-        -- Очень близко - мгновенный телепорт
+        -- Очень близко - мгновенный телепорт с сохранением ориентации
         print("🚶 Очень близко, мгновенный телепорт")
         hrp.CFrame = targetCF
         task.wait(0.3)
@@ -1120,16 +1134,20 @@ local function teleportTo(position)
         task.wait(0.4)
     else
         -- ПРОДВИНУТЫЙ ОБХОД - используем новую функцию с имитацией человека
-        print("�️ ПРОДВИНУТЫЙ ОБХОД АНТИЧИТА")
+        print("🛡️ ПРОДВИНУТЫЙ ОБХОД АНТИЧИТА")
         local success = pcall(function()
             advancedSafeTeleport(currentCF, targetCF, distance)
         end)
         if not success then
-            -- Если не сработало, пробуем обычный медленный твин
+            -- Если не сработало, пробуем обычный медленный телепорт
             print("⚠️ Запасной вариант")
             smoothTeleport(currentPos, position, 15, 0.12)
         end
         task.wait(0.5)
+    end
+    
+    return true
+end
     end
     
     return true
