@@ -1771,9 +1771,11 @@
     -- Ждём что игрок полностью загрузился
     if not player.Character then
         print("⏳ Жду загрузки персонажа...")
-        repeat
+        local timeout = 0
+        while not player.Character and timeout < 30 do
             task.wait(0.5)
-        until player.Character ~= nil
+            timeout = timeout + 0.5
+        end
         task.wait(2) -- Дополнительное время после спавна
     else
         task.wait(1) -- Даем игре прогрузиться
@@ -1783,10 +1785,12 @@
     local playerGui = player:FindFirstChild("PlayerGui")
     if not playerGui then
         print("⏳ Жду PlayerGui...")
-        repeat
+        local timeout = 0
+        while not playerGui and timeout < 15 do
             task.wait(0.5)
+            timeout = timeout + 0.5
             playerGui = player:FindFirstChild("PlayerGui")
-        until playerGui ~= nil or task.wait(15)
+        end
     end
 
     if not playerGui then
