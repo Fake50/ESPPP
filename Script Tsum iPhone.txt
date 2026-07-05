@@ -464,23 +464,131 @@ local function teleportTo(position)
 end
 
 -- Взять предмет из слота
-local function takeItem(slotId)
-    local success = pcall(function()
+local function takeItem(slotId, slot)
+    print("📥 Пытаюсь взять предмет, SlotId:", slotId)
+    
+    -- Метод 1: Через ProximityPrompt
+    local prompt = nil
+    
+    -- Ищем ProximityPrompt в слоте и всех его потомках
+    for _, desc in pairs(slot:GetDescendants()) do
+        if desc:IsA("ProximityPrompt") and desc.Enabled then
+            prompt = desc
+            print("🔘 Найден активный ProximityPrompt")
+            break
+        end
+    end
+    
+    -- Если нашли prompt, активируем его
+    if prompt then
+        local success = pcall(function()
+            if fireproximityprompt then
+                fireproximityprompt(prompt)
+                print("✅ ProximityPrompt активирован через fireproximityprompt")
+            else
+                prompt:InputHoldBegin()
+                task.wait(prompt.HoldDuration or 0.5)
+                prompt:InputHoldEnd()
+                print("✅ ProximityPrompt активирован вручную")
+            end
+        end)
+        
+        if success then
+            task.wait(1) -- Ждем обработки
+        else
+            print("❌ Ошибка активации ProximityPrompt")
+        end
+    else
+        print("⚠️ ProximityPrompt не найден")
+    end
+    
+    -- Метод 2: Прямой вызов RemoteEvent
+    task.wait(0.5)
+    print("📡 Отправляю ShopTake через RemoteEvent...")
+    local success, err = pcall(function()
         local args = {{
             action = "ShopTake",
             slotId = slotId
         }}
         game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("MainEvent"):FireServer(unpack(args))
     end)
+    
+    if success then
+        print("✅ ShopTake отправлен")
+    else
+        print("❌ Ошибка ShopTake:", err)
+    end
+    
     return success
 end
 
--- Оплатить предмет
+-- Оплатить предмет (нажать PAY)
 local function purchaseItem(slotId)
-    local success = pcall(function()
+    print("💳 Пытаюсь оплатить предмет, SlotId:", slotId)
+    
+    local playerGui = player:WaitForChild("PlayerGui")
+    local payButtonFound = false
+    
+    -- Ищем GUI с кнопкой PAY
+    print("🔍 Ищу кнопку PAY в GUI...")
+    for _, gui in pairs(playerGui:GetChildren()) do
+        if gui:IsA("ScreenGui") then
+            for _, button in pairs(gui:GetDescendants()) do
+                if button:IsA("TextButton") then
+                    local text = button.Text:upper()
+                    local name = button.Name:upper()
+                    
+                    if text:find("PAY") or name:find("PAY") or text:find("BUY") or name:find("BUY") or text:find("КУПИТЬ") then
+                        print("💳 Найдена кнопка:", button.Name, "Текст:", button.Text)
+                        payButtonFound = true
+                        
+                        -- Симулируем клик через getconnections
+                        local clicked = pcall(function()
+                            if getconnections then
+                                for _, connection in pairs(getconnections(button.MouseButton1Click)) do
+                                    connection:Fire()
+                                end
+                            end
+                        end)
+                        
+                        if clicked then
+                            print("✅ Кнопка нажата через getconnections")
+                        end
+                        
+                        -- Дополнительно симулируем обычный клик
+                        pcall(function()
+                            button.MouseButton1Click:Fire()
+                        end)
+                        
+                        task.wait(0.8)
+                        break
+                    end
+                end
+            end
+            if payButtonFound then break end
+        end
+    end
+    
+    if not payButtonFound then
+        print("⚠️ Кнопка PAY не найдена в GUI")
+    end
+    
+    -- Отправляем через RemoteFunction напрямую
+    task.wait(0.5)
+    print("📡 Отправляю ShopPurchase через RemoteFunction...")
+    local success, err = pcall(function()
         local args = {"ShopPurchase", {slotId}}
-        game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("RemoteFunction"):InvokeServer(unpack(args))
+        local result = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("RemoteFunction"):InvokeServer(unpack(args))
+        print("📦 Результат покупки:", result)
+        return result
     end)
+    
+    if success then
+        print("✅ ShopPurchase отправлен")
+    else
+        print("❌ Ошибка ShopPurchase:", err)
+    end
+    
     return success
 end
 
@@ -508,71 +616,97 @@ local function buyItem(mannequinData)
     end
     local itemName = table.concat(itemNames, " + ")
     
-    print("🛒 Покупаю:", itemName)
+    print("")
+    print("═══════════════════════════════")
+    print("🛒 ПОКУПАЮ:", itemName)
+    print("═══════════════════════════════")
     
     -- Получаем SlotId
     local slotId = getSlotId(slot)
     if not slotId then
         autoBuyRunning = false
+        print("❌ SlotId не найден")
         return false, "SlotId не найден"
     end
+    print("🆔 SlotId:", slotId)
     
     -- Получаем зону
     local zoneName = slot.Parent.Parent.Name
     print("📍 Зона:", zoneName)
     
     -- Шаг 1: Телепорт к предмету
-    print("🚀 Телепортируюсь к предмету...")
-    local mannequinPos = mannequin:FindFirstChild("HumanoidRootPart") or mannequin:FindFirstChild("Torso")
+    print("")
+    print("🚀 ШАГ 1: Телепортируюсь к предмету...")
+    local mannequinPos = mannequin:FindFirstChild("HumanoidRootPart") or mannequin:FindFirstChild("Torso") or mannequin.PrimaryPart
     if not mannequinPos then
         autoBuyRunning = false
+        print("❌ Позиция манекена не найдена")
         return false, "Позиция манекена не найдена"
     end
     
-    if not teleportTo(mannequinPos.Position + Vector3.new(0, 2, 0)) then
+    -- Телепортируемся прямо к манекену (еще ближе)
+    local targetPos = mannequinPos.Position + Vector3.new(0, 0, 1.5)
+    if not teleportTo(targetPos) then
         autoBuyRunning = false
+        print("❌ Ошибка телепорта к предмету")
         return false, "Ошибка телепорта к предмету"
     end
+    print("✅ Телепортирован к предмету")
     
-    task.wait(0.5)
+    task.wait(1.2) -- Увеличена задержка
     
     -- Шаг 2: Взять предмет
-    print("👕 Беру предмет...")
-    if not takeItem(slotId) then
+    print("")
+    print("👕 ШАГ 2: Беру предмет...")
+    if not takeItem(slotId, slot) then
         autoBuyRunning = false
+        print("❌ Ошибка при взятии предмета")
         return false, "Ошибка при взятии предмета"
     end
     
-    task.wait(0.5)
+    task.wait(2) -- Увеличена задержка для обработки
     
     -- Шаг 3: Найти NPC
-    print("🔍 Ищу NPC...")
+    print("")
+    print("🔍 ШАГ 3: Ищу NPC в зоне...")
     local npc = findNPCInZone(zoneName)
     if not npc then
         autoBuyRunning = false
+        print("❌ NPC не найден в зоне")
         return false, "NPC не найден в зоне"
     end
+    print("✅ NPC найден")
     
     -- Шаг 4: Телепорт к NPC
-    print("🚀 Телепортируюсь к NPC...")
-    if not teleportTo(npc.Position + Vector3.new(0, 2, 3)) then
+    print("")
+    print("🚀 ШАГ 4: Телепортируюсь к NPC...")
+    local npcTargetPos = npc.Position + Vector3.new(0, 1, 3)
+    if not teleportTo(npcTargetPos) then
         autoBuyRunning = false
+        print("❌ Ошибка телепорта к NPC")
         return false, "Ошибка телепорта к NPC"
     end
+    print("✅ Телепортирован к NPC")
     
-    task.wait(0.5)
+    task.wait(1)
     
     -- Шаг 5: Оплата
-    print("💳 Оплачиваю...")
+    print("")
+    print("💳 ШАГ 5: Оплачиваю...")
     if not purchaseItem(slotId) then
         autoBuyRunning = false
+        print("❌ Ошибка при оплате")
         return false, "Ошибка при оплате"
     end
     
-    task.wait(0.5)
+    task.wait(1)
     
     autoBuyRunning = false
-    print("✅ Успешно куплено:", itemName)
+    print("")
+    print("═══════════════════════════════")
+    print("✅ УСПЕШНО КУПЛЕНО:", itemName)
+    print("═══════════════════════════════")
+    print("")
     return true, "Успешно куплено"
 end
 
