@@ -253,6 +253,7 @@ print("👜 Аксессуаров:", accessoriesCount)
 -- ============================================
 local espEnabled = false
 local espObjects = {}
+local espTracking = {} -- Таблица для отслеживания объектов и их ESP
 local tracers = {}
 local tracerGui = nil
 local autoBuyEnabled = false
@@ -343,7 +344,12 @@ local function createHighlight(model)
 end
 
 local function createLabel(model, text)
-    if model:FindFirstChild("ESP_L") then return end
+    if model:FindFirstChild("ESP_L") then 
+        local existingGui = model:FindFirstChild("ESP_L")
+        if existingGui then
+            return existingGui
+        end
+    end
     
     local gui = Instance.new("BillboardGui")
     gui.Name = "ESP_L"
@@ -354,6 +360,7 @@ local function createLabel(model, text)
     gui.Parent = player:WaitForChild("PlayerGui")
     
     local label = Instance.new("TextLabel")
+    label.Name = "ESP_Text" -- Добавляем имя для легкого поиска
     label.Size = UDim2.new(1, 0, 1, 0)
     label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     label.BackgroundTransparency = 0.3
@@ -364,12 +371,12 @@ local function createLabel(model, text)
     label.Parent = gui
     
     table.insert(espObjects, gui)
+    return gui
 end
 
 -- ============================================
 -- ESP УПРАВЛЕНИЕ
 -- ============================================
-local espTracking = {} -- Таблица для отслеживания объектов и их ESP
 
 local function clearESP()
     for _, obj in pairs(espObjects) do
@@ -384,15 +391,81 @@ end
 local function updateESP()
     -- Проверяем каждый объект, если он пропал - удаляем его ESP
     for model, espData in pairs(espTracking) do
+        local shouldRemove = false
+        
+        -- Проверка 1: Модель существует?
         if not model or not model.Parent or model.Parent == nil then
-            -- Объект пропал, удаляем его ESP
-            if espData.highlight and espData.highlight.Parent then
-                espData.highlight:Destroy()
+            shouldRemove = true
+        end
+        
+        -- Проверка 2: Слот существует? (для вещей)
+        if not shouldRemove and espData.slot then
+            if not espData.slot.Parent or espData.slot.Parent == nil then
+                shouldRemove = true
+            else
+                -- Проверяем что манекен все еще в слоте
+                local mannequinInSlot = espData.slot:FindFirstChild("Mannequin")
+                if not mannequinInSlot or mannequinInSlot ~= model then
+                    shouldRemove = true
+                end
             end
-            if espData.label and espData.label.Parent then
-                espData.label:Destroy()
+        end
+        
+        -- Проверка 3: Для манекенов - есть ли еще одежда?
+        if not shouldRemove and model:IsA("Model") and model.Name == "Mannequin" then
+            local hasClothing = false
+            for _, child in pairs(model:GetChildren()) do
+                if child:IsA("Shirt") or child:IsA("Pants") then
+                    hasClothing = true
+                    break
+                end
             end
+            -- Если одежда пропала - удаляем ESP
+            if not hasClothing then
+                shouldRemove = true
+            end
+        end
+        
+        -- Проверка 4: Для аксессуаров - существует ли Handle/Body?
+        if not shouldRemove and model:IsA("Model") and model.Name:match("^M_") then
+            local target = model:FindFirstChild("Handle") or model:FindFirstChild("Body")
+            if not target or not target:IsA("MeshPart") then
+                shouldRemove = true
+            end
+        end
+        
+        -- Проверка 5: ESP элементы существуют?
+        if not shouldRemove then
+            if espData.highlight and (not espData.highlight.Parent or espData.highlight.Parent == nil) then
+                shouldRemove = true
+            end
+        end
+        
+        -- Удаляем ESP если нужно
+        if shouldRemove then
+            local itemName = ""
+            if espData.label and espData.label:IsA("BillboardGui") then
+                local label = espData.label:FindFirstChild("ESP_Text")
+                if label and label:IsA("TextLabel") then
+                    itemName = label.Text
+                end
+            end
+            
+            pcall(function()
+                if espData.highlight and espData.highlight.Parent then
+                    espData.highlight:Destroy()
+                end
+            end)
+            pcall(function()
+                if espData.label and espData.label.Parent then
+                    espData.label:Destroy()
+                end
+            end)
             espTracking[model] = nil
+            
+            if itemName ~= "" then
+                print("🗑️ ESP удален (вещь пропала):", itemName)
+            end
         end
     end
 end
@@ -426,7 +499,9 @@ local function enableESP()
             local label = createLabel(data.mannequin, table.concat(names, " + "))
             espTracking[data.mannequin] = {
                 highlight = data.mannequin:FindFirstChild("ESP_H"),
-                label = label
+                label = label,
+                slot = data.slot, -- Сохраняем ссылку на слот
+                itemType = "clothing"
             }
             found = found + 1
         end
@@ -440,7 +515,8 @@ local function enableESP()
             local label = createLabel(data.model, item.name)
             espTracking[data.model] = {
                 highlight = data.model:FindFirstChild("ESP_H"),
-                label = label
+                label = label,
+                itemType = "accessory"
             }
             found = found + 1
         end
@@ -450,9 +526,49 @@ local function enableESP()
     task.spawn(function()
         while espEnabled do
             updateESP()
-            task.wait(0.5) -- Проверяем каждые 0.5 секунды
+            task.wait(0.2) -- Проверяем каждые 0.2 секунды (быстрее)
         end
     end)
+    
+    -- Добавляем слушателя на удаление объектов
+    for model, trackData in pairs(espTracking) do
+        if model and model.Parent then
+            -- Следим за удалением модели
+            model.AncestryChanged:Connect(function(_, parent)
+                if parent == nil then
+                    -- Модель удалена из Workspace
+                    task.wait(0.1)
+                    updateESP()
+                end
+            end)
+            
+            -- Следим за удалением одежды у манекенов
+            if model:IsA("Model") and model.Name == "Mannequin" then
+                for _, child in pairs(model:GetChildren()) do
+                    if child:IsA("Shirt") or child:IsA("Pants") then
+                        child.AncestryChanged:Connect(function(_, parent)
+                            if parent == nil then
+                                -- Одежда удалена
+                                task.wait(0.1)
+                                updateESP()
+                            end
+                        end)
+                    end
+                end
+            end
+            
+            -- Следим за слотом (для вещей)
+            if trackData.slot and trackData.slot.Parent then
+                trackData.slot.AncestryChanged:Connect(function(_, parent)
+                    if parent == nil then
+                        -- Слот удален
+                        task.wait(0.1)
+                        updateESP()
+                    end
+                end)
+            end
+        end
+    end
     
     print("✅ ESP включен! Найдено:", found)
 end
@@ -466,6 +582,109 @@ end
 -- ============================================
 -- АВТОБАЙ ФУНКЦИИ
 -- ============================================
+
+-- Получить баланс игрока
+local function getPlayerMoney()
+    -- Пробуем разные варианты получения денег
+    local money = 0
+    
+    -- Вариант 1: Leaderstats
+    pcall(function()
+        local leaderstats = player:FindFirstChild("leaderstats")
+        if leaderstats then
+            local cash = leaderstats:FindFirstChild("Cash") or leaderstats:FindFirstChild("Money") or leaderstats:FindFirstChild("Coins")
+            if cash and cash.Value then
+                money = cash.Value
+            end
+        end
+    end)
+    
+    -- Вариант 2: PlayerGui
+    if money == 0 then
+        pcall(function()
+            local playerGui = player:WaitForChild("PlayerGui", 1)
+            for _, gui in pairs(playerGui:GetDescendants()) do
+                if gui:IsA("TextLabel") and gui.Name:lower():find("cash") or gui.Name:lower():find("money") then
+                    local text = gui.Text
+                    local amount = text:match("%d+")
+                    if amount then
+                        money = tonumber(amount) or 0
+                    end
+                end
+            end
+        end)
+    end
+    
+    return money
+end
+
+-- Получить цену предмета из слота
+local function getItemPrice(slot)
+    -- Пробуем найти цену в слоте
+    local price = 0
+    
+    pcall(function()
+        -- Вариант 1: Атрибут Price
+        if slot:GetAttribute("Price") then
+            price = slot:GetAttribute("Price")
+        end
+        
+        -- Вариант 2: StringValue или NumberValue с именем Price
+        if price == 0 then
+            local priceValue = slot:FindFirstChild("Price") or slot:FindFirstChild("price")
+            if priceValue and (priceValue:IsA("NumberValue") or priceValue:IsA("IntValue")) then
+                price = priceValue.Value
+            elseif priceValue and priceValue:IsA("StringValue") then
+                local amount = priceValue.Value:match("%d+")
+                if amount then
+                    price = tonumber(amount)
+                end
+            end
+        end
+        
+        -- Вариант 3: Ищем в Configuration
+        if price == 0 then
+            for _, child in pairs(slot:GetDescendants()) do
+                if child.Name:lower():find("price") then
+                    if child:IsA("NumberValue") or child:IsA("IntValue") then
+                        price = child.Value
+                    elseif child:IsA("StringValue") then
+                        local amount = child.Value:match("%d+")
+                        if amount then
+                            price = tonumber(amount)
+                        end
+                    end
+                end
+            end
+        end
+        
+        -- Вариант 4: Ищем TextLabel с ценой рядом
+        if price == 0 then
+            for _, desc in pairs(slot:GetDescendants()) do
+                if desc:IsA("TextLabel") or desc:IsA("BillboardGui") then
+                    local text = ""
+                    if desc:IsA("TextLabel") then
+                        text = desc.Text
+                    else
+                        local label = desc:FindFirstChildOfClass("TextLabel")
+                        if label then
+                            text = label.Text
+                        end
+                    end
+                    
+                    -- Ищем паттерн цены: $123, 123$, Cash: 123, и т.д.
+                    local amount = text:match("%$%s*(%d+)") or text:match("(%d+)%s*%$") or text:match("Cash:%s*(%d+)")
+                    if amount then
+                        price = tonumber(amount)
+                        break
+                    end
+                end
+            end
+        end
+    end)
+    
+    return price
+end
 
 -- Найти NPC в зоне
 local function findNPCInZone(zoneName)
@@ -731,9 +950,32 @@ local function buyItem(mannequinData)
     end
     local itemName = table.concat(itemNames, " + ")
     
+    -- Проверяем баланс и цену
+    local playerMoney = getPlayerMoney()
+    local itemPrice = getItemPrice(slot)
+    
     print("")
     print("═══════════════════════════════")
     print("🛒 ПОКУПАЮ:", itemName)
+    print("💰 Баланс:", playerMoney, "$")
+    print("💵 Цена:", itemPrice, "$")
+    
+    -- Проверка хватает ли денег
+    if itemPrice > 0 and playerMoney < itemPrice then
+        autoBuyRunning = false
+        print("❌ НЕ ХВАТАЕТ ДЕНЕГ!")
+        print("   Нужно:", itemPrice, "$")
+        print("   Есть:", playerMoney, "$")
+        print("   Не хватает:", itemPrice - playerMoney, "$")
+        print("═══════════════════════════════")
+        return false, "Не хватает денег"
+    end
+    
+    if itemPrice > 0 then
+        print("✅ Денег хватает!")
+    else
+        print("⚠️ Цена не найдена, пробую купить")
+    end
     print("═══════════════════════════════")
     
     -- Получаем SlotId
@@ -846,28 +1088,86 @@ local function startAutoBuy()
     
     autoBuyEnabled = true
     print("🤖 Автобай запущен!")
+    print("💰 Проверяю баланс...")
+    
+    local playerMoney = getPlayerMoney()
+    print("💵 Ваш баланс:", playerMoney, "$")
     
     task.spawn(function()
         local mannequins = getAllMannequins()
         local bought = 0
         local errors = 0
+        local skippedNoMoney = 0
         
+        -- Сортируем по цене (от дешевых к дорогим)
+        local sortedMannequins = {}
         for _, data in pairs(mannequins) do
+            -- Проверяем что вещь в базе
+            if (data.clothingData.shirtId and ASSETS[data.clothingData.shirtId]) or
+               (data.clothingData.pantsId and ASSETS[data.clothingData.pantsId]) then
+                
+                local price = getItemPrice(data.slot)
+                table.insert(sortedMannequins, {
+                    data = data,
+                    price = price
+                })
+            end
+        end
+        
+        -- Сортируем по цене
+        table.sort(sortedMannequins, function(a, b)
+            return a.price < b.price
+        end)
+        
+        print("🔍 Найдено вещей для покупки:", #sortedMannequins)
+        print("")
+        
+        for _, item in pairs(sortedMannequins) do
             if not autoBuyEnabled then
                 print("⏸️ Автобай остановлен")
                 break
             end
             
-            -- Проверяем что вещь в базе
-            if (data.clothingData.shirtId and ASSETS[data.clothingData.shirtId]) or
-               (data.clothingData.pantsId and ASSETS[data.clothingData.pantsId]) then
+            -- Обновляем баланс перед каждой покупкой
+            playerMoney = getPlayerMoney()
+            
+            -- Проверяем хватает ли денег
+            if item.price > 0 and playerMoney < item.price then
+                skippedNoMoney = skippedNoMoney + 1
                 
-                local success, message = buyItem(data)
+                -- Получаем имя вещи
+                local itemNames = {}
+                if item.data.clothingData.shirtId then
+                    local asset = ASSETS[item.data.clothingData.shirtId]
+                    if asset then table.insert(itemNames, asset.name) end
+                end
+                if item.data.clothingData.pantsId then
+                    local asset = ASSETS[item.data.clothingData.pantsId]
+                    if asset then table.insert(itemNames, asset.name) end
+                end
+                local itemName = table.concat(itemNames, " + ")
+                
+                print("💸 ПРОПУСК (не хватает денег):", itemName)
+                print("   Цена:", item.price, "$ | Баланс:", playerMoney, "$")
+                print("")
+                
+                -- Если больше не можем купить ничего, останавливаемся
+                if item.price <= playerMoney then
+                    -- Есть деньги, продолжаем
+                else
+                    -- Если отсортировано правильно, все следующие будут еще дороже
+                    print("⚠️ На остальные вещи тоже не хватит денег")
+                    break
+                end
+            else
+                local success, message = buyItem(item.data)
                 if success then
                     bought = bought + 1
                 else
-                    errors = errors + 1
-                    warn("❌", message)
+                    if message ~= "Не хватает денег" then
+                        errors = errors + 1
+                        warn("❌", message)
+                    end
                 end
                 
                 task.wait(0.5) -- Уменьшенная задержка между покупками
@@ -878,7 +1178,9 @@ local function startAutoBuy()
         print("")
         print("🏁 Автобай завершен!")
         print("✅ Куплено:", bought)
+        print("💸 Пропущено (нет денег):", skippedNoMoney)
         print("❌ Ошибок:", errors)
+        print("💰 Остаток:", getPlayerMoney(), "$")
     end)
     
     return true, "Автобай запущен"
@@ -918,12 +1220,11 @@ if not success then
 end
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 250, 0, 220)
+frame.Size = UDim2.new(0, 250, 0, 250) -- Увеличил высоту для баланса
 frame.Position = UDim2.new(0.5, -125, 0.1, 0)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 2
 frame.BorderColor3 = Color3.fromRGB(255, 180, 0)
-frame.Parent = screenGui
 frame.Parent = screenGui
 
 local corner = Instance.new("UICorner")
@@ -1050,12 +1351,13 @@ print("🎉 Safe ESP загружен!")
 print("✅ БЕЗ обхода - НЕ кикнет")
 print("⚡ Мгновенное нажатие E - без задержки")
 print("💨 Все операции ускорены в 2-3 раза")
-print("🔄 ESP пропадает если вещь исчезла")
+print("🔄 ESP пропадает если вещь исчезла (проверка каждые 0.2с)")
 print("🤖 АВТОБАЙ оптимизирован!")
 print("")
 print("📝 Инструкция:")
 print("1. Нажми 'Включить ESP' - найдет все вещи")
 print("2. Нажми 'АВТОБАЙ' - купит все быстро")
+print("3. ESP автоматически удалится когда вещь пропадет")
 print("")
 print("🎮 GUI в левой верхней части экрана")
 print("Готов к использованию!")
