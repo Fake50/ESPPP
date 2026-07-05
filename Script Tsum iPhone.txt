@@ -1768,28 +1768,45 @@ end
 -- ============================================
 print("🎨 Создаю GUI...")
 
-task.wait(1) -- Даем игре прогрузиться
+-- Ждём что игрок полностью загрузился
+if not player.Character then
+    print("⏳ Жду загрузки персонажа...")
+    player.CharacterAdded:Wait()
+    task.wait(2) -- Дополнительное время после спавна
+else
+    task.wait(1) -- Даем игре прогрузиться
+end
+
+-- Проверяем что PlayerGui существует
+local playerGui = player:FindFirstChild("PlayerGui")
+if not playerGui then
+    print("⏳ Жду PlayerGui...")
+    playerGui = player:WaitForChild("PlayerGui", 15)
+end
+
+if not playerGui then
+    warn("❌ PlayerGui не загрузился за 15 секунд")
+    warn("Попробуй перезагрузить скрипт или зайти заново в игру")
+    return
+end
+
+print("✅ PlayerGui найден, создаю интерфейс...")
+
+-- Удаляем старый GUI если он есть (чтобы избежать дубликатов)
+local oldGui = playerGui:FindFirstChild("SafeESP")
+if oldGui then
+    print("🔄 Удаляю старый GUI...")
+    oldGui:Destroy()
+    task.wait(0.5)
+end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SafeESP"
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = playerGui
 
-local success, err = pcall(function()
-    local playerGui = player:WaitForChild("PlayerGui", 10)
-    if playerGui then
-        screenGui.Parent = playerGui
-        print("✅ GUI создан")
-    else
-        error("PlayerGui не найден")
-    end
-end)
-
-if not success then
-    warn("❌ Ошибка создания GUI:", err)
-    warn("Попробуй перезагрузить скрипт")
-    return
-end
+print("✅ GUI создан успешно!")
 
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 250, 0, 290) -- Увеличил высоту для новой кнопки
@@ -1976,7 +1993,7 @@ print("🎮 GUI в левой верхней части экрана")
 print("Готов к использованию!")
 print("")
 print("🔥 НОВЫЕ ФИЧИ:")
-print("   �️ ПРОДВИНУТЫЙ телепорт - МАКСИМАЛЬНЫЙ обход античита!")
+print("   🛡️ ПРОДВИНУТЫЙ телепорт - МАКСИМАЛЬНЫЙ обход античита!")
 print("     → Контроль скорости передвижения (макс 18 стад/сек)")
 print("     → Разбивка пути на сегменты с паузами")
 print("     → Случайные отклонения для имитации человека")
@@ -1985,3 +2002,8 @@ print("   📋 Отслеживание купленных предметов")
 print("     → После покупки предмет добавляется в список")
 print("     → Автобай не телепается к купленным предметам")
 print("     → Кнопка 'Очистить список' сбрасывает купленные")
+print("")
+print("=" .. string.rep("=", 48))
+print("🎯 GUI УСПЕШНО ЗАГРУЖЕН!")
+print("Если не видишь GUI - подожди 2-3 секунды")
+print("=" .. string.rep("=", 48))
