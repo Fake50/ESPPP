@@ -258,6 +258,64 @@ local RARITY_COLOR = Color3.fromRGB(255, 180, 0)
 -- ============================================
 -- ФУНКЦИИ ПОИСКА
 -- ============================================
+
+-- Получить SlotId из Slot
+local function getSlotId(slot)
+    -- Слот может иметь разные структуры, пробуем все варианты
+    
+    -- Вариант 1: SlotId хранится в атрибуте
+    if slot:GetAttribute("SlotId") then
+        return slot:GetAttribute("SlotId")
+    end
+    
+    -- Вариант 2: SlotId в StringValue или подобном
+    local slotIdValue = slot:FindFirstChild("SlotId") or slot:FindFirstChild("slotId") or slot:FindFirstChild("ID")
+    if slotIdValue and slotIdValue:IsA("StringValue") then
+        return slotIdValue.Value
+    end
+    
+    -- Вариант 3: Имя слота содержит полный SlotId (например "Slot_5587_114582")
+    if slot.Name:match("Slot_%d+_%d+") then
+        return slot.Name
+    end
+    
+    -- Вариант 4: Имя слота это только "Slot_X", ищем Configuration или другие данные
+    for _, child in pairs(slot:GetChildren()) do
+        if child:IsA("Configuration") or child.Name == "Data" or child.Name == "Info" then
+            for _, subChild in pairs(child:GetChildren()) do
+                if subChild.Name:lower():find("slot") and subChild:IsA("StringValue") then
+                    return subChild.Value
+                end
+            end
+        end
+    end
+    
+    -- Вариант 5: Проверяем все StringValue в слоте
+    for _, child in pairs(slot:GetDescendants()) do
+        if child:IsA("StringValue") and child.Value:match("SLOT_%d+_%d+") then
+            return child.Value
+        end
+    end
+    
+    -- Если ничего не нашли, выводим структуру слота для отладки
+    print("⚠️ Не удалось найти SlotId. Структура слота:")
+    print("  Имя:", slot.Name)
+    print("  Дети:")
+    for _, child in pairs(slot:GetChildren()) do
+        print("    -", child.Name, child.ClassName)
+        if child:IsA("StringValue") or child:IsA("IntValue") or child:IsA("NumberValue") then
+            print("      Значение:", child.Value)
+        end
+    end
+    print("  Атрибуты:")
+    for attr, value in pairs(slot:GetAttributes()) do
+        print("    -", attr, "=", value)
+    end
+    
+    -- В крайнем случае возвращаем имя слота
+    return slot.Name
+end
+
 local function getAllMannequins()
     local results = {}
     for _, zone in pairs(workspace:GetChildren()) do
@@ -448,63 +506,6 @@ local function findNPCInZone(zoneName)
         end
     end
     return nil
-end
-
--- Получить SlotId из Slot
-local function getSlotId(slot)
-    -- Слот может иметь разные структуры, пробуем все варианты
-    
-    -- Вариант 1: SlotId хранится в атрибуте
-    if slot:GetAttribute("SlotId") then
-        return slot:GetAttribute("SlotId")
-    end
-    
-    -- Вариант 2: SlotId в StringValue или подобном
-    local slotIdValue = slot:FindFirstChild("SlotId") or slot:FindFirstChild("slotId") or slot:FindFirstChild("ID")
-    if slotIdValue and slotIdValue:IsA("StringValue") then
-        return slotIdValue.Value
-    end
-    
-    -- Вариант 3: Имя слота содержит полный SlotId (например "Slot_5587_114582")
-    if slot.Name:match("Slot_%d+_%d+") then
-        return slot.Name
-    end
-    
-    -- Вариант 4: Имя слота это только "Slot_X", ищем Configuration или другие данные
-    for _, child in pairs(slot:GetChildren()) do
-        if child:IsA("Configuration") or child.Name == "Data" or child.Name == "Info" then
-            for _, subChild in pairs(child:GetChildren()) do
-                if subChild.Name:lower():find("slot") and subChild:IsA("StringValue") then
-                    return subChild.Value
-                end
-            end
-        end
-    end
-    
-    -- Вариант 5: Проверяем все StringValue в слоте
-    for _, child in pairs(slot:GetDescendants()) do
-        if child:IsA("StringValue") and child.Value:match("SLOT_%d+_%d+") then
-            return child.Value
-        end
-    end
-    
-    -- Если ничего не нашли, выводим структуру слота для отладки
-    print("⚠️ Не удалось найти SlotId. Структура слота:")
-    print("  Имя:", slot.Name)
-    print("  Дети:")
-    for _, child in pairs(slot:GetChildren()) do
-        print("    -", child.Name, child.ClassName)
-        if child:IsA("StringValue") or child:IsA("IntValue") or child:IsA("NumberValue") then
-            print("      Значение:", child.Value)
-        end
-    end
-    print("  Атрибуты:")
-    for attr, value in pairs(slot:GetAttributes()) do
-        print("    -", attr, "=", value)
-    end
-    
-    -- В крайнем случае возвращаем имя слота
-    return slot.Name
 end
 
 -- Телепорт к позиции
