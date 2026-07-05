@@ -3,6 +3,12 @@
 -- ============================================
 -- Этот ESP НЕ использует hookmetamethod
 -- Работает на Delta X без детекта
+-- 
+-- ✨ УЛУЧШЕНИЯ:
+-- ✅ ESP автоматически пропадает если вещь исчезла
+-- ⚡ Мгновенное нажатие E (без задержки)
+-- 🚀 Оптимизированные задержки для быстрой работы
+-- 💨 Все операции ускорены в 2-3 раза
 -- ============================================
 
 print("🔄 Загрузка Safe ESP...")
@@ -363,6 +369,8 @@ end
 -- ============================================
 -- ESP УПРАВЛЕНИЕ
 -- ============================================
+local espTracking = {} -- Таблица для отслеживания объектов и их ESP
+
 local function clearESP()
     for _, obj in pairs(espObjects) do
         if obj and obj.Parent then
@@ -370,6 +378,23 @@ local function clearESP()
         end
     end
     espObjects = {}
+    espTracking = {}
+end
+
+local function updateESP()
+    -- Проверяем каждый объект, если он пропал - удаляем его ESP
+    for model, espData in pairs(espTracking) do
+        if not model or not model.Parent or model.Parent == nil then
+            -- Объект пропал, удаляем его ESP
+            if espData.highlight and espData.highlight.Parent then
+                espData.highlight:Destroy()
+            end
+            if espData.label and espData.label.Parent then
+                espData.label:Destroy()
+            end
+            espTracking[model] = nil
+        end
+    end
 end
 
 local function enableESP()
@@ -397,8 +422,12 @@ local function enableESP()
         end
         
         if #names > 0 then
-            createHighlight(data.mannequin)
-            createLabel(data.mannequin, table.concat(names, " + "))
+            local highlight = createHighlight(data.mannequin)
+            local label = createLabel(data.mannequin, table.concat(names, " + "))
+            espTracking[data.mannequin] = {
+                highlight = data.mannequin:FindFirstChild("ESP_H"),
+                label = label
+            }
             found = found + 1
         end
     end
@@ -407,11 +436,23 @@ local function enableESP()
     for _, data in pairs(getAllAccessories()) do
         local item = ACCESSORIES[data.meshId]
         if item then
-            createHighlight(data.model)
-            createLabel(data.model, item.name)
+            local highlight = createHighlight(data.model)
+            local label = createLabel(data.model, item.name)
+            espTracking[data.model] = {
+                highlight = data.model:FindFirstChild("ESP_H"),
+                label = label
+            }
             found = found + 1
         end
     end
+    
+    -- Запускаем автоматическое обновление ESP
+    task.spawn(function()
+        while espEnabled do
+            updateESP()
+            task.wait(0.5) -- Проверяем каждые 0.5 секунды
+        end
+    end)
     
     print("✅ ESP включен! Найдено:", found)
 end
@@ -508,7 +549,7 @@ local function teleportTo(position)
     if not hrp then return false end
     
     hrp.CFrame = CFrame.new(position)
-    task.wait(0.3) -- Даем время на телепорт
+    task.wait(0.15) -- Уменьшенная задержка телепорта
     return true
 end
 
@@ -531,18 +572,17 @@ local function takeItem(slotId, slot)
         return false
     end
     
-    -- Активируем ProximityPrompt (симулируем нажатие E)
-    print("⌨️ Нажимаю E на предмете...")
+    -- Активируем ProximityPrompt (симулируем МГНОВЕННОЕ нажатие E)
+    print("⚨️ Мгновенно нажимаю E на предмете...")
     local success = pcall(function()
         if fireproximityprompt then
-            fireproximityprompt(prompt)
-            print("✅ Нажал E через fireproximityprompt")
+            fireproximityprompt(prompt, 0) -- 0 = мгновенно без задержки
+            print("✅ Нажал E мгновенно через fireproximityprompt")
         else
-            -- Симуляция удержания E
+            -- Мгновенная активация без удержания
             prompt:InputHoldBegin()
-            task.wait(prompt.HoldDuration or 0.5)
             prompt:InputHoldEnd()
-            print("✅ Нажал E вручную")
+            print("✅ Нажал E мгновенно")
         end
     end)
     
@@ -551,8 +591,8 @@ local function takeItem(slotId, slot)
         return false
     end
     
-    -- Ждем пока предмет добавится в корзину
-    task.wait(1.5)
+    -- Уменьшенная задержка для корзины
+    task.wait(0.8)
     print("✅ Предмет должен быть в корзине")
     
     return true
@@ -577,17 +617,16 @@ local function openShopNPC(npc)
         return false
     end
     
-    -- Активируем ProximityPrompt (симулируем нажатие E)
-    print("⌨️ Нажимаю E на NPC...")
+    -- Активируем ProximityPrompt (симулируем МГНОВЕННОЕ нажатие E)
+    print("⚨️ Мгновенно нажимаю E на NPC...")
     local success = pcall(function()
         if fireproximityprompt then
-            fireproximityprompt(prompt)
-            print("✅ Нажал E через fireproximityprompt")
+            fireproximityprompt(prompt, 0) -- 0 = мгновенно без задержки
+            print("✅ Нажал E мгновенно через fireproximityprompt")
         else
             prompt:InputHoldBegin()
-            task.wait(prompt.HoldDuration or 0.5)
             prompt:InputHoldEnd()
-            print("✅ Нажал E вручную")
+            print("✅ Нажал E мгновенно")
         end
     end)
     
@@ -596,8 +635,8 @@ local function openShopNPC(npc)
         return false
     end
     
-    -- Ждем пока откроется GUI
-    task.wait(1)
+    -- Уменьшенная задержка для GUI
+    task.wait(0.6)
     print("✅ GUI магазина должен быть открыт")
     
     return true
@@ -609,8 +648,8 @@ local function purchaseItem(slotId)
     
     local playerGui = player:WaitForChild("PlayerGui")
     
-    -- Ждем немного чтобы GUI точно загрузился
-    task.wait(0.5)
+    -- Уменьшенная задержка для GUI
+    task.wait(0.3)
     
     -- Ищем кнопку PAY
     print("🔍 Ищу кнопку PAY в GUI...")
@@ -642,7 +681,7 @@ local function purchaseItem(slotId)
                             button.MouseButton1Click:Fire()
                         end)
                         
-                        task.wait(0.5)
+                        task.wait(0.3) -- Уменьшенная задержка
                         break
                     end
                 end
@@ -652,7 +691,7 @@ local function purchaseItem(slotId)
     end
     
     -- Отправляем RemoteFunction для покупки
-    task.wait(0.5)
+    task.wait(0.3) -- Уменьшенная задержка
     print("📡 Вызываю RemoteFunction ShopPurchase...")
     local success, result = pcall(function()
         local args = {"ShopPurchase", {slotId}}
@@ -729,7 +768,7 @@ local function buyItem(mannequinData)
     end
     print("✅ Телепортирован к предмету")
     
-    task.wait(1.2) -- Увеличена задержка
+    task.wait(0.5) -- Уменьшенная задержка
     
     -- Шаг 2: Взять предмет (нажать E)
     print("")
@@ -741,7 +780,7 @@ local function buyItem(mannequinData)
     end
     print("✅ Предмет взят и в корзине")
     
-    task.wait(1.5)
+    task.wait(0.8) -- Уменьшенная задержка
     
     -- Шаг 3: Найти NPC
     print("")
@@ -765,7 +804,7 @@ local function buyItem(mannequinData)
     end
     print("✅ Телепортирован к NPC")
     
-    task.wait(1)
+    task.wait(0.5) -- Уменьшенная задержка
     
     -- Шаг 5: Открыть магазин (нажать E на NPC)
     print("")
@@ -777,7 +816,7 @@ local function buyItem(mannequinData)
     end
     print("✅ Магазин открыт")
     
-    task.wait(1)
+    task.wait(0.6) -- Уменьшенная задержка
     
     -- Шаг 6: Оплата (нажать PAY)
     print("")
@@ -788,7 +827,7 @@ local function buyItem(mannequinData)
         return false, "Ошибка при оплате"
     end
     
-    task.wait(1)
+    task.wait(0.5) -- Уменьшенная задержка
     
     autoBuyRunning = false
     print("")
@@ -831,7 +870,7 @@ local function startAutoBuy()
                     warn("❌", message)
                 end
                 
-                task.wait(1) -- Задержка между покупками
+                task.wait(0.5) -- Уменьшенная задержка между покупками
             end
         end
         
@@ -970,7 +1009,7 @@ local info = Instance.new("TextLabel")
 info.Size = UDim2.new(0.9, 0, 0, 70)
 info.Position = UDim2.new(0.05, 0, 0, 150)
 info.BackgroundTransparency = 1
-info.Text = "✅ Safe Mode\n📦 Все 85 вещей\n👜 Все 120 аксессуаров\n🤖 Автобай вкл!"
+info.Text = "✅ Safe Mode\n⚡ Мгновенное E (без задержки)\n� Оптимизация скорости\n🤖 Автобай включен!"
 info.Font = Enum.Font.SourceSans
 info.TextSize = 12
 info.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -1009,12 +1048,14 @@ end)
 
 print("🎉 Safe ESP загружен!")
 print("✅ БЕЗ обхода - НЕ кикнет")
-print("📦 ВСЕ 85 вещей + 120 аксессуаров")
-print("🤖 АВТОБАЙ включен!")
+print("⚡ Мгновенное нажатие E - без задержки")
+print("💨 Все операции ускорены в 2-3 раза")
+print("🔄 ESP пропадает если вещь исчезла")
+print("🤖 АВТОБАЙ оптимизирован!")
 print("")
 print("📝 Инструкция:")
 print("1. Нажми 'Включить ESP' - найдет все вещи")
-print("2. Нажми 'АВТОБАЙ' - купит все найденные вещи")
+print("2. Нажми 'АВТОБАЙ' - купит все быстро")
 print("")
 print("🎮 GUI в левой верхней части экрана")
 print("Готов к использованию!")
