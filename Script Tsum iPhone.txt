@@ -283,24 +283,39 @@ local function getAllMannequins()
                     if slot.Name:match("Slot_") then
                         local mannequin = slot:FindFirstChild("Mannequin")
                         if mannequin and mannequin:IsA("Model") then
+                            -- НОВАЯ ПРОВЕРКА: Манекен должен быть потомком workspace
+                            if not mannequin:IsDescendantOf(workspace) then
+                                continue
+                            end
+                            
                             local clothingData = {}
+                            local hasValidClothing = false
+                            
                             for _, child in pairs(mannequin:GetChildren()) do
                                 if child:IsA("Shirt") then
-                                    clothingData.shirtId = child.ShirtTemplate:match("%d+")
+                                    local id = child.ShirtTemplate:match("%d+")
+                                    clothingData.shirtId = id
+                                    -- Проверяем что это вещь из базы
+                                    if id and ASSETS[id] then
+                                        hasValidClothing = true
+                                    end
                                 elseif child:IsA("Pants") then
-                                    clothingData.pantsId = child.PantsTemplate:match("%d+")
+                                    local id = child.PantsTemplate:match("%d+")
+                                    clothingData.pantsId = id
+                                    -- Проверяем что это вещь из базы
+                                    if id and ASSETS[id] then
+                                        hasValidClothing = true
+                                    end
                                 end
                             end
-                            if clothingData.shirtId or clothingData.pantsId then
-                                -- Проверяем есть ли в базе
-                                if (clothingData.shirtId and ASSETS[clothingData.shirtId]) or
-                                   (clothingData.pantsId and ASSETS[clothingData.pantsId]) then
-                                    table.insert(results, {
-                                        mannequin = mannequin,
-                                        clothingData = clothingData,
-                                        slot = slot
-                                    })
-                                end
+                            
+                            -- Добавляем только если нашли валидную одежду из базы
+                            if hasValidClothing and (clothingData.shirtId or clothingData.pantsId) then
+                                table.insert(results, {
+                                    mannequin = mannequin,
+                                    clothingData = clothingData,
+                                    slot = slot
+                                })
                             end
                         end
                     end
@@ -317,9 +332,15 @@ local function getAllAccessories()
         if zone:IsA("Model") and zone.Name:match("Shop_ShopZone") then
             for _, child in pairs(zone:GetChildren()) do
                 if child:IsA("Model") and child.Name:match("^M_") then
+                    -- НОВАЯ ПРОВЕРКА: Модель должна быть в workspace
+                    if not child:IsDescendantOf(workspace) then
+                        continue
+                    end
+                    
                     local target = child:FindFirstChild("Handle") or child:FindFirstChild("Body")
                     if target and target:IsA("MeshPart") and target.MeshId then
                         local id = target.MeshId:match("%d+")
+                        -- Проверяем что это аксессуар из базы
                         if id and ACCESSORIES[id] then
                             table.insert(results, {
                                 model = child,
@@ -923,16 +944,16 @@ local function advancedSafeTeleport(startCF, endCF, distance)
         activeTween = nil
     end
     
-    -- Вычисляем безопасную скорость (максимум 20 стадов/сек для обхода античита)
-    local maxSpeed = 18 -- Безопасная скорость для обхода детекта
+    -- Вычисляем безопасную скорость (оптимизированная)
+    local maxSpeed = 25 -- Скорость для обхода детекта (чуть быстрее)
     local calculatedDuration = distance / maxSpeed
     
-    -- Минимум 1 секунда для любого расстояния > 15 стадов
-    local safeDuration = math.max(calculatedDuration, 1.5)
+    -- Минимум для небольших расстояний
+    local safeDuration = math.max(calculatedDuration, 1.0)
     
-    -- Для очень больших расстояний добавляем еще больше времени
-    if distance > 100 then
-        safeDuration = math.max(safeDuration, 2.5)
+    -- Для очень больших расстояний добавляем немного времени
+    if distance > 120 then
+        safeDuration = math.max(safeDuration, 2.0)
     end
     
     print("🛡️ Безопасный телепорт:", math.floor(distance), "стадов за", string.format("%.1f", safeDuration), "сек")
@@ -1836,7 +1857,7 @@ local info = Instance.new("TextLabel")
 info.Size = UDim2.new(0.9, 0, 0, 55)
 info.Position = UDim2.new(0.05, 0, 0, 195)
 info.BackgroundTransparency = 1
-info.Text = "✅ Safe Mode + обход античита\n⚡ Мгновенное E (без задержки)\n🛡️ ПРОДВИНУТЫЙ телепорт (18 стад/сек)\n🤖 Автобай включен!\n📋 Не телепается к купленным"
+info.Text = "✅ Safe Mode + обход античита\n⚡ Мгновенное E (без задержки)\n🛡️ ПРОДВИНУТЫЙ телепорт (25 стад/сек)\n🤖 Автобай включен!\n📋 ESP только для существующих вещей"
 info.Font = Enum.Font.SourceSans
 info.TextSize = 12
 info.TextColor3 = Color3.fromRGB(200, 200, 200)
