@@ -251,6 +251,7 @@ local tracers = {}
 local tracerGui = nil
 local autoBuyEnabled = false
 local autoBuyRunning = false
+local purchasedSlots = {} -- Список купленных слотов
 
 local RARITY_COLOR = Color3.fromRGB(255, 180, 0)
 
@@ -265,6 +266,13 @@ local function getAllMannequins()
             if slots then
                 for _, slot in pairs(slots:GetChildren()) do
                     if slot.Name:match("Slot_") then
+                        -- Проверяем, не куплен ли уже этот слот
+                        local slotId = getSlotId(slot)
+                        if purchasedSlots[slotId] then
+                            -- Пропускаем уже купленные слоты
+                            continue
+                        end
+                        
                         local mannequin = slot:FindFirstChild("Mannequin")
                         if mannequin and mannequin:IsA("Model") then
                             local clothingData = {}
@@ -531,18 +539,17 @@ local function takeItem(slotId, slot)
         return false
     end
     
-    -- Активируем ProximityPrompt (симулируем нажатие E)
+    -- Активируем ProximityPrompt БЕЗ задержки (просто нажатие, не зажатие)
     print("⌨️ Нажимаю E на предмете...")
     local success = pcall(function()
         if fireproximityprompt then
             fireproximityprompt(prompt)
             print("✅ Нажал E через fireproximityprompt")
         else
-            -- Симуляция удержания E
+            -- Быстрое нажатие БЕЗ удержания
             prompt:InputHoldBegin()
-            task.wait(prompt.HoldDuration or 0.5)
             prompt:InputHoldEnd()
-            print("✅ Нажал E вручную")
+            print("✅ Нажал E вручную (быстрое нажатие)")
         end
     end)
     
@@ -551,8 +558,8 @@ local function takeItem(slotId, slot)
         return false
     end
     
-    -- Ждем пока предмет добавится в корзину
-    task.wait(1.5)
+    -- Короткая задержка для обработки
+    task.wait(0.8)
     print("✅ Предмет должен быть в корзине")
     
     return true
@@ -577,17 +584,17 @@ local function openShopNPC(npc)
         return false
     end
     
-    -- Активируем ProximityPrompt (симулируем нажатие E)
+    -- Активируем ProximityPrompt БЕЗ задержки
     print("⌨️ Нажимаю E на NPC...")
     local success = pcall(function()
         if fireproximityprompt then
             fireproximityprompt(prompt)
             print("✅ Нажал E через fireproximityprompt")
         else
+            -- Быстрое нажатие БЕЗ удержания
             prompt:InputHoldBegin()
-            task.wait(prompt.HoldDuration or 0.5)
             prompt:InputHoldEnd()
-            print("✅ Нажал E вручную")
+            print("✅ Нажал E вручную (быстрое нажатие)")
         end
     end)
     
@@ -597,7 +604,7 @@ local function openShopNPC(npc)
     end
     
     -- Ждем пока откроется GUI
-    task.wait(1)
+    task.wait(0.8)
     print("✅ GUI магазина должен быть открыт")
     
     return true
@@ -791,6 +798,11 @@ local function buyItem(mannequinData)
     task.wait(1)
     
     autoBuyRunning = false
+    
+    -- Помечаем слот как купленный, чтобы не брать его снова
+    purchasedSlots[slotId] = true
+    print("🔒 Слот", slotId, "помечен как купленный")
+    
     print("")
     print("═══════════════════════════════")
     print("✅ УСПЕШНО КУПЛЕНО:", itemName)
@@ -807,11 +819,14 @@ local function startAutoBuy()
     
     autoBuyEnabled = true
     print("🤖 Автобай запущен!")
+    print("📝 Купленные слоты будут пропускаться")
     
     task.spawn(function()
         local mannequins = getAllMannequins()
         local bought = 0
         local errors = 0
+        
+        print("🔍 Найдено предметов для покупки:", #mannequins)
         
         for _, data in pairs(mannequins) do
             if not autoBuyEnabled then
@@ -831,7 +846,7 @@ local function startAutoBuy()
                     warn("❌", message)
                 end
                 
-                task.wait(1) -- Задержка между покупками
+                task.wait(0.5) -- Короткая задержка между покупками
             end
         end
         
@@ -840,6 +855,7 @@ local function startAutoBuy()
         print("🏁 Автобай завершен!")
         print("✅ Куплено:", bought)
         print("❌ Ошибок:", errors)
+        print("🔒 Куплено слотов всего:", #purchasedSlots)
     end)
     
     return true, "Автобай запущен"
@@ -848,6 +864,7 @@ end
 local function stopAutoBuy()
     autoBuyEnabled = false
     print("⏹️ Автобай остановлен")
+    print("🔄 Чтобы сбросить купленные слоты, перезагрузи скрипт")
 end
 
 -- ============================================
