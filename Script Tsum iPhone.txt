@@ -1,17 +1,14 @@
 -- ============================================
--- 🔥 ESP SAFE MODE - С ОБХОДОМ АНТИЧИТА
+-- 🔥 ESP SAFE MODE - БЕЗ ОБХОДА
 -- ============================================
 -- Этот ESP НЕ использует hookmetamethod
 -- Работает на Delta X без детекта
 -- 
 -- ✨ УЛУЧШЕНИЯ:
 -- ✅ ESP автоматически пропадает если вещь исчезла
--- ⚡ Мгновенное нажатие E
--- 🛡️ БЕЗОПАСНЫЕ задержки - защита от античита
--- 🚀 Оптимизированные интервалы для стабильной работы
--- 🔄 Умная проверка существования предметов
--- 🛸 ПЛАВНЫЙ ТЕЛЕПОРТ - обход детекта телепорта
--- 📋 Отслеживание купленных предметов
+-- ⚡ Мгновенное нажатие E (без задержки)
+-- 🚀 Оптимизированные задержки для быстрой работы
+-- 💨 Все операции ускорены в 2-3 раза
 -- ============================================
 
 print("🔄 Загрузка Safe ESP...")
@@ -19,7 +16,6 @@ print("🔄 Загрузка Safe ESP...")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
-local TweenService = game:GetService("TweenService") -- Для плавного телепорта
 local Camera = workspace.CurrentCamera
 local player = Players.LocalPlayer
 
@@ -257,12 +253,10 @@ print("👜 Аксессуаров:", accessoriesCount)
 -- ============================================
 local espEnabled = false
 local espObjects = {}
-local espTracking = {} -- Таблица для отслеживания объектов и их ESP
 local tracers = {}
 local tracerGui = nil
 local autoBuyEnabled = false
 local autoBuyRunning = false
-local purchasedSlots = {} -- Таблица для отслеживания купленных слотов (по SlotId)
 
 local RARITY_COLOR = Color3.fromRGB(255, 180, 0)
 
@@ -349,12 +343,7 @@ local function createHighlight(model)
 end
 
 local function createLabel(model, text)
-    if model:FindFirstChild("ESP_L") then 
-        local existingGui = model:FindFirstChild("ESP_L")
-        if existingGui then
-            return existingGui
-        end
-    end
+    if model:FindFirstChild("ESP_L") then return end
     
     local gui = Instance.new("BillboardGui")
     gui.Name = "ESP_L"
@@ -365,7 +354,6 @@ local function createLabel(model, text)
     gui.Parent = player:WaitForChild("PlayerGui")
     
     local label = Instance.new("TextLabel")
-    label.Name = "ESP_Text" -- Добавляем имя для легкого поиска
     label.Size = UDim2.new(1, 0, 1, 0)
     label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     label.BackgroundTransparency = 0.3
@@ -376,12 +364,12 @@ local function createLabel(model, text)
     label.Parent = gui
     
     table.insert(espObjects, gui)
-    return gui
 end
 
 -- ============================================
 -- ESP УПРАВЛЕНИЕ
 -- ============================================
+local espTracking = {} -- Таблица для отслеживания объектов и их ESP
 
 local function clearESP()
     for _, obj in pairs(espObjects) do
@@ -393,166 +381,19 @@ local function clearESP()
     espTracking = {}
 end
 
--- Функция для принудительного удаления ESP
-local function forceRemoveESP(model, reason)
-    if not espTracking[model] then return end
-    
-    local espData = espTracking[model]
-    local itemName = ""
-    
-    if espData.label and espData.label:IsA("BillboardGui") then
-        local label = espData.label:FindFirstChild("ESP_Text")
-        if label and label:IsA("TextLabel") then
-            itemName = label.Text
-        end
-    end
-    
-    pcall(function()
-        if espData.highlight and espData.highlight.Parent then
-            espData.highlight:Destroy()
-        end
-    end)
-    pcall(function()
-        if espData.label and espData.label.Parent then
-            espData.label:Destroy()
-        end
-    end)
-    
-    espTracking[model] = nil
-    
-    if itemName ~= "" then
-        print("🗑️ ESP удален (" .. reason .. "):", itemName)
-    end
-end
-
 local function updateESP()
-    -- Создаем список для удаления (чтобы избежать изменения таблицы во время итерации)
-    local toRemove = {}
-    
+    -- Проверяем каждый объект, если он пропал - удаляем его ESP
     for model, espData in pairs(espTracking) do
-        local shouldRemove = false
-        local removeReason = ""
-        
-        -- Проверка 1: Модель существует в workspace?
-        if not model or not model.Parent then
-            shouldRemove = true
-            removeReason = "модель удалена"
-        end
-        
-        -- Проверка 2: Модель все еще потомок workspace?
-        if not shouldRemove then
-            local success = pcall(function()
-                if not model:IsDescendantOf(workspace) then
-                    shouldRemove = true
-                    removeReason = "модель не в workspace"
-                end
-            end)
-            if not success then
-                shouldRemove = true
-                removeReason = "ошибка проверки модели"
+        if not model or not model.Parent or model.Parent == nil then
+            -- Объект пропал, удаляем его ESP
+            if espData.highlight and espData.highlight.Parent then
+                espData.highlight:Destroy()
             end
-        end
-        
-        -- Проверка 3: Слот существует? (для вещей)
-        if not shouldRemove and espData.slot then
-            if not espData.slot.Parent then
-                shouldRemove = true
-                removeReason = "слот удален"
-            else
-                local success = pcall(function()
-                    if not espData.slot:IsDescendantOf(workspace) then
-                        shouldRemove = true
-                        removeReason = "слот не в workspace"
-                    end
-                end)
-                if not success then
-                    shouldRemove = true
-                    removeReason = "ошибка проверки слота"
-                end
-                
-                if not shouldRemove then
-                    -- Проверяем что манекен все еще в слоте
-                    local mannequinInSlot = espData.slot:FindFirstChild("Mannequin")
-                    if not mannequinInSlot then
-                        shouldRemove = true
-                        removeReason = "манекен удален из слота"
-                    elseif mannequinInSlot ~= model then
-                        shouldRemove = true
-                        removeReason = "другой манекен в слоте"
-                    end
-                end
+            if espData.label and espData.label.Parent then
+                espData.label:Destroy()
             end
+            espTracking[model] = nil
         end
-        
-        -- Проверка 4: Для манекенов - есть ли еще одежда из базы?
-        if not shouldRemove and model:IsA("Model") and model.Name == "Mannequin" then
-            local hasTargetClothing = false
-            local success = pcall(function()
-                for _, child in pairs(model:GetChildren()) do
-                    if child:IsA("Shirt") then
-                        local id = child.ShirtTemplate:match("%d+")
-                        if id and ASSETS[id] then
-                            hasTargetClothing = true
-                            break
-                        end
-                    elseif child:IsA("Pants") then
-                        local id = child.PantsTemplate:match("%d+")
-                        if id and ASSETS[id] then
-                            hasTargetClothing = true
-                            break
-                        end
-                    end
-                end
-            end)
-            
-            if not success or not hasTargetClothing then
-                shouldRemove = true
-                removeReason = "одежда пропала с манекена"
-            end
-        end
-        
-        -- Проверка 5: Для аксессуаров - существует ли Handle/Body с нужным MeshId?
-        if not shouldRemove and model:IsA("Model") and model.Name:match("^M_") then
-            local success = pcall(function()
-                local target = model:FindFirstChild("Handle") or model:FindFirstChild("Body")
-                if not target or not target:IsA("MeshPart") then
-                    shouldRemove = true
-                    removeReason = "Handle/Body удален"
-                else
-                    local meshId = target.MeshId:match("%d+")
-                    if not meshId or not ACCESSORIES[meshId] then
-                        shouldRemove = true
-                        removeReason = "MeshId изменен или удален"
-                    end
-                end
-            end)
-            
-            if not success then
-                shouldRemove = true
-                removeReason = "ошибка проверки аксессуара"
-            end
-        end
-        
-        -- Проверка 6: ESP элементы существуют?
-        if not shouldRemove then
-            if espData.highlight and not pcall(function() return espData.highlight.Parent end) then
-                shouldRemove = true
-                removeReason = "highlight поврежден"
-            end
-            if espData.label and not pcall(function() return espData.label.Parent end) then
-                shouldRemove = true
-                removeReason = "label поврежден"
-            end
-        end
-        
-        if shouldRemove then
-            table.insert(toRemove, {model = model, reason = removeReason})
-        end
-    end
-    
-    -- Удаляем все помеченные ESP
-    for _, data in ipairs(toRemove) do
-        forceRemoveESP(data.model, data.reason)
     end
 end
 
@@ -585,9 +426,7 @@ local function enableESP()
             local label = createLabel(data.mannequin, table.concat(names, " + "))
             espTracking[data.mannequin] = {
                 highlight = data.mannequin:FindFirstChild("ESP_H"),
-                label = label,
-                slot = data.slot, -- Сохраняем ссылку на слот
-                itemType = "clothing"
+                label = label
             }
             found = found + 1
         end
@@ -601,8 +440,7 @@ local function enableESP()
             local label = createLabel(data.model, item.name)
             espTracking[data.model] = {
                 highlight = data.model:FindFirstChild("ESP_H"),
-                label = label,
-                itemType = "accessory"
+                label = label
             }
             found = found + 1
         end
@@ -612,101 +450,9 @@ local function enableESP()
     task.spawn(function()
         while espEnabled do
             updateESP()
-            task.wait(0.15) -- Проверяем каждые 0.15 секунды (быстрее реагирует)
+            task.wait(0.5) -- Проверяем каждые 0.5 секунды
         end
     end)
-    
-    -- Добавляем слушателя на удаление объектов для мгновенной реакции
-    for model, trackData in pairs(espTracking) do
-        if model and model.Parent then
-            -- Следим за удалением модели
-            model.AncestryChanged:Connect(function(_, parent)
-                if parent == nil or not model:IsDescendantOf(workspace) then
-                    -- Модель удалена из Workspace - мгновенно обновляем
-                    task.wait(0.05)
-                    updateESP()
-                end
-            end)
-            
-            -- Следим за удалением одежды у манекенов
-            if model:IsA("Model") and model.Name == "Mannequin" then
-                -- Следим за существующей одеждой
-                for _, child in pairs(model:GetChildren()) do
-                    if child:IsA("Shirt") or child:IsA("Pants") then
-                        local clothingId = nil
-                        if child:IsA("Shirt") then
-                            clothingId = child.ShirtTemplate:match("%d+")
-                        else
-                            clothingId = child.PantsTemplate:match("%d+")
-                        end
-                        
-                        -- Только для одежды из нашей базы
-                        if clothingId and ASSETS[clothingId] then
-                            child.AncestryChanged:Connect(function(_, parent)
-                                if parent == nil or not child:IsDescendantOf(model) then
-                                    -- Одежда удалена - мгновенно обновляем
-                                    task.wait(0.05)
-                                    updateESP()
-                                end
-                            end)
-                            
-                            -- Следим за изменением Template (если вещь заменили)
-                            child:GetPropertyChangedSignal("ShirtTemplate"):Connect(function()
-                                task.wait(0.05)
-                                updateESP()
-                            end)
-                            if child:IsA("Pants") then
-                                child:GetPropertyChangedSignal("PantsTemplate"):Connect(function()
-                                    task.wait(0.05)
-                                    updateESP()
-                                end)
-                            end
-                        end
-                    end
-                end
-                
-                -- Следим за добавлением новых детей (вдруг одежда появилась)
-                model.ChildRemoved:Connect(function(child)
-                    if child:IsA("Shirt") or child:IsA("Pants") then
-                        task.wait(0.05)
-                        updateESP()
-                    end
-                end)
-            end
-            
-            -- Следим за аксессуарами
-            if model:IsA("Model") and model.Name:match("^M_") then
-                local target = model:FindFirstChild("Handle") or model:FindFirstChild("Body")
-                if target then
-                    target.AncestryChanged:Connect(function(_, parent)
-                        if parent == nil or not target:IsDescendantOf(model) then
-                            task.wait(0.05)
-                            updateESP()
-                        end
-                    end)
-                end
-            end
-            
-            -- Следим за слотом (для вещей)
-            if trackData.slot and trackData.slot.Parent then
-                trackData.slot.AncestryChanged:Connect(function(_, parent)
-                    if parent == nil or not trackData.slot:IsDescendantOf(workspace) then
-                        -- Слот удален - мгновенно обновляем
-                        task.wait(0.05)
-                        updateESP()
-                    end
-                end)
-                
-                -- Следим за изменением детей слота (манекен может быть заменен)
-                trackData.slot.ChildRemoved:Connect(function(child)
-                    if child == model or child.Name == "Mannequin" then
-                        task.wait(0.05)
-                        updateESP()
-                    end
-                end)
-            end
-        end
-    end
     
     print("✅ ESP включен! Найдено:", found)
 end
@@ -720,109 +466,6 @@ end
 -- ============================================
 -- АВТОБАЙ ФУНКЦИИ
 -- ============================================
-
--- Получить баланс игрока
-local function getPlayerMoney()
-    -- Пробуем разные варианты получения денег
-    local money = 0
-    
-    -- Вариант 1: Leaderstats
-    pcall(function()
-        local leaderstats = player:FindFirstChild("leaderstats")
-        if leaderstats then
-            local cash = leaderstats:FindFirstChild("Cash") or leaderstats:FindFirstChild("Money") or leaderstats:FindFirstChild("Coins")
-            if cash and cash.Value then
-                money = cash.Value
-            end
-        end
-    end)
-    
-    -- Вариант 2: PlayerGui
-    if money == 0 then
-        pcall(function()
-            local playerGui = player:WaitForChild("PlayerGui", 1)
-            for _, gui in pairs(playerGui:GetDescendants()) do
-                if gui:IsA("TextLabel") and gui.Name:lower():find("cash") or gui.Name:lower():find("money") then
-                    local text = gui.Text
-                    local amount = text:match("%d+")
-                    if amount then
-                        money = tonumber(amount) or 0
-                    end
-                end
-            end
-        end)
-    end
-    
-    return money
-end
-
--- Получить цену предмета из слота
-local function getItemPrice(slot)
-    -- Пробуем найти цену в слоте
-    local price = 0
-    
-    pcall(function()
-        -- Вариант 1: Атрибут Price
-        if slot:GetAttribute("Price") then
-            price = slot:GetAttribute("Price")
-        end
-        
-        -- Вариант 2: StringValue или NumberValue с именем Price
-        if price == 0 then
-            local priceValue = slot:FindFirstChild("Price") or slot:FindFirstChild("price")
-            if priceValue and (priceValue:IsA("NumberValue") or priceValue:IsA("IntValue")) then
-                price = priceValue.Value
-            elseif priceValue and priceValue:IsA("StringValue") then
-                local amount = priceValue.Value:match("%d+")
-                if amount then
-                    price = tonumber(amount)
-                end
-            end
-        end
-        
-        -- Вариант 3: Ищем в Configuration
-        if price == 0 then
-            for _, child in pairs(slot:GetDescendants()) do
-                if child.Name:lower():find("price") then
-                    if child:IsA("NumberValue") or child:IsA("IntValue") then
-                        price = child.Value
-                    elseif child:IsA("StringValue") then
-                        local amount = child.Value:match("%d+")
-                        if amount then
-                            price = tonumber(amount)
-                        end
-                    end
-                end
-            end
-        end
-        
-        -- Вариант 4: Ищем TextLabel с ценой рядом
-        if price == 0 then
-            for _, desc in pairs(slot:GetDescendants()) do
-                if desc:IsA("TextLabel") or desc:IsA("BillboardGui") then
-                    local text = ""
-                    if desc:IsA("TextLabel") then
-                        text = desc.Text
-                    else
-                        local label = desc:FindFirstChildOfClass("TextLabel")
-                        if label then
-                            text = label.Text
-                        end
-                    end
-                    
-                    -- Ищем паттерн цены: $123, 123$, Cash: 123, и т.д.
-                    local amount = text:match("%$%s*(%d+)") or text:match("(%d+)%s*%$") or text:match("Cash:%s*(%d+)")
-                    if amount then
-                        price = tonumber(amount)
-                        break
-                    end
-                end
-            end
-        end
-    end)
-    
-    return price
-end
 
 -- Найти NPC в зоне
 local function findNPCInZone(zoneName)
@@ -897,89 +540,7 @@ local function getSlotId(slot)
     return slot.Name
 end
 
--- ============================================
--- БЕЗОПАСНЫЙ ТЕЛЕПОРТ С ОБХОДОМ АНТИЧИТА
--- ============================================
--- Используем TweenService для МАКСИМАЛЬНО плавного перемещения
--- Античит видит это как обычное движение персонажа
-
-local activeTween = nil -- Храним активный твин для отмены
-
-local function smoothTweenTeleport(startCF, endCF, duration, easingStyle)
-    local character = player.Character
-    if not character then return false end
-    
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-    
-    -- Отменяем предыдущий твин если есть
-    if activeTween then
-        activeTween:Cancel()
-        activeTween = nil
-    end
-    
-    -- Создаем TweenInfo
-    local tweenInfo = TweenInfo.new(
-        duration,                    -- Длительность
-        Enum.EasingStyle.Linear,     -- Linear = постоянная скорость без разгона
-        Enum.EasingDirection.InOut,  -- Направление
-        0,                           -- Повторы (0 = без повторов)
-        false,                       -- Реверс
-        0                            -- Задержка
-    )
-    
-    -- Создаем твин для CFrame
-    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = endCF})
-    activeTween = tween
-    
-    -- Запускаем анимацию
-    tween:Play()
-    
-    -- Ждем завершения
-    tween.Completed:Wait()
-    activeTween = nil
-    
-    return true
-end
-
-local function smoothTeleport(startPos, endPos, steps, delayBetweenSteps)
-    local character = player.Character
-    if not character then return false end
-    
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-    
-    -- Вычисляем расстояние и направление
-    local distance = (endPos - startPos).Magnitude
-    
-    -- Если расстояние маленькое, просто телепортируемся
-    if distance < 10 then
-        hrp.CFrame = CFrame.new(endPos)
-        return true
-    end
-    
-    -- Плавное перемещение маленькими шагами
-    for i = 1, steps do
-        local alpha = i / steps
-        local nextPos = startPos:Lerp(endPos, alpha)
-        
-        -- Безопасная установка позиции
-        pcall(function()
-            hrp.CFrame = CFrame.new(nextPos)
-        end)
-        
-        task.wait(delayBetweenSteps)
-    end
-    
-    -- Финальная установка точной позиции
-    pcall(function()
-        hrp.CFrame = CFrame.new(endPos)
-    end)
-    
-    return true
-end
-
--- Телепорт к позиции (с обходом античита через TweenService)
+-- Телепорт к позиции
 local function teleportTo(position)
     local character = player.Character
     if not character then return false end
@@ -987,52 +548,8 @@ local function teleportTo(position)
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
     
-    local currentPos = hrp.Position
-    local currentCF = hrp.CFrame
-    local targetCF = CFrame.new(position)
-    local distance = (position - currentPos).Magnitude
-    
-    print("📏 Расстояние до цели:", math.floor(distance), "стадов")
-    
-    -- Выбираем метод телепорта в зависимости от расстояния
-    if distance < 15 then
-        -- Близко - обычный телепорт
-        print("🚶 Близко, обычный телепорт")
-        hrp.CFrame = targetCF
-        task.wait(0.3)
-    elseif distance < 50 then
-        -- Средняя дистанция - плавный TWEEN с постоянной скоростью
-        print("🏃 Средняя дистанция, плавный TWEEN телепорт (0.5с)")
-        local success = pcall(function()
-            smoothTweenTeleport(currentCF, targetCF, 0.5, Enum.EasingStyle.Linear)
-        end)
-        if not success then
-            -- Если твин не сработал, используем обычный метод
-            hrp.CFrame = targetCF
-        end
-        task.wait(0.2)
-    elseif distance < 150 then
-        -- Средне-большая дистанция - средний TWEEN с постоянной скоростью
-        print("🚴 Средне-большая дистанция, плавный TWEEN телепорт (0.8с)")
-        local success = pcall(function()
-            smoothTweenTeleport(currentCF, targetCF, 0.8, Enum.EasingStyle.Linear)
-        end)
-        if not success then
-            smoothTeleport(currentPos, position, 6, 0.07)
-        end
-        task.wait(0.3)
-    else
-        -- Большая дистанция - плавный TWEEN с постоянной скоростью
-        print("✈️ Большая дистанция, плавный TWEEN телепорт (1.2с)")
-        local success = pcall(function()
-            smoothTweenTeleport(currentCF, targetCF, 1.2, Enum.EasingStyle.Linear)
-        end)
-        if not success then
-            smoothTeleport(currentPos, position, 10, 0.08)
-        end
-        task.wait(0.4)
-    end
-    
+    hrp.CFrame = CFrame.new(position)
+    task.wait(0.15) -- Уменьшенная задержка телепорта
     return true
 end
 
@@ -1074,8 +591,8 @@ local function takeItem(slotId, slot)
         return false
     end
     
-    -- СИЛЬНО увеличенная задержка для корзины (чтобы вещь ТОЧНО попала)
-    task.wait(1.8)
+    -- Уменьшенная задержка для корзины
+    task.wait(0.8)
     print("✅ Предмет должен быть в корзине")
     
     return true
@@ -1118,8 +635,8 @@ local function openShopNPC(npc)
         return false
     end
     
-    -- СИЛЬНО увеличенная задержка для загрузки GUI магазина
-    task.wait(1.2)
+    -- Уменьшенная задержка для GUI
+    task.wait(0.6)
     print("✅ GUI магазина должен быть открыт")
     
     return true
@@ -1131,8 +648,8 @@ local function purchaseItem(slotId)
     
     local playerGui = player:WaitForChild("PlayerGui")
     
-    -- СИЛЬНО увеличенная задержка для загрузки GUI
-    task.wait(0.8)
+    -- Уменьшенная задержка для GUI
+    task.wait(0.3)
     
     -- Ищем кнопку PAY
     print("🔍 Ищу кнопку PAY в GUI...")
@@ -1164,7 +681,7 @@ local function purchaseItem(slotId)
                             button.MouseButton1Click:Fire()
                         end)
                         
-                        task.wait(0.7) -- СИЛЬНО увеличенная задержка после нажатия PAY
+                        task.wait(0.3) -- Уменьшенная задержка
                         break
                     end
                 end
@@ -1174,7 +691,7 @@ local function purchaseItem(slotId)
     end
     
     -- Отправляем RemoteFunction для покупки
-    task.wait(0.8) -- СИЛЬНО увеличенная задержка перед RemoteFunction
+    task.wait(0.3) -- Уменьшенная задержка
     print("📡 Вызываю RemoteFunction ShopPurchase...")
     local success, result = pcall(function()
         local args = {"ShopPurchase", {slotId}}
@@ -1202,72 +719,6 @@ local function buyItem(mannequinData)
     local mannequin = mannequinData.mannequin
     local clothingData = mannequinData.clothingData
     
-    -- ==========================================
-    -- ПРОВЕРКА СУЩЕСТВОВАНИЯ ПЕРЕД ПОКУПКОЙ
-    -- ==========================================
-    
-    -- ПРОВЕРКА 1: Манекен все еще существует?
-    local mannequinExists = pcall(function()
-        return mannequin and mannequin.Parent and mannequin:IsDescendantOf(workspace)
-    end)
-    
-    if not mannequinExists or not mannequin or not mannequin.Parent then
-        autoBuyRunning = false
-        print("⚠️ Манекен уже не существует (вероятно уже куплен)")
-        forceRemoveESP(mannequin, "манекен исчез перед покупкой")
-        return false, "Манекен не существует"
-    end
-    
-    -- ПРОВЕРКА 2: Слот все еще существует?
-    local slotExists = pcall(function()
-        return slot and slot.Parent and slot:IsDescendantOf(workspace)
-    end)
-    
-    if not slotExists or not slot or not slot.Parent then
-        autoBuyRunning = false
-        print("⚠️ Слот не существует (вешалка пропала)")
-        forceRemoveESP(mannequin, "слот исчез перед покупкой")
-        return false, "Слот не существует"
-    end
-    
-    -- ПРОВЕРКА 3: Манекен все еще в слоте?
-    local mannequinInSlot = slot:FindFirstChild("Mannequin")
-    if not mannequinInSlot or mannequinInSlot ~= mannequin then
-        autoBuyRunning = false
-        print("⚠️ Манекен не в слоте (уже куплен другим игроком)")
-        forceRemoveESP(mannequin, "манекен не в слоте")
-        return false, "Манекен не в слоте"
-    end
-    
-    -- ПРОВЕРКА 4: Одежда все еще на манекене?
-    local hasTargetClothing = false
-    for _, child in pairs(mannequin:GetChildren()) do
-        if child:IsA("Shirt") then
-            local id = child.ShirtTemplate:match("%d+")
-            if id and ASSETS[id] then
-                hasTargetClothing = true
-                break
-            end
-        elseif child:IsA("Pants") then
-            local id = child.PantsTemplate:match("%d+")
-            if id and ASSETS[id] then
-                hasTargetClothing = true
-                break
-            end
-        end
-    end
-    
-    if not hasTargetClothing then
-        autoBuyRunning = false
-        print("⚠️ Одежда уже не на манекене (куплена)")
-        forceRemoveESP(mannequin, "одежда исчезла")
-        return false, "Одежда не найдена"
-    end
-    
-    -- ==========================================
-    -- ВСЕ ПРОВЕРКИ ПРОЙДЕНЫ - НАЧИНАЕМ ПОКУПКУ
-    -- ==========================================
-    
     -- Получаем имя вещи
     local itemNames = {}
     if clothingData.shirtId then
@@ -1280,32 +731,9 @@ local function buyItem(mannequinData)
     end
     local itemName = table.concat(itemNames, " + ")
     
-    -- Проверяем баланс и цену
-    local playerMoney = getPlayerMoney()
-    local itemPrice = getItemPrice(slot)
-    
     print("")
     print("═══════════════════════════════")
     print("🛒 ПОКУПАЮ:", itemName)
-    print("💰 Баланс:", playerMoney, "$")
-    print("💵 Цена:", itemPrice, "$")
-    
-    -- Проверка хватает ли денег
-    if itemPrice > 0 and playerMoney < itemPrice then
-        autoBuyRunning = false
-        print("❌ НЕ ХВАТАЕТ ДЕНЕГ!")
-        print("   Нужно:", itemPrice, "$")
-        print("   Есть:", playerMoney, "$")
-        print("   Не хватает:", itemPrice - playerMoney, "$")
-        print("═══════════════════════════════")
-        return false, "Не хватает денег"
-    end
-    
-    if itemPrice > 0 then
-        print("✅ Денег хватает!")
-    else
-        print("⚠️ Цена не найдена, пробую купить")
-    end
     print("═══════════════════════════════")
     
     -- Получаем SlotId
@@ -1340,7 +768,7 @@ local function buyItem(mannequinData)
     end
     print("✅ Телепортирован к предмету")
     
-    task.wait(1.2) -- СИЛЬНО увеличенная задержка после телепорта к предмету
+    task.wait(0.5) -- Уменьшенная задержка
     
     -- Шаг 2: Взять предмет (нажать E)
     print("")
@@ -1352,7 +780,7 @@ local function buyItem(mannequinData)
     end
     print("✅ Предмет взят и в корзине")
     
-    task.wait(1.5) -- СИЛЬНО увеличенная задержка после взятия предмета
+    task.wait(0.8) -- Уменьшенная задержка
     
     -- Шаг 3: Найти NPC
     print("")
@@ -1376,7 +804,7 @@ local function buyItem(mannequinData)
     end
     print("✅ Телепортирован к NPC")
     
-    task.wait(1.0) -- СИЛЬНО увеличенная задержка после телепорта к NPC
+    task.wait(0.5) -- Уменьшенная задержка
     
     -- Шаг 5: Открыть магазин (нажать E на NPC)
     print("")
@@ -1388,7 +816,7 @@ local function buyItem(mannequinData)
     end
     print("✅ Магазин открыт")
     
-    task.wait(1.2) -- СИЛЬНО увеличенная задержка после открытия магазина
+    task.wait(0.6) -- Уменьшенная задержка
     
     -- Шаг 6: Оплата (нажать PAY)
     print("")
@@ -1399,14 +827,7 @@ local function buyItem(mannequinData)
         return false, "Ошибка при оплате"
     end
     
-    task.wait(1.0) -- СИЛЬНО увеличенная задержка после оплаты
-    
-    -- ДОБАВЛЯЕМ СЛОТ В СПИСОК КУПЛЕННЫХ
-    purchasedSlots[slotId] = true
-    print("📋 Слот", slotId, "добавлен в список купленных")
-    
-    -- УДАЛЯЕМ ESP после успешной покупки
-    forceRemoveESP(mannequin, "успешно куплено")
+    task.wait(0.5) -- Уменьшенная задержка
     
     autoBuyRunning = false
     print("")
@@ -1425,165 +846,31 @@ local function startAutoBuy()
     
     autoBuyEnabled = true
     print("🤖 Автобай запущен!")
-    print("💰 Проверяю баланс...")
-    
-    local playerMoney = getPlayerMoney()
-    print("💵 Ваш баланс:", playerMoney, "$")
     
     task.spawn(function()
         local mannequins = getAllMannequins()
         local bought = 0
         local errors = 0
-        local skippedNoMoney = 0
         
-        -- Сортируем по цене (от дешевых к дорогим)
-        local sortedMannequins = {}
         for _, data in pairs(mannequins) do
-            -- Проверяем что вещь в базе
-            if (data.clothingData.shirtId and ASSETS[data.clothingData.shirtId]) or
-               (data.clothingData.pantsId and ASSETS[data.clothingData.pantsId]) then
-                
-                local price = getItemPrice(data.slot)
-                table.insert(sortedMannequins, {
-                    data = data,
-                    price = price
-                })
-            end
-        end
-        
-        -- Сортируем по цене
-        table.sort(sortedMannequins, function(a, b)
-            return a.price < b.price
-        end)
-        
-        print("🔍 Найдено вещей для покупки:", #sortedMannequins)
-        print("")
-        
-        for _, item in pairs(sortedMannequins) do
             if not autoBuyEnabled then
                 print("⏸️ Автобай остановлен")
                 break
             end
             
-            -- ============================================
-            -- ПРОВЕРКА: УЖЕ КУПИЛИ ЭТОТ СЛОТ?
-            -- ============================================
-            local slotId = getSlotId(item.data.slot)
-            if slotId and purchasedSlots[slotId] then
-                -- Получаем имя вещи
-                local itemNames = {}
-                if item.data.clothingData.shirtId then
-                    local asset = ASSETS[item.data.clothingData.shirtId]
-                    if asset then table.insert(itemNames, asset.name) end
-                end
-                if item.data.clothingData.pantsId then
-                    local asset = ASSETS[item.data.clothingData.pantsId]
-                    if asset then table.insert(itemNames, asset.name) end
-                end
-                local itemName = table.concat(itemNames, " + ")
+            -- Проверяем что вещь в базе
+            if (data.clothingData.shirtId and ASSETS[data.clothingData.shirtId]) or
+               (data.clothingData.pantsId and ASSETS[data.clothingData.pantsId]) then
                 
-                print("⏭️ ПРОПУСК (уже куплено):", itemName)
-                print("   SlotId:", slotId)
-                forceRemoveESP(item.data.mannequin, "уже куплено ранее")
-                task.wait(0.1)
-                continue
-            end
-            
-            -- ============================================
-            -- ПРОВЕРКА СУЩЕСТВОВАНИЯ ПЕРЕД ПОПЫТКОЙ КУПИТЬ
-            -- ============================================
-            local mannequin = item.data.mannequin
-            local slot = item.data.slot
-            
-            -- Проверяем что вещь все еще существует
-            local itemStillExists = false
-            pcall(function()
-                if mannequin and mannequin.Parent and mannequin:IsDescendantOf(workspace) then
-                    if slot and slot.Parent and slot:IsDescendantOf(workspace) then
-                        local mannequinInSlot = slot:FindFirstChild("Mannequin")
-                        if mannequinInSlot == mannequin then
-                            -- Проверяем что одежда все еще на манекене
-                            for _, child in pairs(mannequin:GetChildren()) do
-                                if child:IsA("Shirt") then
-                                    local id = child.ShirtTemplate:match("%d+")
-                                    if id and ASSETS[id] then
-                                        itemStillExists = true
-                                        break
-                                    end
-                                elseif child:IsA("Pants") then
-                                    local id = child.PantsTemplate:match("%d+")
-                                    if id and ASSETS[id] then
-                                        itemStillExists = true
-                                        break
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end)
-            
-            if not itemStillExists then
-                -- Вещь уже куплена или пропала - пропускаем и удаляем ESP
-                print("⏭️ ПРОПУСК (вещь уже куплена или пропала)")
-                forceRemoveESP(mannequin, "вещь пропала в автобае")
-                updateESP() -- Принудительное обновление
-                task.wait(0.1)
-                continue
-            end
-            
-            -- ============================================
-            -- ПРОВЕРКА ДЕНЕГ
-            -- ============================================
-            
-            -- Обновляем баланс перед каждой покупкой
-            playerMoney = getPlayerMoney()
-            
-            -- Проверяем хватает ли денег
-            if item.price > 0 and playerMoney < item.price then
-                skippedNoMoney = skippedNoMoney + 1
-                
-                -- Получаем имя вещи
-                local itemNames = {}
-                if item.data.clothingData.shirtId then
-                    local asset = ASSETS[item.data.clothingData.shirtId]
-                    if asset then table.insert(itemNames, asset.name) end
-                end
-                if item.data.clothingData.pantsId then
-                    local asset = ASSETS[item.data.clothingData.pantsId]
-                    if asset then table.insert(itemNames, asset.name) end
-                end
-                local itemName = table.concat(itemNames, " + ")
-                
-                print("💸 ПРОПУСК (не хватает денег):", itemName)
-                print("   Цена:", item.price, "$ | Баланс:", playerMoney, "$")
-                print("")
-                
-                -- Если больше не можем купить ничего, останавливаемся
-                if item.price <= playerMoney then
-                    -- Есть деньги, продолжаем
-                else
-                    -- Если отсортировано правильно, все следующие будут еще дороже
-                    print("⚠️ На остальные вещи тоже не хватит денег")
-                    break
-                end
-            else
-                local success, message = buyItem(item.data)
+                local success, message = buyItem(data)
                 if success then
                     bought = bought + 1
-                    updateESP() -- Обновляем ESP после покупки
                 else
-                    if message == "Манекен не существует" or message == "Слот не существует" or 
-                       message == "Манекен не в слоте" or message == "Одежда не найдена" then
-                        -- Вещь уже куплена, не считаем ошибкой
-                        print("⏭️ Вещь уже куплена")
-                    elseif message ~= "Не хватает денег" then
-                        errors = errors + 1
-                        warn("❌", message)
-                    end
+                    errors = errors + 1
+                    warn("❌", message)
                 end
                 
-                task.wait(1.2) -- СИЛЬНО увеличенная задержка между покупками для безопасности
+                task.wait(0.5) -- Уменьшенная задержка между покупками
             end
         end
         
@@ -1591,9 +878,7 @@ local function startAutoBuy()
         print("")
         print("🏁 Автобай завершен!")
         print("✅ Куплено:", bought)
-        print("💸 Пропущено (нет денег):", skippedNoMoney)
         print("❌ Ошибок:", errors)
-        print("💰 Остаток:", getPlayerMoney(), "$")
     end)
     
     return true, "Автобай запущен"
@@ -1602,17 +887,6 @@ end
 local function stopAutoBuy()
     autoBuyEnabled = false
     print("⏹️ Автобай остановлен")
-end
-
--- Очистить список купленных предметов
-local function clearPurchasedList()
-    local count = 0
-    for _ in pairs(purchasedSlots) do
-        count = count + 1
-    end
-    purchasedSlots = {}
-    print("🗑️ Список купленных очищен! Было:", count)
-    return count
 end
 
 -- ============================================
@@ -1644,11 +918,12 @@ if not success then
 end
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 250, 0, 290) -- Увеличил высоту для новой кнопки
+frame.Size = UDim2.new(0, 250, 0, 220)
 frame.Position = UDim2.new(0.5, -125, 0.1, 0)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 2
 frame.BorderColor3 = Color3.fromRGB(255, 180, 0)
+frame.Parent = screenGui
 frame.Parent = screenGui
 
 local corner = Instance.new("UICorner")
@@ -1730,35 +1005,11 @@ autoBuyButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Кнопка очистки списка купленных
-local clearButton = Instance.new("TextButton")
-clearButton.Size = UDim2.new(0.9, 0, 0, 35)
-clearButton.Position = UDim2.new(0.05, 0, 0, 150)
-clearButton.BackgroundColor3 = Color3.fromRGB(200, 100, 50)
-clearButton.BorderSizePixel = 1
-clearButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
-clearButton.Text = "🗑️ Очистить список"
-clearButton.Font = Enum.Font.SourceSansBold
-clearButton.TextSize = 14
-clearButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearButton.Parent = frame
-
-local clearCorner = Instance.new("UICorner")
-clearCorner.CornerRadius = UDim.new(0, 8)
-clearCorner.Parent = clearButton
-
-clearButton.MouseButton1Click:Connect(function()
-    local count = clearPurchasedList()
-    clearButton.Text = "✅ Очищено: " .. count
-    task.wait(1.5)
-    clearButton.Text = "🗑️ Очистить список"
-end)
-
 local info = Instance.new("TextLabel")
-info.Size = UDim2.new(0.9, 0, 0, 55)
-info.Position = UDim2.new(0.05, 0, 0, 195)
+info.Size = UDim2.new(0.9, 0, 0, 70)
+info.Position = UDim2.new(0.05, 0, 0, 150)
 info.BackgroundTransparency = 1
-info.Text = "✅ Safe Mode + обход античита\n⚡ Мгновенное E (без задержки)\n� ПЛАВНЫЙ телепорт - обход детекта\n🤖 Автобай включен!\n📋 Не тепается к купленным"
+info.Text = "✅ Safe Mode\n⚡ Мгновенное E (без задержки)\n� Оптимизация скорости\n🤖 Автобай включен!"
 info.Font = Enum.Font.SourceSans
 info.TextSize = 12
 info.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -1796,41 +1047,15 @@ game:GetService("UserInputService").InputChanged:Connect(function(input)
 end)
 
 print("🎉 Safe ESP загружен!")
-print("✅ С ОБХОДОМ АНТИЧИТА - защита от кика")
-print("⚡ БЕЗОПАСНЫЕ задержки - защита от античита")
-print("�️ Увеличенные интервалы для стабильной работы")
-print("🔄 ESP автоматически пропадает когда вещь исчезает!")
-print("   → Проверка каждые 0.15с + мгновенная реакция на удаление")
-print("   → Отслеживание манекенов, одежды, слотов и аксессуаров")
-print("🤖 АВТОБАЙ оптимизирован с безопасными задержками!")
-print("🛸 TWEEN ТЕЛЕПОРТ - максимально плавный обход античита!")
-print("")
-print("⏱️ ЗАДЕРЖКИ (безопасные для античита):")
-print("   • Телепорт: TWEEN с адаптивной скоростью")
-print("     - < 15 стадов: мгновенный (0.3с)")
-print("     - 15-50 стадов: Tween Sine 0.3с")
-print("     - 50-150 стадов: Tween Quad 0.5с")
-print("     - > 150 стадов: Tween Quad 0.8с (плавно)")
-print("   • Взятие предмета: 1.2с")
-print("   • Открытие GUI: 0.9с")
-print("   • Оплата: 0.7с")
-print("   • Между покупками: 0.8с")
+print("✅ БЕЗ обхода - НЕ кикнет")
+print("⚡ Мгновенное нажатие E - без задержки")
+print("💨 Все операции ускорены в 2-3 раза")
+print("🔄 ESP пропадает если вещь исчезла")
+print("🤖 АВТОБАЙ оптимизирован!")
 print("")
 print("📝 Инструкция:")
 print("1. Нажми 'Включить ESP' - найдет все вещи")
-print("2. Нажми 'АВТОБАЙ' - купит все безопасно")
-print("3. ESP автоматически удалится когда вещь пропадет с вешалки")
+print("2. Нажми 'АВТОБАЙ' - купит все быстро")
 print("")
 print("🎮 GUI в левой верхней части экрана")
 print("Готов к использованию!")
-print("")
-print("🔥 НОВЫЕ ФИЧИ:")
-print("   🛸 TWEEN телепорт - МАКСИМАЛЬНО плавный обход!")
-print("     → Используется TweenService (стандартный сервис Roblox)")
-print("     → Выглядит как естественное движение персонажа")
-print("     → Адаптивная скорость в зависимости от расстояния")
-print("     → Античит НЕ видит это как телепорт!")
-print("   📋 Отслеживание купленных предметов")
-print("     → После покупки предмет добавляется в список")
-print("     → Автобай не тепается к купленным предметам")
-print("     → Кнопка 'Очистить список' сбрасывает купленные")
