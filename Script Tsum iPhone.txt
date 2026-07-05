@@ -606,7 +606,7 @@
         end
     end
 
-    function enableESP()
+    _G.enableESP = function()
         if espEnabled then return end
         espEnabled = true
         
@@ -767,7 +767,7 @@
         print("✅ ESP включен! Найдено:", found)
     end
 
-    function disableESP()
+    _G.disableESP = function()
         espEnabled = false
         clearESP()
         print("❌ ESP выключен")
@@ -1566,7 +1566,7 @@
     end
 
     -- Автобай всех найденных вещей
-    function startAutoBuy()
+    _G.startAutoBuy = function()
         if not espEnabled then
             return false, "Сначала включи ESP!"
         end
@@ -1747,13 +1747,13 @@
         return true, "Автобай запущен"
     end
 
-    function stopAutoBuy()
+    _G.stopAutoBuy = function()
         autoBuyEnabled = false
         print("⏹️ Автобай остановлен")
     end
 
     -- Очистить список купленных предметов
-    function clearPurchasedList()
+    _G.clearPurchasedList = function()
         local count = 0
         for _ in pairs(purchasedSlots) do
             count = count + 1
