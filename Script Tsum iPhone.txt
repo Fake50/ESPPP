@@ -921,7 +921,7 @@ local function smoothTweenTeleport(startCF, endCF, duration, easingStyle)
     -- Создаем TweenInfo
     local tweenInfo = TweenInfo.new(
         duration,                    -- Длительность
-        easingStyle or Enum.EasingStyle.Linear, -- Стиль анимации
+        Enum.EasingStyle.Linear,     -- Linear = постоянная скорость без разгона
         Enum.EasingDirection.InOut,  -- Направление
         0,                           -- Повторы (0 = без повторов)
         false,                       -- Реверс
@@ -1001,10 +1001,10 @@ local function teleportTo(position)
         hrp.CFrame = targetCF
         task.wait(0.3)
     elseif distance < 50 then
-        -- Средняя дистанция - быстрый TWEEN (выглядит очень естественно!)
-        print("🏃 Средняя дистанция, TWEEN телепорт (0.3с)")
+        -- Средняя дистанция - плавный TWEEN с постоянной скоростью
+        print("🏃 Средняя дистанция, плавный TWEEN телепорт (0.5с)")
         local success = pcall(function()
-            smoothTweenTeleport(currentCF, targetCF, 0.3, Enum.EasingStyle.Sine)
+            smoothTweenTeleport(currentCF, targetCF, 0.5, Enum.EasingStyle.Linear)
         end)
         if not success then
             -- Если твин не сработал, используем обычный метод
@@ -1012,20 +1012,20 @@ local function teleportTo(position)
         end
         task.wait(0.2)
     elseif distance < 150 then
-        -- Средне-большая дистанция - средний TWEEN
-        print("🚴 Средне-большая дистанция, TWEEN телепорт (0.5с)")
+        -- Средне-большая дистанция - средний TWEEN с постоянной скоростью
+        print("🚴 Средне-большая дистанция, плавный TWEEN телепорт (0.8с)")
         local success = pcall(function()
-            smoothTweenTeleport(currentCF, targetCF, 0.5, Enum.EasingStyle.Quad)
+            smoothTweenTeleport(currentCF, targetCF, 0.8, Enum.EasingStyle.Linear)
         end)
         if not success then
             smoothTeleport(currentPos, position, 6, 0.07)
         end
         task.wait(0.3)
     else
-        -- Большая дистанция - плавный TWEEN
-        print("✈️ Большая дистанция, плавный TWEEN телепорт (0.8с)")
+        -- Большая дистанция - плавный TWEEN с постоянной скоростью
+        print("✈️ Большая дистанция, плавный TWEEN телепорт (1.2с)")
         local success = pcall(function()
-            smoothTweenTeleport(currentCF, targetCF, 0.8, Enum.EasingStyle.Quad)
+            smoothTweenTeleport(currentCF, targetCF, 1.2, Enum.EasingStyle.Linear)
         end)
         if not success then
             smoothTeleport(currentPos, position, 10, 0.08)
