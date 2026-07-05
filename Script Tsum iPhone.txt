@@ -509,34 +509,55 @@ local function updateESP()
             end
         end
         
-        -- Проверка 4: Для манекенов - есть ли еще одежда из базы?
+        -- Проверка 4: Для манекенов - есть ли еще одежда из базы И она та же самая?
         if not shouldRemove and model:IsA("Model") and model.Name == "Mannequin" then
             local hasTargetClothing = false
+            local clothingMatches = true -- НОВОЕ: Проверяем что ID не изменились
+            
             local success = pcall(function()
+                local currentShirtId = nil
+                local currentPantsId = nil
+                
                 for _, child in pairs(model:GetChildren()) do
                     if child:IsA("Shirt") then
-                        local id = child.ShirtTemplate:match("%d+")
-                        if id and ASSETS[id] then
+                        currentShirtId = child.ShirtTemplate:match("%d+")
+                        if currentShirtId and ASSETS[currentShirtId] then
                             hasTargetClothing = true
-                            break
                         end
                     elseif child:IsA("Pants") then
-                        local id = child.PantsTemplate:match("%d+")
-                        if id and ASSETS[id] then
+                        currentPantsId = child.PantsTemplate:match("%d+")
+                        if currentPantsId and ASSETS[currentPantsId] then
                             hasTargetClothing = true
-                            break
+                        end
+                    end
+                end
+                
+                -- НОВОЕ: Проверяем что ID одежды не изменились
+                if espData.originalClothingIds then
+                    if espData.originalClothingIds.shirtId then
+                        if currentShirtId ~= espData.originalClothingIds.shirtId then
+                            clothingMatches = false
+                        end
+                    end
+                    if espData.originalClothingIds.pantsId then
+                        if currentPantsId ~= espData.originalClothingIds.pantsId then
+                            clothingMatches = false
                         end
                     end
                 end
             end)
             
-            if not success or not hasTargetClothing then
+            if not success or not hasTargetClothing or not clothingMatches then
                 shouldRemove = true
-                removeReason = "одежда пропала с манекена"
+                if not clothingMatches then
+                    removeReason = "одежда изменилась (другая вещь)"
+                else
+                    removeReason = "одежда пропала с манекена"
+                end
             end
         end
         
-        -- Проверка 5: Для аксессуаров - существует ли Handle/Body с нужным MeshId?
+        -- Проверка 5: Для аксессуаров - существует ли Handle/Body с нужным MeshId И тот же ли это ID?
         if not shouldRemove and model:IsA("Model") and model.Name:match("^M_") then
             local success = pcall(function()
                 local target = model:FindFirstChild("Handle") or model:FindFirstChild("Body")
@@ -548,6 +569,10 @@ local function updateESP()
                     if not meshId or not ACCESSORIES[meshId] then
                         shouldRemove = true
                         removeReason = "MeshId изменен или удален"
+                    -- НОВОЕ: Проверяем что MeshId не изменился
+                    elseif espData.originalMeshId and meshId ~= espData.originalMeshId then
+                        shouldRemove = true
+                        removeReason = "MeshId изменился (другой предмет)"
                     end
                 end
             end)
@@ -592,16 +617,20 @@ local function enableESP()
     -- Вещи
     for _, data in pairs(getAllMannequins()) do
         local names = {}
+        local clothingIds = {} -- Сохраняем ID для последующей проверки
+        
         if data.clothingData.shirtId then
             local item = ASSETS[data.clothingData.shirtId]
             if item then
                 table.insert(names, item.name)
+                clothingIds.shirtId = data.clothingData.shirtId
             end
         end
         if data.clothingData.pantsId then
             local item = ASSETS[data.clothingData.pantsId]
             if item then
                 table.insert(names, item.name)
+                clothingIds.pantsId = data.clothingData.pantsId
             end
         end
         
@@ -612,7 +641,8 @@ local function enableESP()
                 highlight = data.mannequin:FindFirstChild("ESP_H"),
                 label = label,
                 slot = data.slot, -- Сохраняем ссылку на слот
-                itemType = "clothing"
+                itemType = "clothing",
+                originalClothingIds = clothingIds -- НОВОЕ: Сохраняем оригинальные ID
             }
             found = found + 1
         end
@@ -627,7 +657,8 @@ local function enableESP()
             espTracking[data.model] = {
                 highlight = data.model:FindFirstChild("ESP_H"),
                 label = label,
-                itemType = "accessory"
+                itemType = "accessory",
+                originalMeshId = data.meshId -- НОВОЕ: Сохраняем оригинальный MeshId
             }
             found = found + 1
         end
@@ -637,7 +668,7 @@ local function enableESP()
     task.spawn(function()
         while espEnabled do
             updateESP()
-            task.wait(0.15) -- Проверяем каждые 0.15 секунды (быстрее реагирует)
+            task.wait(0.1) -- Проверяем каждые 0.1 секунды для быстрого удаления ESP
         end
     end)
     
