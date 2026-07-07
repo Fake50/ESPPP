@@ -1,272 +1,296 @@
--- ============================================
--- 🔥 ESP SAFE MODE + AUTOBUY (RAYFIELD GUI)
--- ============================================
-print("🔄 Загрузка Safe ESP + AutoBuy...")
+    -- ============================================
+    -- 🔥 ESP SAFE MODE + AUTOBUY (RAYFIELD GUI)
+    -- ============================================
+    print("🔄 Загрузка Safe ESP + AutoBuy...")
 
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+    local Players = game:GetService("Players")
+    local player = Players.LocalPlayer
 
--- ============================================
--- ПОЛНАЯ БАЗА ДАННЫХ ВЕЩЕЙ
--- ============================================
-local ASSETS = {
-    ["6004029863"] = { name = "Haliky Худи", chance = 0.001 },
-    ["8631671219"] = { name = "Stone Island Big Loom Camo-Tc", chance = 0.002 },
-    ["10443560332"] = { name = "Raf Simons AW01 Runway", chance = 0.002 },
-    ["6676412078"] = { name = "Haliky Gang Bears", chance = 0.003 },
-    ["71906531939193"] = { name = "Yohji Yamamoto Темно-Синяя", chance = 0.003 },
-    ["130162125639664"] = { name = "Yohji Yamamoto Красная", chance = 0.004 },
-    ["1329266661"] = { name = "BAPE Full Zip Shark", chance = 0.005 },
-    ["8631708414"] = { name = "Stone Island Big Loom Camo-Tc Штаны", chance = 0.005 },
-    ["92502686962334"] = { name = "Yohji Yamamoto Кожанка", chance = 0.005 },
-    ["7369775832"] = { name = "Chrome Hearts x LV Jacket", chance = 0.005 },
-    ["13429337006"] = { name = "Moncler x PA Fiber Light Puffer", chance = 0.005 },
-    ["74621497123361"] = { name = "Raf Simons Pharaxus Green Black Штаны", chance = 0.005 },
-    ["85073157438003"] = { name = "Maison Margiela Куртка из Ремней", chance = 0.005 },
-    ["6071739641"] = { name = "Off-White Virgil Abloh Красный", chance = 0.005 },
-    ["1103783722"] = { name = "Bape x Supreme", chance = 0.007 },
-    ["7205233873"] = { name = "Palm Angels Zip Кислотный", chance = 0.007 },
-    ["78339652684003"] = { name = "Stone Island x Supreme Белые", chance = 0.008 },
-    ["13876916067"] = { name = "Stone Island x Supreme", chance = 0.008 },
-    ["6501833581"] = { name = "Palm Angels Zip Цветок", chance = 0.009 },
-    ["119801182639139"] = { name = "Palm Angels Zip Фиолетовый", chance = 0.009 },
-    ["112790132457513"] = { name = "Stone Island x Supreme White Штаны", chance = 0.01 },
-    ["116321915070400"] = { name = "Stone Island x Supreme Штаны", chance = 0.01 },
-    ["118565360972858"] = { name = "Balenciaga Nasa Bomber Jacket", chance = 0.01 },
-    ["16662225319"] = { name = "Balenciaga Runway", chance = 0.01 },
-    ["127906814275652"] = { name = "Balenciaga Leather Штаны", chance = 0.01 },
-    ["5944585412"] = { name = "Chrome Hearts x Off-White Hoodie", chance = 0.01 },
-    ["126218652868749"] = { name = "Number(N)ine Shield Черное Худи", chance = 0.01 },
-    ["5972477551"] = { name = "Гоша Рубчинский Рождественский", chance = 0.015 },
-    ["126602708675680"] = { name = "Гоша Рубчинский Вдруг Друг", chance = 0.015 },
-    ["101546483409686"] = { name = "Racer WorldWide Лонгслив", chance = 0.015 },
-    ["116197719499900"] = { name = "Gutta Opiy Shirt", chance = 0.02 },
-    ["102649937877868"] = { name = "Palm Angels x Raf Blue Red", chance = 0.02 },
-    ["96072265863113"] = { name = "Stone Island Comfort Tech Purple", chance = 0.02 },
-    ["1081054865"] = { name = "Gucci Coco Capitan", chance = 0.02 },
-    ["2074367265"] = { name = "TH Hoodie X Balenciaga x RAF", chance = 0.02 },
-    ["130342095571450"] = { name = "Balenciaga Paris", chance = 0.02 },
-    ["72161303025169"] = { name = "ERD Красная Джинсовка", chance = 0.02 },
-    ["772695234"] = { name = "Гоша Рубчинский Зеленый Свитер", chance = 0.03 },
-    ["297942902"] = { name = "Cav Empt Бомбер", chance = 0.04 },
-    ["436720175"] = { name = "Гоша Рубчинский X Thrasher", chance = 0.04 },
-    ["914784451"] = { name = "Cav Empt FW 17", chance = 0.05 },
-    ["80849817692916"] = { name = "Chrome Hearts Camo Matty", chance = 0.05 },
-    ["112414916707189"] = { name = "ERD Archive Худи Красный", chance = 0.05 },
-    ["117808202442208"] = { name = "ERD Archive Лонгслив", chance = 0.05 },
-    ["17573405255"] = { name = "Number(N)ine Серый Лонгслив", chance = 0.05 },
-    ["3052304804"] = { name = "BAPE Tiger Camo", chance = 0.06 },
-    ["11796928274"] = { name = "Гоша Рубчинский Рождество Штаны", chance = 0.06 },
-    ["18280893501"] = { name = "Cav Empt Joker", chance = 0.07 },
-    ["126486170842278"] = { name = "BAPE Tiger Штаны Фиолетовые", chance = 0.08 },
-    ["93929061709529"] = { name = "Racer WorldWide Куртка", chance = 0.08 },
-    ["13778721234"] = { name = "Stone Island Skin Touch Purple", chance = 0.08 },
-    ["13779001394"] = { name = "Stone Island Purple Skin Touch Штаны", chance = 0.08 },
-    ["100168311309116"] = { name = "Gallery Dept Кепка Шамана", chance = 0.08 },
-    ["1002344601"] = { name = "Cav Empt MD Document Crewneck", chance = 0.1 },
-    ["1565502110"] = { name = "Supreme x Bape x LV", chance = 0.1 },
-    ["92202912411173"] = { name = "Raf Simons SS10 Sterling Ruby Shirt", chance = 0.1 },
-    ["322189905"] = { name = "Cav Empt Not Impossible Crewneck", chance = 0.15 },
-    ["15706847529"] = { name = "Гоша Рубчинский x Rassvet", chance = 0.15 },
-    ["1213373788"] = { name = "Off-White Camo", chance = 0.15 },
-    ["121413776309543"] = { name = "Number(N)ine Серая Zip Jacket", chance = 0.15 },
-    ["78070667368419"] = { name = "Maison Margiela Женская Меховая Куртка", chance = 0.2 },
-    ["2474144248"] = { name = "Off-White MonoLisa", chance = 0.25 },
-    ["4843433312"] = { name = "BAPE Yellow Camo Shark", chance = 0.3 },
-    ["123206690688862"] = { name = "Gutta Snake Year", chance = 0.3 },
-    ["133885913046054"] = { name = "Number(N)ine Zip Jacket", chance = 0.3 },
-    ["113679737601896"] = { name = "Stone Island Off Day Blue", chance = 0.35 },
-    ["81220837440974"] = { name = "Stone Island Red Hoodie Off Dye", chance = 0.35 },
-    ["105050054678663"] = { name = "BAPE Tiger Штаны Темно-Зеленые", chance = 0.4 },
-    ["116825151038506"] = { name = "Gutta Raiders Camo Shirt", chance = 0.4 },
-    ["1824185877"] = { name = "Гоша Рубчинский x Kappa", chance = 0.4 },
-    ["5611331856"] = { name = "Palm Angels Flame", chance = 0.4 },
-    ["119505659829019"] = { name = "BAPE Red Panda", chance = 0.5 },
-    ["136214158712256"] = { name = "BAPE Tiger Штаны Синие", chance = 0.5 },
-    ["91431686212610"] = { name = "BAPE Tiger Штаны Красные", chance = 0.5 },
-    ["1518645601"] = { name = "Gucci Tiger Hoodie", chance = 0.5 },
-    ["2109554074"] = { name = "Gucci x LV Jacket", chance = 0.5 },
-    ["70522682896000"] = { name = "Zapatillas Gucci X Amiri", chance = 0.5 },
-    ["5226567361"] = { name = "Supreme x LV", chance = 0.5 },
-    ["3244925420"] = { name = "Cav Empt Свитшот Symptom Heavy", chance = 0.6 },
-    ["13444831655"] = { name = "Supreme x BB", chance = 0.8 },
-    ["124794708387683"] = { name = "Гоша Рубчинский Fila Yellow LS", chance = 0.8 },
-    ["8631755137"] = { name = "Stone Island WATRO-TC Jacket", chance = 0.15 },
-    ["98404573180892"] = { name = "CP Company Navy Windbreaker", chance = 0.15 },
-    ["11290616968"] = { name = "Vetements Бомбер Полиции", chance = 0.15 },
-    ["98965932254784"] = { name = "Comme des Garcons X Rolling Stones", chance = 0.15 },
-    ["9930373233"] = { name = "NeNet Худи Фиолетовая", chance = 0.15 },
-}
+    -- ============================================
+    -- ПОЛНАЯ БАЗА ДАННЫХ ВЕЩЕЙ
+    -- ============================================
+    local ASSETS = {
+        ["6004029863"] = { name = "Haliky Худи", chance = 0.001 },
+        ["8631671219"] = { name = "Stone Island Big Loom Camo-Tc", chance = 0.002 },
+        ["10443560332"] = { name = "Raf Simons AW01 Runway", chance = 0.002 },
+        ["6676412078"] = { name = "Haliky Gang Bears", chance = 0.003 },
+        ["71906531939193"] = { name = "Yohji Yamamoto Темно-Синяя", chance = 0.003 },
+        ["130162125639664"] = { name = "Yohji Yamamoto Красная", chance = 0.004 },
+        ["1329266661"] = { name = "BAPE Full Zip Shark", chance = 0.005 },
+        ["8631708414"] = { name = "Stone Island Big Loom Camo-Tc Штаны", chance = 0.005 },
+        ["92502686962334"] = { name = "Yohji Yamamoto Кожанка", chance = 0.005 },
+        ["7369775832"] = { name = "Chrome Hearts x LV Jacket", chance = 0.005 },
+        ["13429337006"] = { name = "Moncler x PA Fiber Light Puffer", chance = 0.005 },
+        ["74621497123361"] = { name = "Raf Simons Pharaxus Green Black Штаны", chance = 0.005 },
+        ["85073157438003"] = { name = "Maison Margiela Куртка из Ремней", chance = 0.005 },
+        ["6071739641"] = { name = "Off-White Virgil Abloh Красный", chance = 0.005 },
+        ["1103783722"] = { name = "Bape x Supreme", chance = 0.007 },
+        ["7205233873"] = { name = "Palm Angels Zip Кислотный", chance = 0.007 },
+        ["78339652684003"] = { name = "Stone Island x Supreme Белые", chance = 0.008 },
+        ["13876916067"] = { name = "Stone Island x Supreme", chance = 0.008 },
+        ["6501833581"] = { name = "Palm Angels Zip Цветок", chance = 0.009 },
+        ["119801182639139"] = { name = "Palm Angels Zip Фиолетовый", chance = 0.009 },
+        ["112790132457513"] = { name = "Stone Island x Supreme White Штаны", chance = 0.01 },
+        ["116321915070400"] = { name = "Stone Island x Supreme Штаны", chance = 0.01 },
+        ["118565360972858"] = { name = "Balenciaga Nasa Bomber Jacket", chance = 0.01 },
+        ["16662225319"] = { name = "Balenciaga Runway", chance = 0.01 },
+        ["127906814275652"] = { name = "Balenciaga Leather Штаны", chance = 0.01 },
+        ["5944585412"] = { name = "Chrome Hearts x Off-White Hoodie", chance = 0.01 },
+        ["126218652868749"] = { name = "Number(N)ine Shield Черное Худи", chance = 0.01 },
+        ["5972477551"] = { name = "Гоша Рубчинский Рождественский", chance = 0.015 },
+        ["126602708675680"] = { name = "Гоша Рубчинский Вдруг Друг", chance = 0.015 },
+        ["101546483409686"] = { name = "Racer WorldWide Лонгслив", chance = 0.015 },
+        ["116197719499900"] = { name = "Gutta Opiy Shirt", chance = 0.02 },
+        ["102649937877868"] = { name = "Palm Angels x Raf Blue Red", chance = 0.02 },
+        ["96072265863113"] = { name = "Stone Island Comfort Tech Purple", chance = 0.02 },
+        ["1081054865"] = { name = "Gucci Coco Capitan", chance = 0.02 },
+        ["2074367265"] = { name = "TH Hoodie X Balenciaga x RAF", chance = 0.02 },
+        ["130342095571450"] = { name = "Balenciaga Paris", chance = 0.02 },
+        ["72161303025169"] = { name = "ERD Красная Джинсовка", chance = 0.02 },
+        ["772695234"] = { name = "Гоша Рубчинский Зеленый Свитер", chance = 0.03 },
+        ["297942902"] = { name = "Cav Empt Бомбер", chance = 0.04 },
+        ["436720175"] = { name = "Гоша Рубчинский X Thrasher", chance = 0.04 },
+        ["914784451"] = { name = "Cav Empt FW 17", chance = 0.05 },
+        ["80849817692916"] = { name = "Chrome Hearts Camo Matty", chance = 0.05 },
+        ["112414916707189"] = { name = "ERD Archive Худи Красный", chance = 0.05 },
+        ["117808202442208"] = { name = "ERD Archive Лонгслив", chance = 0.05 },
+        ["17573405255"] = { name = "Number(N)ine Серый Лонгслив", chance = 0.05 },
+        ["3052304804"] = { name = "BAPE Tiger Camo", chance = 0.06 },
+        ["11796928274"] = { name = "Гоша Рубчинский Рождество Штаны", chance = 0.06 },
+        ["18280893501"] = { name = "Cav Empt Joker", chance = 0.07 },
+        ["126486170842278"] = { name = "BAPE Tiger Штаны Фиолетовые", chance = 0.08 },
+        ["93929061709529"] = { name = "Racer WorldWide Куртка", chance = 0.08 },
+        ["13778721234"] = { name = "Stone Island Skin Touch Purple", chance = 0.08 },
+        ["13779001394"] = { name = "Stone Island Purple Skin Touch Штаны", chance = 0.08 },
+        ["100168311309116"] = { name = "Gallery Dept Кепка Шамана", chance = 0.08 },
+        ["1002344601"] = { name = "Cav Empt MD Document Crewneck", chance = 0.1 },
+        ["1565502110"] = { name = "Supreme x Bape x LV", chance = 0.1 },
+        ["92202912411173"] = { name = "Raf Simons SS10 Sterling Ruby Shirt", chance = 0.1 },
+        ["322189905"] = { name = "Cav Empt Not Impossible Crewneck", chance = 0.15 },
+        ["15706847529"] = { name = "Гоша Рубчинский x Rassvet", chance = 0.15 },
+        ["1213373788"] = { name = "Off-White Camo", chance = 0.15 },
+        ["121413776309543"] = { name = "Number(N)ine Серая Zip Jacket", chance = 0.15 },
+        ["78070667368419"] = { name = "Maison Margiela Женская Меховая Куртка", chance = 0.2 },
+        ["2474144248"] = { name = "Off-White MonoLisa", chance = 0.25 },
+        ["4843433312"] = { name = "BAPE Yellow Camo Shark", chance = 0.3 },
+        ["123206690688862"] = { name = "Gutta Snake Year", chance = 0.3 },
+        ["133885913046054"] = { name = "Number(N)ine Zip Jacket", chance = 0.3 },
+        ["113679737601896"] = { name = "Stone Island Off Day Blue", chance = 0.35 },
+        ["81220837440974"] = { name = "Stone Island Red Hoodie Off Dye", chance = 0.35 },
+        ["105050054678663"] = { name = "BAPE Tiger Штаны Темно-Зеленые", chance = 0.4 },
+        ["116825151038506"] = { name = "Gutta Raiders Camo Shirt", chance = 0.4 },
+        ["1824185877"] = { name = "Гоша Рубчинский x Kappa", chance = 0.4 },
+        ["5611331856"] = { name = "Palm Angels Flame", chance = 0.4 },
+        ["119505659829019"] = { name = "BAPE Red Panda", chance = 0.5 },
+        ["136214158712256"] = { name = "BAPE Tiger Штаны Синие", chance = 0.5 },
+        ["91431686212610"] = { name = "BAPE Tiger Штаны Красные", chance = 0.5 },
+        ["1518645601"] = { name = "Gucci Tiger Hoodie", chance = 0.5 },
+        ["2109554074"] = { name = "Gucci x LV Jacket", chance = 0.5 },
+        ["70522682896000"] = { name = "Zapatillas Gucci X Amiri", chance = 0.5 },
+        ["5226567361"] = { name = "Supreme x LV", chance = 0.5 },
+        ["3244925420"] = { name = "Cav Empt Свитшот Symptom Heavy", chance = 0.6 },
+        ["13444831655"] = { name = "Supreme x BB", chance = 0.8 },
+        ["124794708387683"] = { name = "Гоша Рубчинский Fila Yellow LS", chance = 0.8 },
+        ["8631755137"] = { name = "Stone Island WATRO-TC Jacket", chance = 0.15 },
+        ["98404573180892"] = { name = "CP Company Navy Windbreaker", chance = 0.15 },
+        ["11290616968"] = { name = "Vetements Бомбер Полиции", chance = 0.15 },
+        ["98965932254784"] = { name = "Comme des Garcons X Rolling Stones", chance = 0.15 },
+        ["9930373233"] = { name = "NeNet Худи Фиолетовая", chance = 0.15 },
+    }
 
--- ============================================
--- ПОЛНАЯ БАЗА ДАННЫХ АКСЕССУАРОВ
--- ============================================
-local ACCESSORIES = {
-    ["14523189142"] = { name = "Maksakov Ghost", chance = 0.005 },
-    ["14615310668"] = { name = "Red Maksakov Ghost", chance = 0.08 },
-    ["14615304098"] = { name = "Pink Maksakov Ghost", chance = 0.08 },
-    ["14615307025"] = { name = "White Maksakov Ghost", chance = 0.1 },
-    ["85865866386997"] = { name = "Bape Маска", chance = 0.15 },
-    ["70765247277282"] = { name = "Baby Milo Рюкзак", chance = 0.003 },
-    ["115389802684898"] = { name = "Bape Рюкзак Camo", chance = 0.4 },
-    ["89846079310975"] = { name = "Bape Panda Shark Шапка", chance = 0.07 },
-    ["101486965390763"] = { name = "Red BAPE Tiger Backpack", chance = 0.6 },
-    ["130822108945941"] = { name = "MCM Рюкзак Красный", chance = 0.4 },
-    ["113057369240600"] = { name = "MCM Рюкзак", chance = 0.5 },
-    ["122914640223931"] = { name = "MCM Рюкзак Белый", chance = 0.6 },
-    ["116403395006931"] = { name = "MCM Рюкзак X SprayGround", chance = 0.04 },
-    ["71040675246222"] = { name = "CP Company Goggle Beanie Light Blue", chance = 0.5 },
-    ["96236164474655"] = { name = "CP Company Goggle Beanie Sail", chance = 0.3 },
-    ["84903025841942"] = { name = "CP Company Goggle Beanie Red", chance = 0.15 },
-    ["109191017280869"] = { name = "CP Company Goggle Beanie Pink", chance = 0.08 },
-    ["96068891445307"] = { name = "Balenciaga Alien Рюкзак", chance = 0.6 },
-    ["91603290514384"] = { name = "Balenciaga Gamer Distressed Cap", chance = 0.8 },
-    ["111982024415210"] = { name = "Ebay X Balenciaga Trucker", chance = 0.2 },
-    ["18147597296"] = { name = "Balenciaga Sports Icon Distressed Cap", chance = 0.07 },
-    ["117973635335653"] = { name = "Balenciaga x Chrome Cotton Blue", chance = 0.3 },
-    ["127277375292070"] = { name = "Balenciaga x Chrome Cotton Yellow", chance = 0.25 },
-    ["85692687437028"] = { name = "Balenciaga x Chrome Cotton White", chance = 0.15 },
-    ["89723156077371"] = { name = "Balenciaga Distressed White Cap", chance = 0.5 },
-    ["104126944758670"] = { name = "Balenciaga Blue Explorer", chance = 0.5 },
-    ["81550191875286"] = { name = "Balenciaga X Under Armour Duffel", chance = 0.8 },
-    ["106641690712546"] = { name = "Balenciaga Patchwork Bag", chance = 0.3 },
-    ["119024772298896"] = { name = "Balenciaga Graffiti City White", chance = 0.06 },
-    ["71591468298793"] = { name = "Balenciaga Graffiti City Black", chance = 0.05 },
-    ["99189491919957"] = { name = "Balenciaga X Under Armour Piercing", chance = 0.09 },
-    ["99692493214274"] = { name = "Balenciaga Garment Large Tote", chance = 0.02 },
-    ["134357315882448"] = { name = "Balenciaga Black Duffel", chance = 0.003 },
-    ["119249567021092"] = { name = "Balenciaga White Duffel", chance = 0.004 },
-    ["129539513019418"] = { name = "Balenciaga Reverse Xpander Sunglasses", chance = 0.02 },
-    ["129758048256121"] = { name = "Balenciaga Butterfly Shades", chance = 0.007 },
-    ["94671579377101"] = { name = "Balenciaga Black Spike Eyewear", chance = 0.002 },
-    ["92884235090318"] = { name = "Balenciaga Red Spike Eyewear", chance = 0.01 },
-    ["76486673718873"] = { name = "Gucci Goggles", chance = 0.3 },
-    ["16344213019"] = { name = "Gucci Ophidia GG Backpack", chance = 0.015 },
-    ["16301624126"] = { name = "Gucci Savoy Small Hat Box", chance = 0.04 },
-    ["115400611080426"] = { name = "Balenciaga x Gucci Duffle", chance = 0.008 },
-    ["6803402872"] = { name = "Gucci Dionysus Bag with Bee", chance = 0.04 },
-    ["104339539451912"] = { name = "Gucci Duffel Bag Beige", chance = 0.8 },
-    ["106839053930915"] = { name = "Gucci Duffel Bag Black", chance = 0.8 },
-    ["83731330884409"] = { name = "Blumarine Очки Классик", chance = 0.007 },
-    ["77676520738963"] = { name = "Gucci Маска", chance = 0.09 },
-    ["74493965787309"] = { name = "Gucci Сумка Global", chance = 0.3 },
-    ["123152452514671"] = { name = "Gucci Angry Glasses", chance = 0.001 },
-    ["128111835687158"] = { name = "Gucci Сумка", chance = 0.4 },
-    ["100680712845143"] = { name = "Gucci Flashtrek Left", chance = 0.02 },
-    ["108881975046000"] = { name = "Gucci Flashtrek Right", chance = 0.02 },
-    ["6783142181"] = { name = "Gucci Diamond-Framed Sunglasses", chance = 0.15 },
-    ["132695427826329"] = { name = "Chrome Hearts Crosses Beanie", chance = 0.3 },
-    ["125854200114380"] = { name = "Chrome Hearts Pink Beanie", chance = 0.6 },
-    ["135279723356196"] = { name = "Chrome Hearts Purple Beanie", chance = 0.4 },
-    ["125357035013809"] = { name = "Chrome Hearts Duffle Bag", chance = 0.3 },
-    ["87874224966717"] = { name = "Chrome Hearts Zebra Leather Bag", chance = 0.01 },
-    ["98026639580728"] = { name = "Chrome Hearts Camo Grunge Leather", chance = 0.08 },
-    ["107066313514551"] = { name = "Chrome Hearts Street Dirty Leather", chance = 0.7 },
-    ["120186577797659"] = { name = "Chrome Hearts Black Glasses", chance = 0.4 },
-    ["109761541704044"] = { name = "Chrome Hearts White Glasses", chance = 0.5 },
-    ["94612984046803"] = { name = "Chrome Hearts Cross Necklace Silver", chance = 0.02 },
-    ["96209722328474"] = { name = "Chrome Hearts Cross Chain Stacked", chance = 0.003 },
-    ["108747673267074"] = { name = "Chrome Hearts Silver Bracelet", chance = 0.15 },
-    ["98077128019618"] = { name = "Moncler Logo Beanie Black", chance = 0.04 },
-    ["6847974055"] = { name = "LV Monogram Bucket Hat", chance = 0.08 },
-    ["6847979005"] = { name = "LV Monogram Cap", chance = 0.2 },
-    ["7495514829"] = { name = "LV Keepall 55 Monogram", chance = 0.002 },
-    ["6847991145"] = { name = "LV Christopher Backpack", chance = 0.001 },
-    ["6847995221"] = { name = "LV District Messenger", chance = 0.015 },
-    ["7495518344"] = { name = "LV Bumbag Monogram", chance = 0.03 },
-    ["82737430290621"] = { name = "LV Boing 747", chance = 0.001 },
-    ["90893801653709"] = { name = "ERD Классическая Кепка", chance = 0.15 },
-    ["133988893738584"] = { name = "OffWhite Рюкзак", chance = 0.015 },
-    ["5460373518"] = { name = "OffWhite Сумка", chance = 0.5 },
-    ["102784336050801"] = { name = "Off White Out Of Office", chance = 0.3 },
-    ["89818592943048"] = { name = "NeNet Берет", chance = 0.09 },
-    ["118231617266072"] = { name = "Рюкзак NeNet", chance = 0.003 },
-    ["120296789227673"] = { name = "Amiri Бриллиантовая Цепочка", chance = 0.08 },
-    ["88660799116081"] = { name = "Amiri Skeleton", chance = 0.15 },
-    ["135241025390136"] = { name = "Amiri MA-1 Голубые", chance = 0.4 },
-    ["100351258840519"] = { name = "Goyard Graffiti Рюкзак", chance = 0.5 },
-    ["78438678589037"] = { name = "Goyard Желтый Рюкзак", chance = 0.8 },
-    ["100702892962731"] = { name = "Dior Лыжная Маска", chance = 0.08 },
-    ["82508073931214"] = { name = "Dior Рюкзак", chance = 0.12 },
-    ["92420837177718"] = { name = "Maison Margiela Шарф Черный", chance = 0.2 },
-    ["95715426059863"] = { name = "Maison Margiela Тоут", chance = 0.5 },
-    ["101158083917641"] = { name = "Maison Margiela Сумка Olivie", chance = 0.001 },
-    ["104467521699761"] = { name = "Rick Owens Drkshdw Рюкзак", chance = 0.5 },
-    ["85028391876506"] = { name = "Rick Owens Цепочка", chance = 0.001 },
-    ["140525091977150"] = { name = "RayBan Meta Smart Очки", chance = 0.001 },
-    ["108914282771759"] = { name = "Burberry Очки", chance = 0.3 },
-    ["71146177247977"] = { name = "Сумка George Gina & Lucy", chance = 0.001 },
-    ["124837470634133"] = { name = "1017 Alyx 9SM Mini Tank Красный Рюкзак", chance = 0.003 },
-    ["131705692271561"] = { name = "1017 Alyx 9SM Mini Tank Рюкзак", chance = 0.7 },
-    ["120823175427702"] = { name = "Raf Simons Тоут", chance = 0.007 },
-    ["72553364992946"] = { name = "Raf Simons x Eastpak Backpack", chance = 0.004 },
-    ["84288129132005"] = { name = "ARMY x BENZO TRUCKER HAT", chance = 0.001 },
-    ["136175219569950"] = { name = "Balenciaga Runner Черно-Белые", chance = 0.001 },
-    ["109837841091755"] = { name = "Rick Owens Большие Ботинки", chance = 0.001 },
-    ["134123291764431"] = { name = "Rick Owens Tractor", chance = 0.002 },
-    ["121105827477042"] = { name = "Balenciaga Runner Черные", chance = 0.003 },
-    ["117031897089009"] = { name = "Dior B23 Белые", chance = 0.003 },
-    ["140560964765540"] = { name = "Maison Margiela Future", chance = 0.003 },
-    ["88187426598743"] = { name = "Balenciaga Track Красные", chance = 0.004 },
-    ["107470281269035"] = { name = "Balenciaga Track Faded Черные", chance = 0.005 },
-    ["128837829969207"] = { name = "Dior B22 Черные", chance = 0.004 },
-    ["111856812062327"] = { name = "Balenciaga Track Burgery", chance = 0.008 },
-    ["83139787354012"] = { name = "Rick Owens GeoBasket", chance = 0.02 },
-    ["81932153540529"] = { name = "Balenciaga Track 2", chance = 0.04 },
-    ["117040887104405"] = { name = "Maison Margiela Replica", chance = 0.04 },
-    ["133663475114410"] = { name = "Balenciaga Track Orange", chance = 0.001 },
-    ["103190071706436"] = { name = "Balenciaga Duffel White", chance = 0.004 },
-    ["138830952908268"] = { name = "Gallery Dept Кепка Paint", chance = 0.008 },
-    ["116688991245886"] = { name = "USA Сумка", chance = 0.001 },
-    ["132852801767004"] = { name = "Balenciaga Flash Track", chance = 0.001 }
-}
+    -- ============================================
+    -- ПОЛНАЯ БАЗА ДАННЫХ АКСЕССУАРОВ
+    -- ============================================
+    local ACCESSORIES = {
+        ["14523189142"] = { name = "Maksakov Ghost", chance = 0.005 },
+        ["14615310668"] = { name = "Red Maksakov Ghost", chance = 0.08 },
+        ["14615304098"] = { name = "Pink Maksakov Ghost", chance = 0.08 },
+        ["14615307025"] = { name = "White Maksakov Ghost", chance = 0.1 },
+        ["85865866386997"] = { name = "Bape Маска", chance = 0.15 },
+        ["70765247277282"] = { name = "Baby Milo Рюкзак", chance = 0.003 },
+        ["115389802684898"] = { name = "Bape Рюкзак Camo", chance = 0.4 },
+        ["89846079310975"] = { name = "Bape Panda Shark Шапка", chance = 0.07 },
+        ["101486965390763"] = { name = "Red BAPE Tiger Backpack", chance = 0.6 },
+        ["130822108945941"] = { name = "MCM Рюкзак Красный", chance = 0.4 },
+        ["113057369240600"] = { name = "MCM Рюкзак", chance = 0.5 },
+        ["122914640223931"] = { name = "MCM Рюкзак Белый", chance = 0.6 },
+        ["116403395006931"] = { name = "MCM Рюкзак X SprayGround", chance = 0.04 },
+        ["71040675246222"] = { name = "CP Company Goggle Beanie Light Blue", chance = 0.5 },
+        ["96236164474655"] = { name = "CP Company Goggle Beanie Sail", chance = 0.3 },
+        ["84903025841942"] = { name = "CP Company Goggle Beanie Red", chance = 0.15 },
+        ["109191017280869"] = { name = "CP Company Goggle Beanie Pink", chance = 0.08 },
+        ["96068891445307"] = { name = "Balenciaga Alien Рюкзак", chance = 0.6 },
+        ["91603290514384"] = { name = "Balenciaga Gamer Distressed Cap", chance = 0.8 },
+        ["111982024415210"] = { name = "Ebay X Balenciaga Trucker", chance = 0.2 },
+        ["18147597296"] = { name = "Balenciaga Sports Icon Distressed Cap", chance = 0.07 },
+        ["117973635335653"] = { name = "Balenciaga x Chrome Cotton Blue", chance = 0.3 },
+        ["127277375292070"] = { name = "Balenciaga x Chrome Cotton Yellow", chance = 0.25 },
+        ["85692687437028"] = { name = "Balenciaga x Chrome Cotton White", chance = 0.15 },
+        ["89723156077371"] = { name = "Balenciaga Distressed White Cap", chance = 0.5 },
+        ["104126944758670"] = { name = "Balenciaga Blue Explorer", chance = 0.5 },
+        ["81550191875286"] = { name = "Balenciaga X Under Armour Duffel", chance = 0.8 },
+        ["106641690712546"] = { name = "Balenciaga Patchwork Bag", chance = 0.3 },
+        ["119024772298896"] = { name = "Balenciaga Graffiti City White", chance = 0.06 },
+        ["71591468298793"] = { name = "Balenciaga Graffiti City Black", chance = 0.05 },
+        ["99189491919957"] = { name = "Balenciaga X Under Armour Piercing", chance = 0.09 },
+        ["99692493214274"] = { name = "Balenciaga Garment Large Tote", chance = 0.02 },
+        ["134357315882448"] = { name = "Balenciaga Black Duffel", chance = 0.003 },
+        ["119249567021092"] = { name = "Balenciaga White Duffel", chance = 0.004 },
+        ["129539513019418"] = { name = "Balenciaga Reverse Xpander Sunglasses", chance = 0.02 },
+        ["129758048256121"] = { name = "Balenciaga Butterfly Shades", chance = 0.007 },
+        ["94671579377101"] = { name = "Balenciaga Black Spike Eyewear", chance = 0.002 },
+        ["92884235090318"] = { name = "Balenciaga Red Spike Eyewear", chance = 0.01 },
+        ["76486673718873"] = { name = "Gucci Goggles", chance = 0.3 },
+        ["16344213019"] = { name = "Gucci Ophidia GG Backpack", chance = 0.015 },
+        ["16301624126"] = { name = "Gucci Savoy Small Hat Box", chance = 0.04 },
+        ["115400611080426"] = { name = "Balenciaga x Gucci Duffle", chance = 0.008 },
+        ["6803402872"] = { name = "Gucci Dionysus Bag with Bee", chance = 0.04 },
+        ["104339539451912"] = { name = "Gucci Duffel Bag Beige", chance = 0.8 },
+        ["106839053930915"] = { name = "Gucci Duffel Bag Black", chance = 0.8 },
+        ["83731330884409"] = { name = "Blumarine Очки Классик", chance = 0.007 },
+        ["77676520738963"] = { name = "Gucci Маска", chance = 0.09 },
+        ["74493965787309"] = { name = "Gucci Сумка Global", chance = 0.3 },
+        ["123152452514671"] = { name = "Gucci Angry Glasses", chance = 0.001 },
+        ["128111835687158"] = { name = "Gucci Сумка", chance = 0.4 },
+        ["100680712845143"] = { name = "Gucci Flashtrek Left", chance = 0.02 },
+        ["108881975046000"] = { name = "Gucci Flashtrek Right", chance = 0.02 },
+        ["6783142181"] = { name = "Gucci Diamond-Framed Sunglasses", chance = 0.15 },
+        ["132695427826329"] = { name = "Chrome Hearts Crosses Beanie", chance = 0.3 },
+        ["125854200114380"] = { name = "Chrome Hearts Pink Beanie", chance = 0.6 },
+        ["135279723356196"] = { name = "Chrome Hearts Purple Beanie", chance = 0.4 },
+        ["125357035013809"] = { name = "Chrome Hearts Duffle Bag", chance = 0.3 },
+        ["87874224966717"] = { name = "Chrome Hearts Zebra Leather Bag", chance = 0.01 },
+        ["98026639580728"] = { name = "Chrome Hearts Camo Grunge Leather", chance = 0.08 },
+        ["107066313514551"] = { name = "Chrome Hearts Street Dirty Leather", chance = 0.7 },
+        ["120186577797659"] = { name = "Chrome Hearts Black Glasses", chance = 0.4 },
+        ["109761541704044"] = { name = "Chrome Hearts White Glasses", chance = 0.5 },
+        ["94612984046803"] = { name = "Chrome Hearts Cross Necklace Silver", chance = 0.02 },
+        ["96209722328474"] = { name = "Chrome Hearts Cross Chain Stacked", chance = 0.003 },
+        ["108747673267074"] = { name = "Chrome Hearts Silver Bracelet", chance = 0.15 },
+        ["98077128019618"] = { name = "Moncler Logo Beanie Black", chance = 0.04 },
+        ["6847974055"] = { name = "LV Monogram Bucket Hat", chance = 0.08 },
+        ["6847979005"] = { name = "LV Monogram Cap", chance = 0.2 },
+        ["7495514829"] = { name = "LV Keepall 55 Monogram", chance = 0.002 },
+        ["6847991145"] = { name = "LV Christopher Backpack", chance = 0.001 },
+        ["6847995221"] = { name = "LV District Messenger", chance = 0.015 },
+        ["7495518344"] = { name = "LV Bumbag Monogram", chance = 0.03 },
+        ["82737430290621"] = { name = "LV Boing 747", chance = 0.001 },
+        ["90893801653709"] = { name = "ERD Классическая Кепка", chance = 0.15 },
+        ["133988893738584"] = { name = "OffWhite Рюкзак", chance = 0.015 },
+        ["5460373518"] = { name = "OffWhite Сумка", chance = 0.5 },
+        ["102784336050801"] = { name = "Off White Out Of Office", chance = 0.3 },
+        ["89818592943048"] = { name = "NeNet Берет", chance = 0.09 },
+        ["118231617266072"] = { name = "Рюкзак NeNet", chance = 0.003 },
+        ["120296789227673"] = { name = "Amiri Бриллиантовая Цепочка", chance = 0.08 },
+        ["88660799116081"] = { name = "Amiri Skeleton", chance = 0.15 },
+        ["135241025390136"] = { name = "Amiri MA-1 Голубые", chance = 0.4 },
+        ["100351258840519"] = { name = "Goyard Graffiti Рюкзак", chance = 0.5 },
+        ["78438678589037"] = { name = "Goyard Желтый Рюкзак", chance = 0.8 },
+        ["100702892962731"] = { name = "Dior Лыжная Маска", chance = 0.08 },
+        ["82508073931214"] = { name = "Dior Рюкзак", chance = 0.12 },
+        ["92420837177718"] = { name = "Maison Margiela Шарф Черный", chance = 0.2 },
+        ["95715426059863"] = { name = "Maison Margiela Тоут", chance = 0.5 },
+        ["101158083917641"] = { name = "Maison Margiela Сумка Olivie", chance = 0.001 },
+        ["104467521699761"] = { name = "Rick Owens Drkshdw Рюкзак", chance = 0.5 },
+        ["85028391876506"] = { name = "Rick Owens Цепочка", chance = 0.001 },
+        ["140525091977150"] = { name = "RayBan Meta Smart Очки", chance = 0.001 },
+        ["108914282771759"] = { name = "Burberry Очки", chance = 0.3 },
+        ["71146177247977"] = { name = "Сумка George Gina & Lucy", chance = 0.001 },
+        ["124837470634133"] = { name = "1017 Alyx 9SM Mini Tank Красный Рюкзак", chance = 0.003 },
+        ["131705692271561"] = { name = "1017 Alyx 9SM Mini Tank Рюкзак", chance = 0.7 },
+        ["120823175427702"] = { name = "Raf Simons Тоут", chance = 0.007 },
+        ["72553364992946"] = { name = "Raf Simons x Eastpak Backpack", chance = 0.004 },
+        ["84288129132005"] = { name = "ARMY x BENZO TRUCKER HAT", chance = 0.001 },
+        ["136175219569950"] = { name = "Balenciaga Runner Черно-Белые", chance = 0.001 },
+        ["109837841091755"] = { name = "Rick Owens Большие Ботинки", chance = 0.001 },
+        ["134123291764431"] = { name = "Rick Owens Tractor", chance = 0.002 },
+        ["121105827477042"] = { name = "Balenciaga Runner Черные", chance = 0.003 },
+        ["117031897089009"] = { name = "Dior B23 Белые", chance = 0.003 },
+        ["140560964765540"] = { name = "Maison Margiela Future", chance = 0.003 },
+        ["88187426598743"] = { name = "Balenciaga Track Красные", chance = 0.004 },
+        ["107470281269035"] = { name = "Balenciaga Track Faded Черные", chance = 0.005 },
+        ["128837829969207"] = { name = "Dior B22 Черные", chance = 0.004 },
+        ["111856812062327"] = { name = "Balenciaga Track Burgery", chance = 0.008 },
+        ["83139787354012"] = { name = "Rick Owens GeoBasket", chance = 0.02 },
+        ["81932153540529"] = { name = "Balenciaga Track 2", chance = 0.04 },
+        ["117040887104405"] = { name = "Maison Margiela Replica", chance = 0.04 },
+        ["133663475114410"] = { name = "Balenciaga Track Orange", chance = 0.001 },
+        ["103190071706436"] = { name = "Balenciaga Duffel White", chance = 0.004 },
+        ["138830952908268"] = { name = "Gallery Dept Кепка Paint", chance = 0.008 },
+        ["116688991245886"] = { name = "USA Сумка", chance = 0.001 },
+        ["132852801767004"] = { name = "Balenciaga Flash Track", chance = 0.001 }
+    }
 
-_G.ASSETS = ASSETS
-_G.ACCESSORIES = ACCESSORIES
+    _G.ASSETS = ASSETS
+    _G.ACCESSORIES = ACCESSORIES
 
-local assetsCount = 0
-for _ in pairs(ASSETS) do assetsCount = assetsCount + 1 end
+    local assetsCount = 0
+    for _ in pairs(ASSETS) do assetsCount = assetsCount + 1 end
 
-local accessoriesCount = 0
-for _ in pairs(ACCESSORIES) do accessoriesCount = accessoriesCount + 1 end
+    local accessoriesCount = 0
+    for _ in pairs(ACCESSORIES) do accessoriesCount = accessoriesCount + 1 end
 
--- ============================================
--- ПЕРЕМЕННЫЕ
--- ============================================
-local espEnabled = false
-local espObjects = {}
-local espTracking = {}
-local autoBuyEnabled = false
-local autoBuyRunning = false
-local RARITY_COLOR = Color3.fromRGB(255, 180, 0)
+    -- ============================================
+    -- ПЕРЕМЕННЫЕ
+    -- ============================================
+    local espEnabled = false
+    local espObjects = {}
+    local espTracking = {}
+    local autoBuyEnabled = false
+    local autoBuyRunning = false
+    local RARITY_COLOR = Color3.fromRGB(255, 180, 0)
 
--- ============================================
--- ФУНКЦИИ ПОИСКА
--- ============================================
-local function getAllMannequins()
-    local results = {}
-    for _, zone in pairs(workspace:GetChildren()) do
-        if zone:IsA("Model") and zone.Name:match("Shop_ShopZone") then
-            local slots = zone:FindFirstChild("ItemSlots")
-            if slots then
-                for _, slot in pairs(slots:GetChildren()) do
-                    if slot.Name:match("Slot_") then
-                        local mannequin = slot:FindFirstChild("Mannequin")
-                        if mannequin and mannequin:IsA("Model") then
-                            local clothingData = {}
-                            for _, child in pairs(mannequin:GetChildren()) do
-                                if child:IsA("Shirt") then
-                                    clothingData.shirtId = child.ShirtTemplate:match("%d+")
-                                elseif child:IsA("Pants") then
-                                    clothingData.pantsId = child.PantsTemplate:match("%d+")
+    -- ============================================
+    -- ФУНКЦИИ ПОИСКА
+    -- ============================================
+    local function getAllMannequins()
+        local results = {}
+        for _, zone in pairs(workspace:GetChildren()) do
+            if zone:IsA("Model") and zone.Name:match("Shop_ShopZone") then
+                local slots = zone:FindFirstChild("ItemSlots")
+                if slots then
+                    for _, slot in pairs(slots:GetChildren()) do
+                        if slot.Name:match("Slot_") then
+                            local mannequin = slot:FindFirstChild("Mannequin")
+                            if mannequin and mannequin:IsA("Model") then
+                                local clothingData = {}
+                                for _, child in pairs(mannequin:GetChildren()) do
+                                    if child:IsA("Shirt") then
+                                        clothingData.shirtId = child.ShirtTemplate:match("%d+")
+                                    elseif child:IsA("Pants") then
+                                        clothingData.pantsId = child.PantsTemplate:match("%d+")
+                                    end
+                                end
+                                if (clothingData.shirtId and ASSETS[clothingData.shirtId]) or
+                                (clothingData.pantsId and ASSETS[clothingData.pantsId]) then
+                                    table.insert(results, {
+                                        mannequin = mannequin,
+                                        clothingData = clothingData,
+                                        slot = slot
+                                    })
                                 end
                             end
-                            if (clothingData.shirtId and ASSETS[clothingData.shirtId]) or
-                               (clothingData.pantsId and ASSETS[clothingData.pantsId]) then
+                        end
+                    end
+                end
+            end
+        end
+        return results
+    end
+
+    local function getAllAccessories()
+        local results = {}
+        for _, zone in pairs(workspace:GetChildren()) do
+            if zone:IsA("Model") and zone.Name:match("Shop_ShopZone") then
+                for _, child in pairs(zone:GetChildren()) do
+                    if child:IsA("Model") and child.Name:match("^M_") then
+                        local target = child:FindFirstChild("Handle") or child:FindFirstChild("Body")
+                        if target and target:IsA("MeshPart") and target.MeshId then
+                            local id = target.MeshId:match("%d+")
+                            if id and ACCESSORIES[id] then
                                 table.insert(results, {
-                                    mannequin = mannequin,
-                                    clothingData = clothingData,
-                                    slot = slot
+                                    model = child,
+                                    meshId = id
                                 })
                             end
                         end
@@ -274,880 +298,925 @@ local function getAllMannequins()
                 end
             end
         end
+        return results
     end
-    return results
-end
 
-local function getAllAccessories()
-    local results = {}
-    for _, zone in pairs(workspace:GetChildren()) do
-        if zone:IsA("Model") and zone.Name:match("Shop_ShopZone") then
-            for _, child in pairs(zone:GetChildren()) do
-                if child:IsA("Model") and child.Name:match("^M_") then
-                    local target = child:FindFirstChild("Handle") or child:FindFirstChild("Body")
-                    if target and target:IsA("MeshPart") and target.MeshId then
-                        local id = target.MeshId:match("%d+")
-                        if id and ACCESSORIES[id] then
-                            table.insert(results, {
-                                model = child,
-                                meshId = id
-                            })
+    -- ============================================
+    -- ESP ФУНКЦИИ
+    -- ============================================
+    local function createHighlight(model)
+        if model:FindFirstChild("ESP_H") then return end
+        local h = Instance.new("Highlight")
+        h.Name = "ESP_H"
+        h.Adornee = model
+        h.FillColor = RARITY_COLOR
+        h.OutlineColor = RARITY_COLOR
+        h.FillTransparency = 0.5
+        h.OutlineTransparency = 0
+        h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        h.Parent = model
+        table.insert(espObjects, h)
+    end
+
+    local function createLabel(model, text)
+        if model:FindFirstChild("ESP_L") then return end
+        local gui = Instance.new("BillboardGui")
+        gui.Name = "ESP_L"
+        gui.Adornee = model
+        gui.Size = UDim2.new(0, 200, 0, 40)
+        gui.StudsOffset = Vector3.new(0, 3, 0)
+        gui.AlwaysOnTop = true
+        gui.Parent = player:WaitForChild("PlayerGui")
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        label.BackgroundTransparency = 0.3
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.Font = Enum.Font.SourceSansBold
+        label.TextSize = 14
+        label.Text = text
+        label.Parent = gui
+        
+        table.insert(espObjects, gui)
+    end
+
+    local function clearESP()
+        for _, obj in pairs(espObjects) do
+            if obj and obj.Parent then
+                obj:Destroy()
+            end
+        end
+        espObjects = {}
+        espTracking = {}
+    end
+
+    local function enableESP()
+        if espEnabled then return end
+        espEnabled = true
+        clearESP()
+        
+        local found = 0
+        
+        -- Вещи
+        for _, data in pairs(getAllMannequins()) do
+            local names = {}
+            if data.clothingData.shirtId then
+                local item = ASSETS[data.clothingData.shirtId]
+                if item then table.insert(names, item.name) end
+            end
+            if data.clothingData.pantsId then
+                local item = ASSETS[data.clothingData.pantsId]
+                if item then table.insert(names, item.name) end
+            end
+            
+            if #names > 0 then
+                createHighlight(data.mannequin)
+                createLabel(data.mannequin, table.concat(names, " + "))
+                found = found + 1
+            end
+        end
+        
+        -- Аксессуары
+        for _, data in pairs(getAllAccessories()) do
+            local item = ACCESSORIES[data.meshId]
+            if item then
+                createHighlight(data.model)
+                createLabel(data.model, item.name)
+                found = found + 1
+            end
+        end
+        
+        print("✅ ESP включен! Найдено:", found)
+    end
+
+    local function disableESP()
+        espEnabled = false
+        clearESP()
+        print("❌ ESP выключен")
+    end
+
+    -- ============================================
+    -- АВТОБАЙ ФУНКЦИИ
+    -- ============================================
+    local function getPlayerMoney()
+        local money = 0
+        pcall(function()
+            local leaderstats = player:FindFirstChild("leaderstats")
+            if leaderstats then
+                local cash = leaderstats:FindFirstChild("Cash") or leaderstats:FindFirstChild("Money")
+                if cash then money = cash.Value end
+            end
+        end)
+        return money
+    end
+
+    local function getItemPrice(slot)
+        local price = 0
+        pcall(function()
+            if slot:GetAttribute("Price") then
+                price = slot:GetAttribute("Price")
+            end
+        end)
+        return price
+    end
+
+    local function getSlotId(slot)
+        if slot:GetAttribute("SlotId") then
+            return slot:GetAttribute("SlotId")
+        end
+        if slot.Name:match("Slot_%d+_%d+") then
+            return slot.Name
+        end
+        return slot.Name
+    end
+
+    local function teleportTo(position)
+        local character = player.Character
+        if not character then return false end
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if not hrp then return false end
+        hrp.CFrame = CFrame.new(position)
+        task.wait(0.15)
+        return true
+    end
+
+    -- Найти NPC в зоне
+    local function findNPCInZone(zoneName)
+        local zone = workspace:FindFirstChild(zoneName)
+        if not zone then return nil end
+        
+        for _, child in pairs(zone:GetDescendants()) do
+            if child:IsA("Model") and child.Name:lower():find("npc") then
+                local humanoidRootPart = child:FindFirstChild("HumanoidRootPart")
+                if humanoidRootPart then
+                    return humanoidRootPart
+                end
+            end
+        end
+        return nil
+    end
+
+    -- Взять предмет из слота (нажать E на манекене)
+    local function takeItem(slotId, slot)
+        print("📥 Беру предмет из слота, SlotId:", slotId)
+        
+        local prompt = nil
+        for _, desc in pairs(slot:GetDescendants()) do
+            if desc:IsA("ProximityPrompt") and desc.Enabled then
+                prompt = desc
+                print("🔘 Найден ProximityPrompt")
+                break
+            end
+        end
+        
+        if not prompt then
+            print("⚠️ ProximityPrompt не найден в слоте!")
+            return false
+        end
+        
+        print("⚡ Мгновенно нажимаю E на предмете...")
+        local success = pcall(function()
+            if fireproximityprompt then
+                fireproximityprompt(prompt, 0)
+                print("✅ Нажал E через fireproximityprompt")
+            else
+                prompt:InputHoldBegin()
+                prompt:InputHoldEnd()
+                print("✅ Нажал E")
+            end
+        end)
+        
+        if not success then
+            print("❌ Ошибка активации ProximityPrompt")
+            return false
+        end
+        
+        task.wait(0.3)
+        print("✅ Предмет должен быть в корзине")
+        return true
+    end
+
+    -- Взять аксессуар (нажать E на модели аксессуара)
+    local function takeAccessory(model)
+        print("📥 Беру аксессуар...")
+        
+        local prompt = nil
+        for _, desc in pairs(model:GetDescendants()) do
+            if desc:IsA("ProximityPrompt") and desc.Enabled then
+                prompt = desc
+                print("🔘 Найден ProximityPrompt")
+                break
+            end
+        end
+        
+        if not prompt then
+            print("⚠️ ProximityPrompt не найден у аксессуара!")
+            return false
+        end
+        
+        print("⚡ Мгновенно нажимаю E на аксессуаре...")
+        local success = pcall(function()
+            if fireproximityprompt then
+                fireproximityprompt(prompt, 0)
+                print("✅ Нажал E через fireproximityprompt")
+            else
+                prompt:InputHoldBegin()
+                prompt:InputHoldEnd()
+                print("✅ Нажал E")
+            end
+        end)
+        
+        if not success then
+            print("❌ Ошибка активации ProximityPrompt")
+            return false
+        end
+        
+        task.wait(0.3)
+        print("✅ Аксессуар должен быть в корзине")
+        return true
+    end
+
+    -- Получить цену аксессуара
+    local function getAccessoryPrice(model)
+        local price = 0
+        pcall(function()
+            if model:GetAttribute("Price") then
+                price = model:GetAttribute("Price")
+            end
+            -- Попробуем найти в родительских объектах
+            if price == 0 and model.Parent then
+                if model.Parent:GetAttribute("Price") then
+                    price = model.Parent:GetAttribute("Price")
+                end
+            end
+        end)
+        return price
+    end
+
+    -- Получить SlotId для аксессуара
+    local function getAccessorySlotId(model)
+        if model:GetAttribute("SlotId") then
+            return model:GetAttribute("SlotId")
+        end
+        if model.Parent and model.Parent:GetAttribute("SlotId") then
+            return model.Parent:GetAttribute("SlotId")
+        end
+        return model.Name
+    end
+
+    -- Открыть магазин NPC (нажать E на NPC)
+    local function openShopNPC(npc)
+        print("🛒 Открываю магазин NPC...")
+        
+        local prompt = nil
+        for _, desc in pairs(npc.Parent:GetDescendants()) do
+            if desc:IsA("ProximityPrompt") and desc.Enabled then
+                prompt = desc
+                print("🔘 Найден ProximityPrompt у NPC")
+                break
+            end
+        end
+        
+        if not prompt then
+            print("⚠️ ProximityPrompt не найден у NPC!")
+            return false
+        end
+        
+        print("⚡ Мгновенно нажимаю E на NPC...")
+        local success = pcall(function()
+            if fireproximityprompt then
+                fireproximityprompt(prompt, 0)
+                print("✅ Нажал E через fireproximityprompt")
+            else
+                prompt:InputHoldBegin()
+                prompt:InputHoldEnd()
+                print("✅ Нажал E")
+            end
+        end)
+        
+        if not success then
+            print("❌ Ошибка активации ProximityPrompt у NPC")
+            return false
+        end
+        
+        task.wait(0.2)
+        print("✅ GUI магазина должен быть открыт")
+        return true
+    end
+
+    -- Оплатить предмет (нажать PAY в GUI)
+    local function purchaseItem(slotId)
+        print("💳 Оплачиваю предмет, SlotId:", slotId)
+        
+        local playerGui = player:WaitForChild("PlayerGui")
+        task.wait(0.2)
+        
+        print("🔍 Ищу кнопку PAY в GUI...")
+        local payButtonFound = false
+        local buttonsChecked = 0
+        
+        for _, gui in pairs(playerGui:GetChildren()) do
+            if gui:IsA("ScreenGui") and gui.Enabled then
+                for _, button in pairs(gui:GetDescendants()) do
+                    if button:IsA("TextButton") and button.Visible then
+                        buttonsChecked = buttonsChecked + 1
+                        local text = button.Text:upper()
+                        local name = button.Name:upper()
+                        
+                        -- Выводим все кнопки для отладки
+                        if buttonsChecked <= 5 then
+                            print("   Кнопка:", button.Name, "| Текст:", button.Text)
+                        end
+                        
+                        -- Ищем кнопку оплаты по разным вариантам
+                        if text:find("PAY") or text:find("ОПЛАТИТЬ") or text:find("ЗАПЛАТИТЬ") or text:find("BUY") or text:find("КУПИТЬ") or
+                        name:find("PAY") or name:find("BUY") or name:find("PURCHASE") or name:find("CONFIRM") or name:find("ЗАПЛАТИТЬ") then
+                            print("💳 ✅ Найдена кнопка оплаты:", button.Name, "| Текст:", button.Text)
+                            payButtonFound = true
+                            
+                            -- Метод 1: getconnections
+                            pcall(function()
+                                if getconnections then
+                                    for _, connection in pairs(getconnections(button.MouseButton1Click)) do
+                                        connection:Fire()
+                                        print("✅ Нажал через getconnections")
+                                    end
+                                end
+                            end)
+                            
+                            -- Метод 2: обычный Fire
+                            pcall(function()
+                                button.MouseButton1Click:Fire()
+                                print("✅ Нажал через MouseButton1Click:Fire()")
+                            end)
+                            
+                            -- Метод 3: MouseButton1Down
+                            pcall(function()
+                                button.MouseButton1Down:Fire()
+                                button.MouseButton1Up:Fire()
+                                print("✅ Нажал через MouseButton1Down/Up")
+                            end)
+                            
+                            task.wait(0.5)
+                            break
                         end
                     end
                 end
+                if payButtonFound then break end
             end
-        end
-    end
-    return results
-end
-
--- ============================================
--- ESP ФУНКЦИИ
--- ============================================
-local function createHighlight(model)
-    if model:FindFirstChild("ESP_H") then return end
-    local h = Instance.new("Highlight")
-    h.Name = "ESP_H"
-    h.Adornee = model
-    h.FillColor = RARITY_COLOR
-    h.OutlineColor = RARITY_COLOR
-    h.FillTransparency = 0.5
-    h.OutlineTransparency = 0
-    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    h.Parent = model
-    table.insert(espObjects, h)
-end
-
-local function createLabel(model, text)
-    if model:FindFirstChild("ESP_L") then return end
-    local gui = Instance.new("BillboardGui")
-    gui.Name = "ESP_L"
-    gui.Adornee = model
-    gui.Size = UDim2.new(0, 200, 0, 40)
-    gui.StudsOffset = Vector3.new(0, 3, 0)
-    gui.AlwaysOnTop = true
-    gui.Parent = player:WaitForChild("PlayerGui")
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    label.BackgroundTransparency = 0.3
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.Font = Enum.Font.SourceSansBold
-    label.TextSize = 14
-    label.Text = text
-    label.Parent = gui
-    
-    table.insert(espObjects, gui)
-end
-
-local function clearESP()
-    for _, obj in pairs(espObjects) do
-        if obj and obj.Parent then
-            obj:Destroy()
-        end
-    end
-    espObjects = {}
-    espTracking = {}
-end
-
-local function enableESP()
-    if espEnabled then return end
-    espEnabled = true
-    clearESP()
-    
-    local found = 0
-    
-    -- Вещи
-    for _, data in pairs(getAllMannequins()) do
-        local names = {}
-        if data.clothingData.shirtId then
-            local item = ASSETS[data.clothingData.shirtId]
-            if item then table.insert(names, item.name) end
-        end
-        if data.clothingData.pantsId then
-            local item = ASSETS[data.clothingData.pantsId]
-            if item then table.insert(names, item.name) end
         end
         
-        if #names > 0 then
-            createHighlight(data.mannequin)
-            createLabel(data.mannequin, table.concat(names, " + "))
-            found = found + 1
-        end
-    end
-    
-    -- Аксессуары
-    for _, data in pairs(getAllAccessories()) do
-        local item = ACCESSORIES[data.meshId]
-        if item then
-            createHighlight(data.model)
-            createLabel(data.model, item.name)
-            found = found + 1
-        end
-    end
-    
-    print("✅ ESP включен! Найдено:", found)
-end
-
-local function disableESP()
-    espEnabled = false
-    clearESP()
-    print("❌ ESP выключен")
-end
-
--- ============================================
--- АВТОБАЙ ФУНКЦИИ
--- ============================================
-local function getPlayerMoney()
-    local money = 0
-    pcall(function()
-        local leaderstats = player:FindFirstChild("leaderstats")
-        if leaderstats then
-            local cash = leaderstats:FindFirstChild("Cash") or leaderstats:FindFirstChild("Money")
-            if cash then money = cash.Value end
-        end
-    end)
-    return money
-end
-
-local function getItemPrice(slot)
-    local price = 0
-    pcall(function()
-        if slot:GetAttribute("Price") then
-            price = slot:GetAttribute("Price")
-        end
-    end)
-    return price
-end
-
-local function getSlotId(slot)
-    if slot:GetAttribute("SlotId") then
-        return slot:GetAttribute("SlotId")
-    end
-    if slot.Name:match("Slot_%d+_%d+") then
-        return slot.Name
-    end
-    return slot.Name
-end
-
-local function teleportTo(position)
-    local character = player.Character
-    if not character then return false end
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-    hrp.CFrame = CFrame.new(position)
-    task.wait(0.15)
-    return true
-end
-
--- Найти NPC в зоне
-local function findNPCInZone(zoneName)
-    local zone = workspace:FindFirstChild(zoneName)
-    if not zone then return nil end
-    
-    for _, child in pairs(zone:GetDescendants()) do
-        if child:IsA("Model") and child.Name:lower():find("npc") then
-            local humanoidRootPart = child:FindFirstChild("HumanoidRootPart")
-            if humanoidRootPart then
-                return humanoidRootPart
-            end
-        end
-    end
-    return nil
-end
-
--- Взять предмет из слота (нажать E на манекене)
-local function takeItem(slotId, slot)
-    print("📥 Беру предмет из слота, SlotId:", slotId)
-    
-    local prompt = nil
-    for _, desc in pairs(slot:GetDescendants()) do
-        if desc:IsA("ProximityPrompt") and desc.Enabled then
-            prompt = desc
-            print("🔘 Найден ProximityPrompt")
-            break
-        end
-    end
-    
-    if not prompt then
-        print("⚠️ ProximityPrompt не найден в слоте!")
-        return false
-    end
-    
-    print("⚡ Мгновенно нажимаю E на предмете...")
-    local success = pcall(function()
-        if fireproximityprompt then
-            fireproximityprompt(prompt, 0)
-            print("✅ Нажал E через fireproximityprompt")
+        if not payButtonFound then
+            print("⚠️ Кнопка PAY не найдена! Проверено кнопок:", buttonsChecked)
+            print("⚠️ Попытка вызвать ремоут напрямую без GUI...")
         else
-            prompt:InputHoldBegin()
-            prompt:InputHoldEnd()
-            print("✅ Нажал E")
+            print("✅ Кнопка PAY нажата")
         end
-    end)
-    
-    if not success then
-        print("❌ Ошибка активации ProximityPrompt")
-        return false
-    end
-    
-    task.wait(0.3)
-    print("✅ Предмет должен быть в корзине")
-    return true
-end
-
--- Взять аксессуар (нажать E на модели аксессуара)
-local function takeAccessory(model)
-    print("📥 Беру аксессуар...")
-    
-    local prompt = nil
-    for _, desc in pairs(model:GetDescendants()) do
-        if desc:IsA("ProximityPrompt") and desc.Enabled then
-            prompt = desc
-            print("🔘 Найден ProximityPrompt")
-            break
-        end
-    end
-    
-    if not prompt then
-        print("⚠️ ProximityPrompt не найден у аксессуара!")
-        return false
-    end
-    
-    print("⚡ Мгновенно нажимаю E на аксессуаре...")
-    local success = pcall(function()
-        if fireproximityprompt then
-            fireproximityprompt(prompt, 0)
-            print("✅ Нажал E через fireproximityprompt")
-        else
-            prompt:InputHoldBegin()
-            prompt:InputHoldEnd()
-            print("✅ Нажал E")
-        end
-    end)
-    
-    if not success then
-        print("❌ Ошибка активации ProximityPrompt")
-        return false
-    end
-    
-    task.wait(0.3)
-    print("✅ Аксессуар должен быть в корзине")
-    return true
-end
-
--- Получить цену аксессуара
-local function getAccessoryPrice(model)
-    local price = 0
-    pcall(function()
-        if model:GetAttribute("Price") then
-            price = model:GetAttribute("Price")
-        end
-        -- Попробуем найти в родительских объектах
-        if price == 0 and model.Parent then
-            if model.Parent:GetAttribute("Price") then
-                price = model.Parent:GetAttribute("Price")
-            end
-        end
-    end)
-    return price
-end
-
--- Получить SlotId для аксессуара
-local function getAccessorySlotId(model)
-    if model:GetAttribute("SlotId") then
-        return model:GetAttribute("SlotId")
-    end
-    if model.Parent and model.Parent:GetAttribute("SlotId") then
-        return model.Parent:GetAttribute("SlotId")
-    end
-    return model.Name
-end
-
--- Открыть магазин NPC (нажать E на NPC)
-local function openShopNPC(npc)
-    print("🛒 Открываю магазин NPC...")
-    
-    local prompt = nil
-    for _, desc in pairs(npc.Parent:GetDescendants()) do
-        if desc:IsA("ProximityPrompt") and desc.Enabled then
-            prompt = desc
-            print("🔘 Найден ProximityPrompt у NPC")
-            break
-        end
-    end
-    
-    if not prompt then
-        print("⚠️ ProximityPrompt не найден у NPC!")
-        return false
-    end
-    
-    print("⚡ Мгновенно нажимаю E на NPC...")
-    local success = pcall(function()
-        if fireproximityprompt then
-            fireproximityprompt(prompt, 0)
-            print("✅ Нажал E через fireproximityprompt")
-        else
-            prompt:InputHoldBegin()
-            prompt:InputHoldEnd()
-            print("✅ Нажал E")
-        end
-    end)
-    
-    if not success then
-        print("❌ Ошибка активации ProximityPrompt у NPC")
-        return false
-    end
-    
-    task.wait(0.2)
-    print("✅ GUI магазина должен быть открыт")
-    return true
-end
-
--- Оплатить предмет (нажать PAY в GUI)
-local function purchaseItem(slotId)
-    print("💳 Оплачиваю предмет, SlotId:", slotId)
-    
-    local playerGui = player:WaitForChild("PlayerGui")
-    task.wait(0.2)
-    
-    print("🔍 Ищу кнопку PAY в GUI...")
-    local payButtonFound = false
-    local buttonsChecked = 0
-    
-    for _, gui in pairs(playerGui:GetChildren()) do
-        if gui:IsA("ScreenGui") and gui.Enabled then
-            for _, button in pairs(gui:GetDescendants()) do
-                if button:IsA("TextButton") and button.Visible then
-                    buttonsChecked = buttonsChecked + 1
-                    local text = button.Text:upper()
-                    local name = button.Name:upper()
-                    
-                    -- Выводим все кнопки для отладки
-                    if buttonsChecked <= 5 then
-                        print("   Кнопка:", button.Name, "| Текст:", button.Text)
-                    end
-                    
-                    -- Ищем кнопку оплаты по разным вариантам
-                    if text:find("PAY") or text:find("ОПЛАТИТЬ") or text:find("ЗАПЛАТИТЬ") or text:find("BUY") or text:find("КУПИТЬ") or
-                       name:find("PAY") or name:find("BUY") or name:find("PURCHASE") or name:find("CONFIRM") or name:find("ЗАПЛАТИТЬ") then
-                        print("💳 ✅ Найдена кнопка оплаты:", button.Name, "| Текст:", button.Text)
-                        payButtonFound = true
-                        
-                        -- Метод 1: getconnections
-                        pcall(function()
-                            if getconnections then
-                                for _, connection in pairs(getconnections(button.MouseButton1Click)) do
-                                    connection:Fire()
-                                    print("✅ Нажал через getconnections")
-                                end
-                            end
-                        end)
-                        
-                        -- Метод 2: обычный Fire
-                        pcall(function()
-                            button.MouseButton1Click:Fire()
-                            print("✅ Нажал через MouseButton1Click:Fire()")
-                        end)
-                        
-                        -- Метод 3: MouseButton1Down
-                        pcall(function()
-                            button.MouseButton1Down:Fire()
-                            button.MouseButton1Up:Fire()
-                            print("✅ Нажал через MouseButton1Down/Up")
-                        end)
-                        
-                        task.wait(0.5)
-                        break
-                    end
-                end
-            end
-            if payButtonFound then break end
-        end
-    end
-    
-    if not payButtonFound then
-        print("⚠️ Кнопка PAY не найдена! Проверено кнопок:", buttonsChecked)
-        print("⚠️ Попытка вызвать ремоут напрямую без GUI...")
-    else
-        print("✅ Кнопка PAY нажата")
-    end
-    
-    task.wait(0.3)
-    print("📡 Вызываю ремоут подтверждения покупки через RemoteEvent...")
-    local success, result = pcall(function()
-        game:GetService("ReplicatedStorage"):WaitForChild("ShopRemotes"):WaitForChild("ConfirmPurchase"):FireServer("ShopPurchase", {slotId})
-    end)
-    
-    if success then
-        print("✅ Покупка выполнена через RemoteEvent!")
-        return true
-    else
-        print("❌ Ошибка покупки:", result)
-        return false
-    end
-end
-
-local function buyItem(mannequinData)
-    if autoBuyRunning then
-        return false, "Автобай уже работает"
-    end
-    
-    autoBuyRunning = true
-    
-    local slot = mannequinData.slot
-    local mannequin = mannequinData.mannequin
-    local clothingData = mannequinData.clothingData
-    
-    -- Проверка существования манекена
-    if not mannequin or not mannequin.Parent then
-        autoBuyRunning = false
-        print("⚠️ Манекен уже не существует")
-        return false, "Манекен не существует"
-    end
-    
-    -- Получаем имя вещи
-    local itemNames = {}
-    if clothingData.shirtId then
-        local item = ASSETS[clothingData.shirtId]
-        if item then table.insert(itemNames, item.name) end
-    end
-    if clothingData.pantsId then
-        local item = ASSETS[clothingData.pantsId]
-        if item then table.insert(itemNames, item.name) end
-    end
-    local itemName = table.concat(itemNames, " + ")
-    
-    -- Проверка баланса
-    local playerMoney = getPlayerMoney()
-    local itemPrice = getItemPrice(slot)
-    
-    print("")
-    print("═══════════════════════════════")
-    print("🛒 ПОКУПАЮ:", itemName)
-    print("💰 Баланс:", playerMoney, "$")
-    print("💵 Цена:", itemPrice, "$")
-    
-    if itemPrice > 0 and playerMoney < itemPrice then
-        autoBuyRunning = false
-        print("❌ НЕ ХВАТАЕТ ДЕНЕГ!")
-        print("═══════════════════════════════")
-        return false, "Недостаточно денег"
-    end
-    
-    print("✅ Денег достаточно!")
-    print("═══════════════════════════════")
-    
-    -- Получаем SlotId
-    local slotId = getSlotId(slot)
-    if not slotId then
-        autoBuyRunning = false
-        print("❌ SlotId не найден")
-        return false, "SlotId не найден"
-    end
-    print("🆔 SlotId:", slotId)
-    
-    -- Получаем зону
-    local zoneName = slot.Parent.Parent.Name
-    print("📍 Зона:", zoneName)
-    
-    -- Шаг 1: Телепорт к предмету
-    print("")
-    print("🚀 ШАГ 1: Телепортируюсь к предмету...")
-    local mannequinPos = mannequin:FindFirstChild("HumanoidRootPart") or mannequin:FindFirstChild("Torso") or mannequin.PrimaryPart
-    if not mannequinPos then
-        autoBuyRunning = false
-        print("❌ Позиция манекена не найдена")
-        return false, "Позиция манекена не найдена"
-    end
-    
-    local targetPos = mannequinPos.Position + Vector3.new(0, 0, 1.5)
-    if not teleportTo(targetPos) then
-        autoBuyRunning = false
-        print("❌ Ошибка телепорта к предмету")
-        return false, "Ошибка телепорта к предмету"
-    end
-    print("✅ Телепортирован к предмету")
-    
-    task.wait(0.2)
-    
-    -- Шаг 2: Взять предмет (нажать E)
-    print("")
-    print("👕 ШАГ 2: Нажимаю E на предмете...")
-    if not takeItem(slotId, slot) then
-        autoBuyRunning = false
-        print("❌ Не удалось взять предмет")
-        return false, "Не удалось взять предмет"
-    end
-    print("✅ Предмет взят и в корзине")
-    
-    task.wait(0.3)
-    
-    -- Шаг 3: Найти NPC
-    print("")
-    print("🔍 ШАГ 3: Ищу NPC в зоне...")
-    local npc = findNPCInZone(zoneName)
-    if not npc then
-        autoBuyRunning = false
-        print("❌ NPC не найден в зоне")
-        return false, "NPC не найден в зоне"
-    end
-    print("✅ NPC найден")
-    
-    -- Шаг 4: Телепорт к NPC
-    print("")
-    print("🚀 ШАГ 4: Телепортируюсь к NPC...")
-    local npcTargetPos = npc.Position + Vector3.new(0, 0, 3)
-    if not teleportTo(npcTargetPos) then
-        autoBuyRunning = false
-        print("❌ Ошибка телепорта к NPC")
-        return false, "Ошибка телепорта к NPC"
-    end
-    print("✅ Телепортирован к NPC")
-    
-    task.wait(0.2)
-    
-    -- Шаг 5: Открыть магазин (нажать E на NPC)
-    print("")
-    print("🛒 ШАГ 5: Нажимаю E на NPC...")
-    if not openShopNPC(npc) then
-        autoBuyRunning = false
-        print("❌ Не удалось открыть магазин")
-        return false, "Не удалось открыть магазин"
-    end
-    print("✅ Магазин открыт")
-    
-    task.wait(0.2)
-    
-    -- Шаг 6: Оплата (нажать PAY)
-    print("")
-    print("💳 ШАГ 6: Нажимаю PAY...")
-    if not purchaseItem(slotId) then
-        autoBuyRunning = false
-        print("❌ Ошибка при оплате")
-        return false, "Ошибка при оплате"
-    end
-    
-    task.wait(0.2)
-    
-    autoBuyRunning = false
-    print("")
-    print("═══════════════════════════════")
-    print("✅ УСПЕШНО КУПЛЕНО:", itemName)
-    print("═══════════════════════════════")
-    print("")
-    return true, "Успешно куплено"
-end
-
-local function buyAccessory(accessoryData)
-    if autoBuyRunning then
-        return false, "Автобай уже работает"
-    end
-    
-    autoBuyRunning = true
-    
-    local model = accessoryData.model
-    local meshId = accessoryData.meshId
-    
-    -- Проверка существования модели
-    if not model or not model.Parent then
-        autoBuyRunning = false
-        print("⚠️ Аксессуар уже не существует")
-        return false, "Аксессуар не существует"
-    end
-    
-    -- Получаем имя аксессуара
-    local item = ACCESSORIES[meshId]
-    if not item then
-        autoBuyRunning = false
-        print("⚠️ Аксессуар не найден в базе данных")
-        return false, "Аксессуар не найден в базе"
-    end
-    local itemName = item.name
-    
-    -- Проверка баланса
-    local playerMoney = getPlayerMoney()
-    local itemPrice = getAccessoryPrice(model)
-    
-    print("")
-    print("═══════════════════════════════")
-    print("🛒 ПОКУПАЮ АКСЕССУАР:", itemName)
-    print("💰 Баланс:", playerMoney, "$")
-    print("💵 Цена:", itemPrice, "$")
-    
-    if itemPrice > 0 and playerMoney < itemPrice then
-        autoBuyRunning = false
-        print("❌ НЕ ХВАТАЕТ ДЕНЕГ!")
-        print("═══════════════════════════════")
-        return false, "Недостаточно денег"
-    end
-    
-    print("✅ Денег достаточно!")
-    print("═══════════════════════════════")
-    
-    -- Получаем SlotId
-    local slotId = getAccessorySlotId(model)
-    print("🆔 SlotId:", slotId)
-    
-    -- Получаем зону
-    local zoneName = model.Parent.Name
-    print("📍 Зона:", zoneName)
-    
-    -- Шаг 1: Телепорт к аксессуару
-    print("")
-    print("🚀 ШАГ 1: Телепортируюсь к аксессуару...")
-    local accessoryPos = model:FindFirstChild("Handle") or model:FindFirstChild("Body") or model.PrimaryPart
-    if not accessoryPos then
-        autoBuyRunning = false
-        print("❌ Позиция аксессуара не найдена")
-        return false, "Позиция аксессуара не найдена"
-    end
-    
-    local targetPos = accessoryPos.Position + Vector3.new(0, 0, 1.5)
-    if not teleportTo(targetPos) then
-        autoBuyRunning = false
-        print("❌ Ошибка телепорта к аксессуару")
-        return false, "Ошибка телепорта к аксессуару"
-    end
-    print("✅ Телепортирован к аксессуару")
-    
-    task.wait(0.2)
-    
-    -- Шаг 2: Взять аксессуар (нажать E)
-    print("")
-    print("👜 ШАГ 2: Нажимаю E на аксессуаре...")
-    if not takeAccessory(model) then
-        autoBuyRunning = false
-        print("❌ Не удалось взять аксессуар")
-        return false, "Не удалось взять аксессуар"
-    end
-    print("✅ Аксессуар взят и в корзине")
-    
-    task.wait(0.3)
-    
-    -- Шаг 3: Найти NPC
-    print("")
-    print("🔍 ШАГ 3: Ищу NPC в зоне...")
-    local npc = findNPCInZone(zoneName)
-    if not npc then
-        autoBuyRunning = false
-        print("❌ NPC не найден в зоне")
-        return false, "NPC не найден в зоне"
-    end
-    print("✅ NPC найден")
-    
-    -- Шаг 4: Телепорт к NPC
-    print("")
-    print("🚀 ШАГ 4: Телепортируюсь к NPC...")
-    local npcTargetPos = npc.Position + Vector3.new(0, 0, 3)
-    if not teleportTo(npcTargetPos) then
-        autoBuyRunning = false
-        print("❌ Ошибка телепорта к NPC")
-        return false, "Ошибка телепорта к NPC"
-    end
-    print("✅ Телепортирован к NPC")
-    
-    task.wait(0.2)
-    
-    -- Шаг 5: Открыть магазин (нажать E на NPC)
-    print("")
-    print("🛒 ШАГ 5: Нажимаю E на NPC...")
-    if not openShopNPC(npc) then
-        autoBuyRunning = false
-        print("❌ Не удалось открыть магазин")
-        return false, "Не удалось открыть магазин"
-    end
-    print("✅ Магазин открыт")
-    
-    task.wait(0.2)
-    
-    -- Шаг 6: Оплата (нажать PAY)
-    print("")
-    print("💳 ШАГ 6: Нажимаю PAY...")
-    if not purchaseItem(slotId) then
-        autoBuyRunning = false
-        print("❌ Ошибка при оплате")
-        return false, "Ошибка при оплате"
-    end
-    
-    task.wait(0.2)
-    
-    autoBuyRunning = false
-    print("")
-    print("═══════════════════════════════")
-    print("✅ УСПЕШНО КУПЛЕН АКСЕССУАР:", itemName)
-    print("═══════════════════════════════")
-    print("")
-    return true, "Успешно куплено"
-end
-
-local function startAutoBuy()
-    if not espEnabled then
-        return false, "Сначала включи ESP!"
-    end
-    
-    autoBuyEnabled = true
-    print("🤖 Автобай запущен!")
-    print("💰 Проверяю баланс...")
-    
-    local playerMoney = getPlayerMoney()
-    print("💵 Ваш баланс:", playerMoney, "$")
-    
-    task.spawn(function()
-        local mannequins = getAllMannequins()
-        local accessories = getAllAccessories()
-        local boughtClothing = 0
-        local boughtAccessories = 0
-        local skipped = 0
         
-        print("🔍 Найдено вещей для покупки:", #mannequins)
-        print("🔍 Найдено аксессуаров для покупки:", #accessories)
+        task.wait(0.3)
+        print("📡 Вызываю ремоут подтверждения покупки через RemoteEvent...")
+        local success, result = pcall(function()
+            game:GetService("ReplicatedStorage"):WaitForChild("ShopRemotes"):WaitForChild("ConfirmPurchase"):FireServer("ShopPurchase", {slotId})
+        end)
+        
+        if success then
+            print("✅ Покупка выполнена через RemoteEvent!")
+            return true
+        else
+            print("❌ Ошибка покупки:", result)
+            return false
+        end
+    end
+
+    local function buyItem(mannequinData)
+        if autoBuyRunning then
+            return false, "Автобай уже работает"
+        end
+        
+        autoBuyRunning = true
+        
+        local slot = mannequinData.slot
+        local mannequin = mannequinData.mannequin
+        local clothingData = mannequinData.clothingData
+        
+        -- Проверка существования манекена
+        if not mannequin or not mannequin.Parent then
+            autoBuyRunning = false
+            print("⚠️ Манекен уже не существует")
+            return false, "Манекен не существует"
+        end
+        
+        -- Получаем имя вещи
+        local itemNames = {}
+        if clothingData.shirtId then
+            local item = ASSETS[clothingData.shirtId]
+            if item then table.insert(itemNames, item.name) end
+        end
+        if clothingData.pantsId then
+            local item = ASSETS[clothingData.pantsId]
+            if item then table.insert(itemNames, item.name) end
+        end
+        local itemName = table.concat(itemNames, " + ")
+        
+        -- Проверка баланса
+        local playerMoney = getPlayerMoney()
+        local itemPrice = getItemPrice(slot)
+        
         print("")
+        print("═══════════════════════════════")
+        print("🛒 ПОКУПАЮ:", itemName)
+        print("💰 Баланс:", playerMoney, "$")
+        print("💵 Цена:", itemPrice, "$")
         
-        -- Покупка вещей
-        print("👕 === ПОКУПКА ВЕЩЕЙ ===")
-        for _, data in pairs(mannequins) do
-            if not autoBuyEnabled then
-                print("⏸️ Автобай остановлен")
-                break
-            end
-            
-            local success, message = buyItem(data)
-            if success then
-                boughtClothing = boughtClothing + 1
-            elseif message == "Недостаточно денег" then
-                skipped = skipped + 1
-            end
-            
-            task.wait(0.5)
+        if itemPrice > 0 and playerMoney < itemPrice then
+            autoBuyRunning = false
+            print("❌ НЕ ХВАТАЕТ ДЕНЕГ!")
+            print("═══════════════════════════════")
+            return false, "Недостаточно денег"
         end
         
-        -- Покупка аксессуаров
-        if autoBuyEnabled then
+        print("✅ Денег достаточно!")
+        print("═══════════════════════════════")
+        
+        -- Получаем SlotId
+        local slotId = getSlotId(slot)
+        if not slotId then
+            autoBuyRunning = false
+            print("❌ SlotId не найден")
+            return false, "SlotId не найден"
+        end
+        print("🆔 SlotId:", slotId)
+        
+        -- Получаем зону
+        local zoneName = slot.Parent.Parent.Name
+        print("📍 Зона:", zoneName)
+        
+        -- Шаг 1: Телепорт к предмету
+        print("")
+        print("🚀 ШАГ 1: Телепортируюсь к предмету...")
+        local mannequinPos = mannequin:FindFirstChild("HumanoidRootPart") or mannequin:FindFirstChild("Torso") or mannequin.PrimaryPart
+        if not mannequinPos then
+            autoBuyRunning = false
+            print("❌ Позиция манекена не найдена")
+            return false, "Позиция манекена не найдена"
+        end
+        
+        local targetPos = mannequinPos.Position + Vector3.new(0, 0, 1.5)
+        if not teleportTo(targetPos) then
+            autoBuyRunning = false
+            print("❌ Ошибка телепорта к предмету")
+            return false, "Ошибка телепорта к предмету"
+        end
+        print("✅ Телепортирован к предмету")
+        
+        task.wait(0.2)
+        
+        -- Шаг 2: Взять предмет (нажать E)
+        print("")
+        print("👕 ШАГ 2: Нажимаю E на предмете...")
+        if not takeItem(slotId, slot) then
+            autoBuyRunning = false
+            print("❌ Не удалось взять предмет")
+            return false, "Не удалось взять предмет"
+        end
+        print("✅ Предмет взят и в корзине")
+        
+        task.wait(0.3)
+        
+        -- Шаг 3: Найти NPC
+        print("")
+        print("🔍 ШАГ 3: Ищу NPC в зоне...")
+        local npc = findNPCInZone(zoneName)
+        if not npc then
+            autoBuyRunning = false
+            print("❌ NPC не найден в зоне")
+            return false, "NPC не найден в зоне"
+        end
+        print("✅ NPC найден")
+        
+        -- Шаг 4: Телепорт к NPC
+        print("")
+        print("🚀 ШАГ 4: Телепортируюсь к NPC...")
+        local npcTargetPos = npc.Position + Vector3.new(0, 0, 3)
+        if not teleportTo(npcTargetPos) then
+            autoBuyRunning = false
+            print("❌ Ошибка телепорта к NPC")
+            return false, "Ошибка телепорта к NPC"
+        end
+        print("✅ Телепортирован к NPC")
+        
+        task.wait(0.2)
+        
+        -- Шаг 5: Открыть магазин (нажать E на NPC)
+        print("")
+        print("🛒 ШАГ 5: Нажимаю E на NPC...")
+        if not openShopNPC(npc) then
+            autoBuyRunning = false
+            print("❌ Не удалось открыть магазин")
+            return false, "Не удалось открыть магазин"
+        end
+        print("✅ Магазин открыт")
+        
+        task.wait(0.2)
+        
+        -- Шаг 6: Оплата (нажать PAY)
+        print("")
+        print("💳 ШАГ 6: Нажимаю PAY...")
+        if not purchaseItem(slotId) then
+            autoBuyRunning = false
+            print("❌ Ошибка при оплате")
+            return false, "Ошибка при оплате"
+        end
+        
+        task.wait(0.2)
+        
+        autoBuyRunning = false
+        print("")
+        print("═══════════════════════════════")
+        print("✅ УСПЕШНО КУПЛЕНО:", itemName)
+        print("═══════════════════════════════")
+        print("")
+        return true, "Успешно куплено"
+    end
+
+    local function buyAccessory(accessoryData)
+        if autoBuyRunning then
+            return false, "Автобай уже работает"
+        end
+        
+        autoBuyRunning = true
+        
+        local model = accessoryData.model
+        local meshId = accessoryData.meshId
+        
+        -- Проверка существования модели
+        if not model or not model.Parent then
+            autoBuyRunning = false
+            print("⚠️ Аксессуар уже не существует")
+            return false, "Аксессуар не существует"
+        end
+        
+        -- Получаем имя аксессуара
+        local item = ACCESSORIES[meshId]
+        if not item then
+            autoBuyRunning = false
+            print("⚠️ Аксессуар не найден в базе данных")
+            return false, "Аксессуар не найден в базе"
+        end
+        local itemName = item.name
+        
+        -- Проверка баланса
+        local playerMoney = getPlayerMoney()
+        local itemPrice = getAccessoryPrice(model)
+        
+        print("")
+        print("═══════════════════════════════")
+        print("🛒 ПОКУПАЮ АКСЕССУАР:", itemName)
+        print("💰 Баланс:", playerMoney, "$")
+        print("💵 Цена:", itemPrice, "$")
+        
+        if itemPrice > 0 and playerMoney < itemPrice then
+            autoBuyRunning = false
+            print("❌ НЕ ХВАТАЕТ ДЕНЕГ!")
+            print("═══════════════════════════════")
+            return false, "Недостаточно денег"
+        end
+        
+        print("✅ Денег достаточно!")
+        print("═══════════════════════════════")
+        
+        -- Получаем SlotId
+        local slotId = getAccessorySlotId(model)
+        print("🆔 SlotId:", slotId)
+        
+        -- Получаем зону
+        local zoneName = model.Parent.Name
+        print("📍 Зона:", zoneName)
+        
+        -- Шаг 1: Телепорт к аксессуару
+        print("")
+        print("🚀 ШАГ 1: Телепортируюсь к аксессуару...")
+        local accessoryPos = model:FindFirstChild("Handle") or model:FindFirstChild("Body") or model.PrimaryPart
+        if not accessoryPos then
+            autoBuyRunning = false
+            print("❌ Позиция аксессуара не найдена")
+            return false, "Позиция аксессуара не найдена"
+        end
+        
+        local targetPos = accessoryPos.Position + Vector3.new(0, 0, 1.5)
+        if not teleportTo(targetPos) then
+            autoBuyRunning = false
+            print("❌ Ошибка телепорта к аксессуару")
+            return false, "Ошибка телепорта к аксессуару"
+        end
+        print("✅ Телепортирован к аксессуару")
+        
+        task.wait(0.2)
+        
+        -- Шаг 2: Взять аксессуар (нажать E)
+        print("")
+        print("👜 ШАГ 2: Нажимаю E на аксессуаре...")
+        if not takeAccessory(model) then
+            autoBuyRunning = false
+            print("❌ Не удалось взять аксессуар")
+            return false, "Не удалось взять аксессуар"
+        end
+        print("✅ Аксессуар взят и в корзине")
+        
+        task.wait(0.3)
+        
+        -- Шаг 3: Найти NPC
+        print("")
+        print("🔍 ШАГ 3: Ищу NPC в зоне...")
+        local npc = findNPCInZone(zoneName)
+        if not npc then
+            autoBuyRunning = false
+            print("❌ NPC не найден в зоне")
+            return false, "NPC не найден в зоне"
+        end
+        print("✅ NPC найден")
+        
+        -- Шаг 4: Телепорт к NPC
+        print("")
+        print("🚀 ШАГ 4: Телепортируюсь к NPC...")
+        local npcTargetPos = npc.Position + Vector3.new(0, 0, 3)
+        if not teleportTo(npcTargetPos) then
+            autoBuyRunning = false
+            print("❌ Ошибка телепорта к NPC")
+            return false, "Ошибка телепорта к NPC"
+        end
+        print("✅ Телепортирован к NPC")
+        
+        task.wait(0.2)
+        
+        -- Шаг 5: Открыть магазин (нажать E на NPC)
+        print("")
+        print("🛒 ШАГ 5: Нажимаю E на NPC...")
+        if not openShopNPC(npc) then
+            autoBuyRunning = false
+            print("❌ Не удалось открыть магазин")
+            return false, "Не удалось открыть магазин"
+        end
+        print("✅ Магазин открыт")
+        
+        task.wait(0.2)
+        
+        -- Шаг 6: Оплата (нажать PAY)
+        print("")
+        print("💳 ШАГ 6: Нажимаю PAY...")
+        if not purchaseItem(slotId) then
+            autoBuyRunning = false
+            print("❌ Ошибка при оплате")
+            return false, "Ошибка при оплате"
+        end
+        
+        task.wait(0.2)
+        
+        autoBuyRunning = false
+        print("")
+        print("═══════════════════════════════")
+        print("✅ УСПЕШНО КУПЛЕН АКСЕССУАР:", itemName)
+        print("═══════════════════════════════")
+        print("")
+        return true, "Успешно куплено"
+    end
+
+    local function startAutoBuy()
+        if not espEnabled then
+            return false, "Сначала включи ESP!"
+        end
+        
+        autoBuyEnabled = true
+        print("🤖 Автобай запущен!")
+        print("💰 Проверяю баланс...")
+        
+        local playerMoney = getPlayerMoney()
+        print("💵 Ваш баланс:", playerMoney, "$")
+        
+        task.spawn(function()
+            local mannequins = getAllMannequins()
+            local accessories = getAllAccessories()
+            local boughtClothing = 0
+            local boughtAccessories = 0
+            local skipped = 0
+            
+            print("🔍 Найдено вещей для покупки:", #mannequins)
+            print("🔍 Найдено аксессуаров для покупки:", #accessories)
             print("")
-            print("👜 === ПОКУПКА АКСЕССУАРОВ ===")
-            for _, data in pairs(accessories) do
+            
+            -- Покупка вещей
+            print("👕 === ПОКУПКА ВЕЩЕЙ ===")
+            for _, data in pairs(mannequins) do
                 if not autoBuyEnabled then
                     print("⏸️ Автобай остановлен")
                     break
                 end
                 
-                local success, message = buyAccessory(data)
+                local success, message = buyItem(data)
                 if success then
-                    boughtAccessories = boughtAccessories + 1
+                    boughtClothing = boughtClothing + 1
                 elseif message == "Недостаточно денег" then
                     skipped = skipped + 1
                 end
                 
                 task.wait(0.5)
             end
+            
+            -- Покупка аксессуаров
+            if autoBuyEnabled then
+                print("")
+                print("👜 === ПОКУПКА АКСЕССУАРОВ ===")
+                for _, data in pairs(accessories) do
+                    if not autoBuyEnabled then
+                        print("⏸️ Автобай остановлен")
+                        break
+                    end
+                    
+                    local success, message = buyAccessory(data)
+                    if success then
+                        boughtAccessories = boughtAccessories + 1
+                    elseif message == "Недостаточно денег" then
+                        skipped = skipped + 1
+                    end
+                    
+                    task.wait(0.5)
+                end
+            end
+            
+            autoBuyEnabled = false
+            print("")
+            print("🏁 Автобай завершен!")
+            print("✅ Куплено вещей:", boughtClothing)
+            print("✅ Куплено аксессуаров:", boughtAccessories)
+            print("⏭️ Пропущено (нет денег):", skipped)
+        end)
+        
+        return true, "Автобай запущен"
+    end
+
+    local function stopAutoBuy()
+        autoBuyEnabled = false
+        autoBuyRunning = false
+        print("⏹️ Автобай остановлен")
+    end
+
+    -- ============================================
+    -- RAYFIELD GUI
+    -- ============================================
+    print("🎨 Загружаю Rayfield GUI...")
+
+    local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+    local Window = Rayfield:CreateWindow({
+        Name = "🔥 Safe ESP & AutoBuy",
+        LoadingTitle = "Safe ESP",
+        LoadingSubtitle = "by Kiro",
+        ConfigurationSaving = {
+            Enabled = false
+        },
+        Discord = {
+            Enabled = false
+        },
+        KeySystem = false,
+    })
+
+    local MainTab = Window:CreateTab("🎯 Основное", 4483362458)
+
+    MainTab:CreateSection("ESP")
+
+    local ESPToggle = MainTab:CreateToggle({
+        Name = "Включить ESP",
+        CurrentValue = false,
+        Flag = "ESPToggle",
+        Callback = function(Value)
+            if Value then
+                enableESP()
+            else
+                disableESP()
+            end
+        end,
+    })
+
+    MainTab:CreateSection("Автобай")
+
+    MainTab:CreateButton({
+        Name = "🤖 Запустить автобай",
+        Callback = function()
+            if not autoBuyEnabled then
+                local success, message = startAutoBuy()
+                if success then
+                    Rayfield:Notify({
+                        Title = "Автобай",
+                        Content = "Автобай запущен!",
+                        Duration = 3,
+                        Image = 4483362458,
+                    })
+                else
+                    Rayfield:Notify({
+                        Title = "Ошибка",
+                        Content = message,
+                        Duration = 5,
+                        Image = 4483362458,
+                    })
+                end
+            end
+        end,
+    })
+
+    MainTab:CreateButton({
+        Name = "⏹️ Остановить автобай",
+        Callback = function()
+            stopAutoBuy()
+            Rayfield:Notify({
+                Title = "Автобай",
+                Content = "Автобай остановлен!",
+                Duration = 3,
+                Image = 4483362458,
+            })
+        end,
+    })
+
+    -- ============================================
+    -- ВКЛАДКА ТЕЛЕПОРТОВ
+    -- ============================================
+    local TeleportTab = Window:CreateTab("🚀 Телепорты", 4483362458)
+
+    TeleportTab:CreateSection("Быстрые телепорты")
+
+    -- Функция телепортации
+    local function teleportToPosition(position, locationName)
+        local character = player.Character
+        if not character then
+            Rayfield:Notify({
+                Title = "Ошибка",
+                Content = "Персонаж не найден!",
+                Duration = 3,
+                Image = 4483362458,
+            })
+            return false
         end
         
-        autoBuyEnabled = false
-        print("")
-        print("🏁 Автобай завершен!")
-        print("✅ Куплено вещей:", boughtClothing)
-        print("✅ Куплено аксессуаров:", boughtAccessories)
-        print("⏭️ Пропущено (нет денег):", skipped)
-    end)
-    
-    return true, "Автобай запущен"
-end
-
-local function stopAutoBuy()
-    autoBuyEnabled = false
-    autoBuyRunning = false
-    print("⏹️ Автобай остановлен")
-end
-
--- ============================================
--- RAYFIELD GUI
--- ============================================
-print("🎨 Загружаю Rayfield GUI...")
-
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
-local Window = Rayfield:CreateWindow({
-    Name = "🔥 Safe ESP & AutoBuy",
-    LoadingTitle = "Safe ESP",
-    LoadingSubtitle = "by Kiro",
-    ConfigurationSaving = {
-        Enabled = false
-    },
-    Discord = {
-        Enabled = false
-    },
-    KeySystem = false,
-})
-
-local MainTab = Window:CreateTab("🎯 Основное", 4483362458)
-
-MainTab:CreateSection("ESP")
-
-local ESPToggle = MainTab:CreateToggle({
-    Name = "Включить ESP",
-    CurrentValue = false,
-    Flag = "ESPToggle",
-    Callback = function(Value)
-        if Value then
-            enableESP()
-        else
-            disableESP()
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if not hrp then
+            Rayfield:Notify({
+                Title = "Ошибка",
+                Content = "HumanoidRootPart не найден!",
+                Duration = 3,
+                Image = 4483362458,
+            })
+            return false
         end
-    end,
-})
-
-MainTab:CreateSection("Автобай")
-
-MainTab:CreateButton({
-    Name = "🤖 Запустить автобай",
-    Callback = function()
-        if not autoBuyEnabled then
-            local success, message = startAutoBuy()
-            if success then
-                Rayfield:Notify({
-                    Title = "Автобай",
-                    Content = "Автобай запущен!",
-                    Duration = 3,
-                    Image = 4483362458,
-                })
-            else
-                Rayfield:Notify({
-                    Title = "Ошибка",
-                    Content = message,
-                    Duration = 5,
-                    Image = 4483362458,
-                })
-            end
-        end
-    end,
-})
-
-MainTab:CreateButton({
-    Name = "⏹️ Остановить автобай",
-    Callback = function()
-        stopAutoBuy()
+        
+        hrp.CFrame = CFrame.new(position)
+        
         Rayfield:Notify({
-            Title = "Автобай",
-            Content = "Автобай остановлен!",
+            Title = "Телепорт",
+            Content = "Телепортирован: " .. locationName,
             Duration = 3,
             Image = 4483362458,
         })
-    end,
-})
+        
+        print("🚀 Телепортирован в:", locationName)
+        print("📍 Координаты:", position)
+        
+        return true
+    end
 
-local SettingsTab = Window:CreateTab("⚙️ Настройки", 4483362458)
+    -- Кнопка телепорта к барыге
+    TeleportTab:CreateButton({
+        Name = "🏪 ТП к Барыге",
+        Callback = function()
+            teleportToPosition(Vector3.new(-5827.89, 4567.91, -2885.06), "Барыга")
+        end,
+    })
 
-SettingsTab:CreateSection("Информация")
+    -- Кнопка телепорта в ЦУМ
+    TeleportTab:CreateButton({
+        Name = "🏬 ТП в ЦУМ",
+        Callback = function()
+            teleportToPosition(Vector3.new(-5897.92, 4597.21, -2404.79), "ЦУМ")
+        end,
+    })
 
-SettingsTab:CreateParagraph({
-    Title = "Safe ESP & AutoBuy",
-    Content = "✅ Safe Mode\n⚡ Мгновенное E\n💰 Проверка баланса\n🔄 Auto-удаление ESP"
-})
+    TeleportTab:CreateSection("Информация")
 
-SettingsTab:CreateLabel("📦 Вещей: " .. assetsCount)
-SettingsTab:CreateLabel("👜 Аксессуаров: " .. accessoriesCount)
+    TeleportTab:CreateParagraph({
+        Title = "О телепортах",
+        Content = "⚡ Мгновенная телепортация\n🏪 Барыга - точка торговли\n🏬 ЦУМ - торговый центр"
+    })
 
-print("🎉 Safe ESP загружен с Rayfield GUI!")
-print("Готов к использованию!")
+    local SettingsTab = Window:CreateTab("⚙️ Настройки", 4483362458)
+
+    SettingsTab:CreateSection("Информация")
+
+    SettingsTab:CreateParagraph({
+        Title = "Safe ESP & AutoBuy",
+        Content = "✅ Safe Mode\n⚡ Мгновенное E\n💰 Проверка баланса\n🔄 Auto-удаление ESP"
+    })
+
+    SettingsTab:CreateLabel("📦 Вещей: " .. assetsCount)
+    SettingsTab:CreateLabel("👜 Аксессуаров: " .. accessoriesCount)
+
+    print("🎉 Safe ESP загружен с Rayfield GUI!")
+    print("Готов к использованию!")
