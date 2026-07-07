@@ -653,61 +653,48 @@
             return true
         end
 
-        -- Взять аксессуар из слота (РАБОТАЕТ НА ПК И ТЕЛЕФОНЕ)
+        -- Взять аксессуар из слота (РАБОТАЕТ НА ПК И ТЕЛЕФОНЕ - ПОЛНОСТЬЮ КАК takeItem)
         local function takeAccessory(slotId, slot)
             print("📥 Беру аксессуар из слота, SlotId:", slotId)
             print("📂 Полный путь слота:", slot:GetFullName())
             
-            -- Метод 1: Пробуем через RemoteEvent TakeItemMobile (для телефона и ПК)
-            local success1 = pcall(function()
-                print("🔄 Пробую через TakeItemMobile RemoteEvent...")
-                -- Передаём сам слот как в примере
-                game:GetService("ReplicatedStorage"):WaitForChild("ShopRemotes"):WaitForChild("TakeItemMobile"):FireServer(slot)
-                print("✅ Взял через TakeItemMobile")
-            end)
-            
-            if success1 then
-                task.wait(0.5)
-                return true
-            end
-            
-            print("⚠️ TakeItemMobile не сработал, пробую через ProximityPrompt...")
-            
-            -- Метод 2: Через ProximityPrompt с удержанием (запасной метод)
+            -- Ищем ProximityPrompt в слоте
             local prompt = nil
             for _, desc in pairs(slot:GetDescendants()) do
                 if desc:IsA("ProximityPrompt") and desc.Enabled then
                     prompt = desc
-                    print("🔘 Найден ProximityPrompt")
-                    print("⏱️ Время удержания:", prompt.HoldDuration, "сек")
+                    print("🔘 Найден ProximityPrompt в аксессуаре")
                     break
                 end
             end
             
             if not prompt then
-                print("⚠️ ProximityPrompt не найден в слоте!")
+                print("❌ ProximityPrompt не найден в слоте аксессуара!")
                 return false
             end
             
-            print("⚡ ЗАЖИМАЮ кнопку на аксессуаре...")
-            local success2 = pcall(function()
+            -- Сначала пытаемся через fireproximityprompt (на ПК)
+            local success = pcall(function()
                 if fireproximityprompt then
-                    fireproximityprompt(prompt, prompt.HoldDuration or 0)
-                    print("✅ Зажал E через fireproximityprompt на", prompt.HoldDuration, "сек")
+                    print("⚡ Пробую через fireproximityprompt (ПК метод)...")
+                    fireproximityprompt(prompt)
+                    print("✅ Взял через fireproximityprompt")
                 else
+                    -- На телефоне используем InputHoldBegin/End
+                    print("⚡ Пробую через InputHold (Телефон метод)...")
                     prompt:InputHoldBegin()
-                    task.wait(prompt.HoldDuration or 1)
+                    task.wait(prompt.HoldDuration or 0.5)
                     prompt:InputHoldEnd()
-                    print("✅ Зажал E через InputHold на", prompt.HoldDuration, "сек")
+                    print("✅ Взял через InputHold")
                 end
             end)
             
-            if not success2 then
-                print("❌ Ошибка активации ProximityPrompt")
+            if not success then
+                print("❌ Ошибка взятия аксессуара через ProximityPrompt")
                 return false
             end
             
-            task.wait(0.5)
+            task.wait(0.3)
             print("✅ Аксессуар должен быть в корзине")
             return true
         end
@@ -1117,50 +1104,40 @@
                 takeSuccess = takeAccessory(slotId, slot)
             else
                 -- Если слота нет, пробуем взять через модель напрямую (ЗАЖИМАЕМ)
-                print("⚠️ Слота нет, пробую взять через модель с удержанием...")
+                print("⚠️ Слота нет, беру аксессуар напрямую из модели...")
                 
-                -- Ищем ProximityPrompt в модели
+                -- Ищем ProximityPrompt в модели аксессуара
                 local prompt = nil
                 for _, desc in pairs(model:GetDescendants()) do
                     if desc:IsA("ProximityPrompt") and desc.Enabled then
                         prompt = desc
-                        print("🔘 Найден ProximityPrompt в модели")
-                        print("⏱️ Время удержания:", prompt.HoldDuration, "сек")
+                        print("🔘 Найден ProximityPrompt в модели аксессуара")
                         break
                     end
                 end
                 
                 if prompt then
-                    print("⚡ ЗАЖИМАЮ кнопку (удержание)...")
+                    print("⚡ Беру аксессуар БЕЗ слота...")
                     local success = pcall(function()
                         if fireproximityprompt then
-                            -- Используем удержание для fireproximityprompt
-                            fireproximityprompt(prompt, prompt.HoldDuration or 0)
-                            print("✅ Зажал через fireproximityprompt на", prompt.HoldDuration, "сек")
+                            -- На ПК через fireproximityprompt
+                            fireproximityprompt(prompt)
+                            print("✅ Взял через fireproximityprompt (ПК)")
                         else
-                            -- Имитируем удержание
+                            -- На телефоне через InputHold
                             prompt:InputHoldBegin()
-                            task.wait(prompt.HoldDuration or 1) -- Ждём время удержания
+                            task.wait(prompt.HoldDuration or 0.5)
                             prompt:InputHoldEnd()
-                            print("✅ Зажал через InputHold на", prompt.HoldDuration, "сек")
+                            print("✅ Взял через InputHold (Телефон)")
                         end
                     end)
                     
                     if success then
-                        task.wait(0.5) -- Дополнительное ожидание
+                        task.wait(0.3)
                         takeSuccess = true
                     end
                 else
-                    print("⚠️ ProximityPrompt не найден в модели, пробую RemoteEvent...")
-                    -- Пробуем через RemoteEvent с моделью
-                    local remoteSuccess = pcall(function()
-                        game:GetService("ReplicatedStorage"):WaitForChild("ShopRemotes"):WaitForChild("TakeItemMobile"):FireServer(model)
-                    end)
-                    if remoteSuccess then
-                        task.wait(0.3)
-                        takeSuccess = true
-                        print("✅ Взял через RemoteEvent с моделью")
-                    end
+                    print("❌ ProximityPrompt не найден в модели аксессуара!")
                 end
             end
             
