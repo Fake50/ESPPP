@@ -707,6 +707,103 @@ local function purchaseItem(slotId)
     end
 end
 
+-- Получить баланс игрока
+local function getPlayerMoney()
+    -- Пробуем разные способы получить деньги
+    local money = 0
+    
+    -- Способ 1: leaderstats
+    pcall(function()
+        local leaderstats = player:FindFirstChild("leaderstats")
+        if leaderstats then
+            local cash = leaderstats:FindFirstChild("Cash") or leaderstats:FindFirstChild("Money") or leaderstats:FindFirstChild("Деньги") or leaderstats:FindFirstChild("Баланс")
+            if cash then
+                money = cash.Value
+            end
+        end
+    end)
+    
+    if money > 0 then return money end
+    
+    -- Способ 2: PlayerData
+    pcall(function()
+        local playerData = player:FindFirstChild("PlayerData")
+        if playerData then
+            local cash = playerData:FindFirstChild("Cash") or playerData:FindFirstChild("Money")
+            if cash then
+                money = cash.Value
+            end
+        end
+    end)
+    
+    if money > 0 then return money end
+    
+    -- Способ 3: Data
+    pcall(function()
+        local data = player:FindFirstChild("Data")
+        if data then
+            local cash = data:FindFirstChild("Cash") or data:FindFirstChild("Money")
+            if cash then
+                money = cash.Value
+            end
+        end
+    end)
+    
+    return money
+end
+
+-- Получить цену предмета из GUI или слота
+local function getItemPrice(slot)
+    local price = 0
+    
+    -- Способ 1: Ищем цену в слоте
+    pcall(function()
+        for _, child in pairs(slot:GetDescendants()) do
+            if child.Name == "Price" or child.Name == "Cost" or child.Name == "Цена" then
+                if child:IsA("IntValue") or child:IsA("NumberValue") then
+                    price = child.Value
+                elseif child:IsA("StringValue") then
+                    price = tonumber(child.Value:match("%d+"))
+                end
+            end
+        end
+    end)
+    
+    if price > 0 then return price end
+    
+    -- Способ 2: Ищем цену в атрибутах
+    pcall(function()
+        if slot:GetAttribute("Price") then
+            price = slot:GetAttribute("Price")
+        elseif slot:GetAttribute("Cost") then
+            price = slot:GetAttribute("Cost")
+        end
+    end)
+    
+    if price > 0 then return price end
+    
+    -- Способ 3: Ищем BillboardGui с ценой
+    pcall(function()
+        for _, desc in pairs(slot:GetDescendants()) do
+            if desc:IsA("BillboardGui") or desc:IsA("SurfaceGui") then
+                for _, label in pairs(desc:GetDescendants()) do
+                    if label:IsA("TextLabel") and label.Text then
+                        local priceMatch = label.Text:match("%$?(%d+)")
+                        if priceMatch then
+                            price = tonumber(priceMatch)
+                            if price and price > 0 then
+                                return price
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+    
+    return price
+end
+
 -- Купить один предмет
 local function buyItem(mannequinData)
     if autoBuyRunning then
@@ -731,9 +828,27 @@ local function buyItem(mannequinData)
     end
     local itemName = table.concat(itemNames, " + ")
     
+    -- Проверяем баланс и цену
+    local playerMoney = getPlayerMoney()
+    local itemPrice = getItemPrice(slot)
+    
     print("")
     print("═══════════════════════════════")
-    print("🛒 ПОКУПАЮ:", itemName)
+    print("🛒 ПРОВЕРЯЮ:", itemName)
+    print("💰 Баланс:", playerMoney)
+    print("💵 Цена:", itemPrice > 0 and itemPrice or "неизвестна")
+    
+    if itemPrice > 0 and playerMoney < itemPrice then
+        autoBuyRunning = false
+        print("❌ НЕДОСТАТОЧНО ДЕНЕГ!")
+        print("   Нужно:", itemPrice, "Есть:", playerMoney)
+        print("═══════════════════════════════")
+        return false, "Недостаточно денег"
+    end
+    
+    if itemPrice > 0 and playerMoney >= itemPrice then
+        print("✅ Денег достаточно!")
+    end
     print("═══════════════════════════════")
     
     -- Получаем SlotId
@@ -851,6 +966,7 @@ local function startAutoBuy()
         local mannequins = getAllMannequins()
         local bought = 0
         local errors = 0
+        local skipped = 0
         
         for _, data in pairs(mannequins) do
             if not autoBuyEnabled then
@@ -865,6 +981,8 @@ local function startAutoBuy()
                 local success, message = buyItem(data)
                 if success then
                     bought = bought + 1
+                elseif message == "Недостаточно денег" then
+                    skipped = skipped + 1
                 else
                     errors = errors + 1
                     warn("❌", message)
@@ -878,6 +996,7 @@ local function startAutoBuy()
         print("")
         print("🏁 Автобай завершен!")
         print("✅ Куплено:", bought)
+        print("⏭️ Пропущено (нет денег):", skipped)
         print("❌ Ошибок:", errors)
     end)
     
