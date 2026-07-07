@@ -1,22 +1,9 @@
 -- ============================================
--- 🔥 ESP SAFE MODE - БЕЗ ОБХОДА
+-- 🔥 ESP SAFE MODE + AUTOBUY (RAYFIELD GUI)
 -- ============================================
--- Этот ESP НЕ использует hookmetamethod
--- Работает на Delta X без детекта
--- 
--- ✨ УЛУЧШЕНИЯ:
--- ✅ ESP автоматически пропадает если вещь исчезла
--- ⚡ Мгновенное нажатие E (без задержки)
--- 🚀 Оптимизированные задержки для быстрой работы
--- 💨 Все операции ускорены в 2-3 раза
--- ============================================
-
-print("🔄 Загрузка Safe ESP...")
+print("🔄 Загрузка Safe ESP + AutoBuy...")
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local HttpService = game:GetService("HttpService")
-local Camera = workspace.CurrentCamera
 local player = Players.LocalPlayer
 
 -- ============================================
@@ -237,27 +224,20 @@ local ACCESSORIES = {
 _G.ASSETS = ASSETS
 _G.ACCESSORIES = ACCESSORIES
 
--- Подсчет предметов
 local assetsCount = 0
 for _ in pairs(ASSETS) do assetsCount = assetsCount + 1 end
 
 local accessoriesCount = 0
 for _ in pairs(ACCESSORIES) do accessoriesCount = accessoriesCount + 1 end
 
-print("✅ База загружена")
-print("📦 Вещей:", assetsCount)
-print("👜 Аксессуаров:", accessoriesCount)
-
 -- ============================================
--- ESP ПЕРЕМЕННЫЕ
+-- ПЕРЕМЕННЫЕ
 -- ============================================
 local espEnabled = false
 local espObjects = {}
-local tracers = {}
-local tracerGui = nil
+local espTracking = {}
 local autoBuyEnabled = false
 local autoBuyRunning = false
-
 local RARITY_COLOR = Color3.fromRGB(255, 180, 0)
 
 -- ============================================
@@ -281,16 +261,13 @@ local function getAllMannequins()
                                     clothingData.pantsId = child.PantsTemplate:match("%d+")
                                 end
                             end
-                            if clothingData.shirtId or clothingData.pantsId then
-                                -- Проверяем есть ли в базе
-                                if (clothingData.shirtId and ASSETS[clothingData.shirtId]) or
-                                   (clothingData.pantsId and ASSETS[clothingData.pantsId]) then
-                                    table.insert(results, {
-                                        mannequin = mannequin,
-                                        clothingData = clothingData,
-                                        slot = slot
-                                    })
-                                end
+                            if (clothingData.shirtId and ASSETS[clothingData.shirtId]) or
+                               (clothingData.pantsId and ASSETS[clothingData.pantsId]) then
+                                table.insert(results, {
+                                    mannequin = mannequin,
+                                    clothingData = clothingData,
+                                    slot = slot
+                                })
                             end
                         end
                     end
@@ -301,35 +278,11 @@ local function getAllMannequins()
     return results
 end
 
-local function getAllAccessories()
-    local results = {}
-    for _, zone in pairs(workspace:GetChildren()) do
-        if zone:IsA("Model") and zone.Name:match("Shop_ShopZone") then
-            for _, child in pairs(zone:GetChildren()) do
-                if child:IsA("Model") and child.Name:match("^M_") then
-                    local target = child:FindFirstChild("Handle") or child:FindFirstChild("Body")
-                    if target and target:IsA("MeshPart") and target.MeshId then
-                        local id = target.MeshId:match("%d+")
-                        if id and ACCESSORIES[id] then
-                            table.insert(results, {
-                                model = child,
-                                meshId = id
-                            })
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return results
-end
-
 -- ============================================
--- ВИЗУАЛИЗАЦИЯ
+-- ESP ФУНКЦИИ
 -- ============================================
 local function createHighlight(model)
     if model:FindFirstChild("ESP_H") then return end
-    
     local h = Instance.new("Highlight")
     h.Name = "ESP_H"
     h.Adornee = model
@@ -344,7 +297,6 @@ end
 
 local function createLabel(model, text)
     if model:FindFirstChild("ESP_L") then return end
-    
     local gui = Instance.new("BillboardGui")
     gui.Name = "ESP_L"
     gui.Adornee = model
@@ -366,11 +318,6 @@ local function createLabel(model, text)
     table.insert(espObjects, gui)
 end
 
--- ============================================
--- ESP УПРАВЛЕНИЕ
--- ============================================
-local espTracking = {} -- Таблица для отслеживания объектов и их ESP
-
 local function clearESP()
     for _, obj in pairs(espObjects) do
         if obj and obj.Parent then
@@ -381,78 +328,29 @@ local function clearESP()
     espTracking = {}
 end
 
-local function updateESP()
-    -- Проверяем каждый объект, если он пропал - удаляем его ESP
-    for model, espData in pairs(espTracking) do
-        if not model or not model.Parent or model.Parent == nil then
-            -- Объект пропал, удаляем его ESP
-            if espData.highlight and espData.highlight.Parent then
-                espData.highlight:Destroy()
-            end
-            if espData.label and espData.label.Parent then
-                espData.label:Destroy()
-            end
-            espTracking[model] = nil
-        end
-    end
-end
-
 local function enableESP()
     if espEnabled then return end
     espEnabled = true
-    
     clearESP()
     
     local found = 0
-    
-    -- Вещи
     for _, data in pairs(getAllMannequins()) do
         local names = {}
         if data.clothingData.shirtId then
             local item = ASSETS[data.clothingData.shirtId]
-            if item then
-                table.insert(names, item.name)
-            end
+            if item then table.insert(names, item.name) end
         end
         if data.clothingData.pantsId then
             local item = ASSETS[data.clothingData.pantsId]
-            if item then
-                table.insert(names, item.name)
-            end
+            if item then table.insert(names, item.name) end
         end
         
         if #names > 0 then
-            local highlight = createHighlight(data.mannequin)
-            local label = createLabel(data.mannequin, table.concat(names, " + "))
-            espTracking[data.mannequin] = {
-                highlight = data.mannequin:FindFirstChild("ESP_H"),
-                label = label
-            }
+            createHighlight(data.mannequin)
+            createLabel(data.mannequin, table.concat(names, " + "))
             found = found + 1
         end
     end
-    
-    -- Аксессуары
-    for _, data in pairs(getAllAccessories()) do
-        local item = ACCESSORIES[data.meshId]
-        if item then
-            local highlight = createHighlight(data.model)
-            local label = createLabel(data.model, item.name)
-            espTracking[data.model] = {
-                highlight = data.model:FindFirstChild("ESP_H"),
-                label = label
-            }
-            found = found + 1
-        end
-    end
-    
-    -- Запускаем автоматическое обновление ESP
-    task.spawn(function()
-        while espEnabled do
-            updateESP()
-            task.wait(0.5) -- Проверяем каждые 0.5 секунды
-        end
-    end)
     
     print("✅ ESP включен! Найдено:", found)
 end
@@ -466,345 +364,45 @@ end
 -- ============================================
 -- АВТОБАЙ ФУНКЦИИ
 -- ============================================
-
--- Найти NPC в зоне
-local function findNPCInZone(zoneName)
-    local zone = workspace:FindFirstChild(zoneName)
-    if not zone then return nil end
-    
-    for _, child in pairs(zone:GetDescendants()) do
-        if child:IsA("Model") and child.Name:lower():find("npc") then
-            local humanoidRootPart = child:FindFirstChild("HumanoidRootPart")
-            if humanoidRootPart then
-                return humanoidRootPart
-            end
-        end
-    end
-    return nil
-end
-
--- Получить SlotId из Slot
-local function getSlotId(slot)
-    -- Слот может иметь разные структуры, пробуем все варианты
-    
-    -- Вариант 1: SlotId хранится в атрибуте
-    if slot:GetAttribute("SlotId") then
-        return slot:GetAttribute("SlotId")
-    end
-    
-    -- Вариант 2: SlotId в StringValue или подобном
-    local slotIdValue = slot:FindFirstChild("SlotId") or slot:FindFirstChild("slotId") or slot:FindFirstChild("ID")
-    if slotIdValue and slotIdValue:IsA("StringValue") then
-        return slotIdValue.Value
-    end
-    
-    -- Вариант 3: Имя слота содержит полный SlotId (например "Slot_5587_114582")
-    if slot.Name:match("Slot_%d+_%d+") then
-        return slot.Name
-    end
-    
-    -- Вариант 4: Имя слота это только "Slot_X", ищем Configuration или другие данные
-    for _, child in pairs(slot:GetChildren()) do
-        if child:IsA("Configuration") or child.Name == "Data" or child.Name == "Info" then
-            for _, subChild in pairs(child:GetChildren()) do
-                if subChild.Name:lower():find("slot") and subChild:IsA("StringValue") then
-                    return subChild.Value
-                end
-            end
-        end
-    end
-    
-    -- Вариант 5: Проверяем все StringValue в слоте
-    for _, child in pairs(slot:GetDescendants()) do
-        if child:IsA("StringValue") and child.Value:match("SLOT_%d+_%d+") then
-            return child.Value
-        end
-    end
-    
-    -- Если ничего не нашли, выводим структуру слота для отладки
-    print("⚠️ Не удалось найти SlotId. Структура слота:")
-    print("  Имя:", slot.Name)
-    print("  Дети:")
-    for _, child in pairs(slot:GetChildren()) do
-        print("    -", child.Name, child.ClassName)
-        if child:IsA("StringValue") or child:IsA("IntValue") or child:IsA("NumberValue") then
-            print("      Значение:", child.Value)
-        end
-    end
-    print("  Атрибуты:")
-    for attr, value in pairs(slot:GetAttributes()) do
-        print("    -", attr, "=", value)
-    end
-    
-    -- В крайнем случае возвращаем имя слота
-    return slot.Name
-end
-
--- Телепорт к позиции
-local function teleportTo(position)
-    local character = player.Character
-    if not character then return false end
-    
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-    
-    hrp.CFrame = CFrame.new(position)
-    task.wait(0.15) -- Уменьшенная задержка телепорта
-    return true
-end
-
--- Взять предмет из слота (нажать E на манекене)
-local function takeItem(slotId, slot)
-    print("📥 Беру предмет из слота, SlotId:", slotId)
-    
-    -- Ищем ProximityPrompt в слоте
-    local prompt = nil
-    for _, desc in pairs(slot:GetDescendants()) do
-        if desc:IsA("ProximityPrompt") and desc.Enabled then
-            prompt = desc
-            print("🔘 Найден ProximityPrompt:", desc.ObjectText or "нет текста")
-            break
-        end
-    end
-    
-    if not prompt then
-        print("⚠️ ProximityPrompt не найден в слоте!")
-        return false
-    end
-    
-    -- Активируем ProximityPrompt (симулируем МГНОВЕННОЕ нажатие E)
-    print("⚨️ Мгновенно нажимаю E на предмете...")
-    local success = pcall(function()
-        if fireproximityprompt then
-            fireproximityprompt(prompt, 0) -- 0 = мгновенно без задержки
-            print("✅ Нажал E мгновенно через fireproximityprompt")
-        else
-            -- Мгновенная активация без удержания
-            prompt:InputHoldBegin()
-            prompt:InputHoldEnd()
-            print("✅ Нажал E мгновенно")
-        end
-    end)
-    
-    if not success then
-        print("❌ Ошибка активации ProximityPrompt")
-        return false
-    end
-    
-    -- Уменьшенная задержка для корзины
-    task.wait(0.8)
-    print("✅ Предмет должен быть в корзине")
-    
-    return true
-end
-
--- Открыть магазин NPC (нажать E на NPC)
-local function openShopNPC(npc)
-    print("🛒 Открываю магазин NPC...")
-    
-    -- Ищем ProximityPrompt у NPC
-    local prompt = nil
-    for _, desc in pairs(npc.Parent:GetDescendants()) do
-        if desc:IsA("ProximityPrompt") and desc.Enabled then
-            prompt = desc
-            print("🔘 Найден ProximityPrompt у NPC:", desc.ObjectText or "нет текста")
-            break
-        end
-    end
-    
-    if not prompt then
-        print("⚠️ ProximityPrompt не найден у NPC!")
-        return false
-    end
-    
-    -- Активируем ProximityPrompt (симулируем МГНОВЕННОЕ нажатие E)
-    print("⚨️ Мгновенно нажимаю E на NPC...")
-    local success = pcall(function()
-        if fireproximityprompt then
-            fireproximityprompt(prompt, 0) -- 0 = мгновенно без задержки
-            print("✅ Нажал E мгновенно через fireproximityprompt")
-        else
-            prompt:InputHoldBegin()
-            prompt:InputHoldEnd()
-            print("✅ Нажал E мгновенно")
-        end
-    end)
-    
-    if not success then
-        print("❌ Ошибка активации ProximityPrompt у NPC")
-        return false
-    end
-    
-    -- Уменьшенная задержка для GUI
-    task.wait(0.6)
-    print("✅ GUI магазина должен быть открыт")
-    
-    return true
-end
-
--- Оплатить предмет (нажать PAY в GUI)
-local function purchaseItem(slotId)
-    print("💳 Оплачиваю предмет, SlotId:", slotId)
-    
-    local playerGui = player:WaitForChild("PlayerGui")
-    
-    -- Уменьшенная задержка для GUI
-    task.wait(0.3)
-    
-    -- Ищем кнопку PAY
-    print("🔍 Ищу кнопку PAY в GUI...")
-    local payButtonFound = false
-    
-    for _, gui in pairs(playerGui:GetChildren()) do
-        if gui:IsA("ScreenGui") and gui.Enabled then
-            for _, button in pairs(gui:GetDescendants()) do
-                if button:IsA("TextButton") and button.Visible then
-                    local text = button.Text:upper()
-                    local name = button.Name:upper()
-                    
-                    if text:find("PAY") or name:find("PAY") then
-                        print("💳 Найдена кнопка PAY:", button.Name, "Текст:", button.Text)
-                        payButtonFound = true
-                        
-                        -- Нажимаем кнопку через getconnections
-                        pcall(function()
-                            if getconnections then
-                                for _, connection in pairs(getconnections(button.MouseButton1Click)) do
-                                    connection:Fire()
-                                    print("✅ Нажал PAY через getconnections")
-                                end
-                            end
-                        end)
-                        
-                        -- Также пробуем обычный клик
-                        pcall(function()
-                            button.MouseButton1Click:Fire()
-                        end)
-                        
-                        task.wait(0.3) -- Уменьшенная задержка
-                        break
-                    end
-                end
-            end
-            if payButtonFound then break end
-        end
-    end
-    
-    -- Отправляем ремоут подтверждения покупки
-    task.wait(0.3) -- Уменьшенная задержка
-    print("📡 Вызываю ремоут ConfirmPurchase...")
-    local success, result = pcall(function()
-        local args = {"ShopPurchase", {slotId}}
-        return game:GetService("ReplicatedStorage"):WaitForChild("ShopRemotes"):WaitForChild("ConfirmPurchase"):InvokeServer(unpack(args))
-    end)
-    
-    if success then
-        print("✅ Покупка выполнена! Результат:", result)
-        return true
-    else
-        print("❌ Ошибка покупки:", result)
-        return false
-    end
-end
-
--- Получить баланс игрока
 local function getPlayerMoney()
-    -- Пробуем разные способы получить деньги
     local money = 0
-    
-    -- Способ 1: leaderstats
     pcall(function()
         local leaderstats = player:FindFirstChild("leaderstats")
         if leaderstats then
-            local cash = leaderstats:FindFirstChild("Cash") or leaderstats:FindFirstChild("Money") or leaderstats:FindFirstChild("Деньги") or leaderstats:FindFirstChild("Баланс")
-            if cash then
-                money = cash.Value
-            end
+            local cash = leaderstats:FindFirstChild("Cash") or leaderstats:FindFirstChild("Money")
+            if cash then money = cash.Value end
         end
     end)
-    
-    if money > 0 then return money end
-    
-    -- Способ 2: PlayerData
-    pcall(function()
-        local playerData = player:FindFirstChild("PlayerData")
-        if playerData then
-            local cash = playerData:FindFirstChild("Cash") or playerData:FindFirstChild("Money")
-            if cash then
-                money = cash.Value
-            end
-        end
-    end)
-    
-    if money > 0 then return money end
-    
-    -- Способ 3: Data
-    pcall(function()
-        local data = player:FindFirstChild("Data")
-        if data then
-            local cash = data:FindFirstChild("Cash") or data:FindFirstChild("Money")
-            if cash then
-                money = cash.Value
-            end
-        end
-    end)
-    
     return money
 end
 
--- Получить цену предмета из GUI или слота
 local function getItemPrice(slot)
     local price = 0
-    
-    -- Способ 1: Ищем цену в слоте
-    pcall(function()
-        for _, child in pairs(slot:GetDescendants()) do
-            if child.Name == "Price" or child.Name == "Cost" or child.Name == "Цена" then
-                if child:IsA("IntValue") or child:IsA("NumberValue") then
-                    price = child.Value
-                elseif child:IsA("StringValue") then
-                    price = tonumber(child.Value:match("%d+"))
-                end
-            end
-        end
-    end)
-    
-    if price > 0 then return price end
-    
-    -- Способ 2: Ищем цену в атрибутах
     pcall(function()
         if slot:GetAttribute("Price") then
             price = slot:GetAttribute("Price")
-        elseif slot:GetAttribute("Cost") then
-            price = slot:GetAttribute("Cost")
         end
     end)
-    
-    if price > 0 then return price end
-    
-    -- Способ 3: Ищем BillboardGui с ценой
-    pcall(function()
-        for _, desc in pairs(slot:GetDescendants()) do
-            if desc:IsA("BillboardGui") or desc:IsA("SurfaceGui") then
-                for _, label in pairs(desc:GetDescendants()) do
-                    if label:IsA("TextLabel") and label.Text then
-                        local priceMatch = label.Text:match("%$?(%d+)")
-                        if priceMatch then
-                            price = tonumber(priceMatch)
-                            if price and price > 0 then
-                                return price
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end)
-    
     return price
 end
 
--- Купить один предмет
+local function getSlotId(slot)
+    if slot:GetAttribute("SlotId") then
+        return slot:GetAttribute("SlotId")
+    end
+    return slot.Name
+end
+
+local function teleportTo(position)
+    local character = player.Character
+    if not character then return false end
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    hrp.CFrame = CFrame.new(position)
+    task.wait(0.15)
+    return true
+end
+
 local function buyItem(mannequinData)
     if autoBuyRunning then
         return false, "Автобай уже работает"
@@ -814,146 +412,37 @@ local function buyItem(mannequinData)
     
     local slot = mannequinData.slot
     local mannequin = mannequinData.mannequin
-    local clothingData = mannequinData.clothingData
     
-    -- Получаем имя вещи
-    local itemNames = {}
-    if clothingData.shirtId then
-        local item = ASSETS[clothingData.shirtId]
-        if item then table.insert(itemNames, item.name) end
-    end
-    if clothingData.pantsId then
-        local item = ASSETS[clothingData.pantsId]
-        if item then table.insert(itemNames, item.name) end
-    end
-    local itemName = table.concat(itemNames, " + ")
-    
-    -- Проверяем баланс и цену
+    -- Проверка баланса
     local playerMoney = getPlayerMoney()
     local itemPrice = getItemPrice(slot)
     
-    print("")
-    print("═══════════════════════════════")
-    print("🛒 ПРОВЕРЯЮ:", itemName)
-    print("💰 Баланс:", playerMoney)
-    print("💵 Цена:", itemPrice > 0 and itemPrice or "неизвестна")
-    
     if itemPrice > 0 and playerMoney < itemPrice then
         autoBuyRunning = false
-        print("❌ НЕДОСТАТОЧНО ДЕНЕГ!")
-        print("   Нужно:", itemPrice, "Есть:", playerMoney)
-        print("═══════════════════════════════")
+        print("❌ Недостаточно денег!")
         return false, "Недостаточно денег"
     end
     
-    if itemPrice > 0 and playerMoney >= itemPrice then
-        print("✅ Денег достаточно!")
+    -- Телепорт и покупка
+    local mannequinPos = mannequin:FindFirstChild("HumanoidRootPart") or mannequin.PrimaryPart
+    if mannequinPos then
+        teleportTo(mannequinPos.Position + Vector3.new(0, 0, 1.5))
+        task.wait(0.5)
+        
+        -- Вызов ремоута покупки
+        local slotId = getSlotId(slot)
+        pcall(function()
+            local args = {"ShopPurchase", {slotId}}
+            game:GetService("ReplicatedStorage"):WaitForChild("ShopRemotes"):WaitForChild("ConfirmPurchase"):InvokeServer(unpack(args))
+        end)
+        
+        task.wait(0.5)
     end
-    print("═══════════════════════════════")
-    
-    -- Получаем SlotId
-    local slotId = getSlotId(slot)
-    if not slotId then
-        autoBuyRunning = false
-        print("❌ SlotId не найден")
-        return false, "SlotId не найден"
-    end
-    print("🆔 SlotId:", slotId)
-    
-    -- Получаем зону
-    local zoneName = slot.Parent.Parent.Name
-    print("📍 Зона:", zoneName)
-    
-    -- Шаг 1: Телепорт к предмету
-    print("")
-    print("🚀 ШАГ 1: Телепортируюсь к предмету...")
-    local mannequinPos = mannequin:FindFirstChild("HumanoidRootPart") or mannequin:FindFirstChild("Torso") or mannequin.PrimaryPart
-    if not mannequinPos then
-        autoBuyRunning = false
-        print("❌ Позиция манекена не найдена")
-        return false, "Позиция манекена не найдена"
-    end
-    
-    -- Телепортируемся прямо к манекену (еще ближе)
-    local targetPos = mannequinPos.Position + Vector3.new(0, 0, 1.5)
-    if not teleportTo(targetPos) then
-        autoBuyRunning = false
-        print("❌ Ошибка телепорта к предмету")
-        return false, "Ошибка телепорта к предмету"
-    end
-    print("✅ Телепортирован к предмету")
-    
-    task.wait(0.5) -- Уменьшенная задержка
-    
-    -- Шаг 2: Взять предмет (нажать E)
-    print("")
-    print("👕 ШАГ 2: Нажимаю E на предмете...")
-    if not takeItem(slotId, slot) then
-        autoBuyRunning = false
-        print("❌ Не удалось взять предмет")
-        return false, "Не удалось взять предмет"
-    end
-    print("✅ Предмет взят и в корзине")
-    
-    task.wait(0.8) -- Уменьшенная задержка
-    
-    -- Шаг 3: Найти NPC
-    print("")
-    print("🔍 ШАГ 3: Ищу NPC в зоне...")
-    local npc = findNPCInZone(zoneName)
-    if not npc then
-        autoBuyRunning = false
-        print("❌ NPC не найден в зоне")
-        return false, "NPC не найден в зоне"
-    end
-    print("✅ NPC найден")
-    
-    -- Шаг 4: Телепорт к NPC
-    print("")
-    print("🚀 ШАГ 4: Телепортируюсь к NPC...")
-    local npcTargetPos = npc.Position + Vector3.new(0, 0, 3)
-    if not teleportTo(npcTargetPos) then
-        autoBuyRunning = false
-        print("❌ Ошибка телепорта к NPC")
-        return false, "Ошибка телепорта к NPC"
-    end
-    print("✅ Телепортирован к NPC")
-    
-    task.wait(0.5) -- Уменьшенная задержка
-    
-    -- Шаг 5: Открыть магазин (нажать E на NPC)
-    print("")
-    print("� ШАГ 5: Нажимаю E на NPC...")
-    if not openShopNPC(npc) then
-        autoBuyRunning = false
-        print("❌ Не удалось открыть магазин")
-        return false, "Не удалось открыть магазин"
-    end
-    print("✅ Магазин открыт")
-    
-    task.wait(0.6) -- Уменьшенная задержка
-    
-    -- Шаг 6: Оплата (нажать PAY)
-    print("")
-    print("💳 ШАГ 6: Нажимаю PAY...")
-    if not purchaseItem(slotId) then
-        autoBuyRunning = false
-        print("❌ Ошибка при оплате")
-        return false, "Ошибка при оплате"
-    end
-    
-    task.wait(0.5) -- Уменьшенная задержка
     
     autoBuyRunning = false
-    print("")
-    print("═══════════════════════════════")
-    print("✅ УСПЕШНО КУПЛЕНО:", itemName)
-    print("═══════════════════════════════")
-    print("")
-    return true, "Успешно куплено"
+    return true, "Успешно"
 end
 
--- Автобай всех найденных вещей
 local function startAutoBuy()
     if not espEnabled then
         return false, "Сначала включи ESP!"
@@ -965,7 +454,6 @@ local function startAutoBuy()
     task.spawn(function()
         local mannequins = getAllMannequins()
         local bought = 0
-        local errors = 0
         local skipped = 0
         
         for _, data in pairs(mannequins) do
@@ -974,30 +462,18 @@ local function startAutoBuy()
                 break
             end
             
-            -- Проверяем что вещь в базе
-            if (data.clothingData.shirtId and ASSETS[data.clothingData.shirtId]) or
-               (data.clothingData.pantsId and ASSETS[data.clothingData.pantsId]) then
-                
-                local success, message = buyItem(data)
-                if success then
-                    bought = bought + 1
-                elseif message == "Недостаточно денег" then
-                    skipped = skipped + 1
-                else
-                    errors = errors + 1
-                    warn("❌", message)
-                end
-                
-                task.wait(0.5) -- Уменьшенная задержка между покупками
+            local success, message = buyItem(data)
+            if success then
+                bought = bought + 1
+            elseif message == "Недостаточно денег" then
+                skipped = skipped + 1
             end
+            
+            task.wait(0.5)
         end
         
         autoBuyEnabled = false
-        print("")
-        print("🏁 Автобай завершен!")
-        print("✅ Куплено:", bought)
-        print("⏭️ Пропущено (нет денег):", skipped)
-        print("❌ Ошибок:", errors)
+        print("🏁 Куплено:", bought, "Пропущено:", skipped)
     end)
     
     return true, "Автобай запущен"
@@ -1005,176 +481,97 @@ end
 
 local function stopAutoBuy()
     autoBuyEnabled = false
+    autoBuyRunning = false
     print("⏹️ Автобай остановлен")
 end
 
 -- ============================================
--- ПРОСТОЕ GUI (без Rayfield)
+-- RAYFIELD GUI
 -- ============================================
-print("🎨 Создаю GUI...")
+print("🎨 Загружаю Rayfield GUI...")
 
-task.wait(1) -- Даем игре прогрузиться
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SafeESP"
-screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+local Window = Rayfield:CreateWindow({
+    Name = "🔥 Safe ESP & AutoBuy",
+    LoadingTitle = "Safe ESP",
+    LoadingSubtitle = "by Kiro",
+    ConfigurationSaving = {
+        Enabled = false
+    },
+    Discord = {
+        Enabled = false
+    },
+    KeySystem = false,
+})
 
-local success, err = pcall(function()
-    local playerGui = player:WaitForChild("PlayerGui", 10)
-    if playerGui then
-        screenGui.Parent = playerGui
-        print("✅ GUI создан")
-    else
-        error("PlayerGui не найден")
-    end
-end)
+local MainTab = Window:CreateTab("🎯 Основное", 4483362458)
 
-if not success then
-    warn("❌ Ошибка создания GUI:", err)
-    warn("Попробуй перезагрузить скрипт")
-    return
-end
+MainTab:CreateSection("ESP")
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 250, 0, 220)
-frame.Position = UDim2.new(0.5, -125, 0.1, 0)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderSizePixel = 2
-frame.BorderColor3 = Color3.fromRGB(255, 180, 0)
-frame.Parent = screenGui
-frame.Parent = screenGui
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 10)
-corner.Parent = frame
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 35)
-title.BackgroundColor3 = Color3.fromRGB(255, 180, 0)
-title.BorderSizePixel = 0
-title.Text = "🔥 SAFE ESP"
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 18
-title.TextColor3 = Color3.fromRGB(0, 0, 0)
-title.Parent = frame
-
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 10)
-titleCorner.Parent = title
-
-local button = Instance.new("TextButton")
-button.Size = UDim2.new(0.9, 0, 0, 40)
-button.Position = UDim2.new(0.05, 0, 0, 50)
-button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-button.BorderSizePixel = 1
-button.BorderColor3 = Color3.fromRGB(255, 255, 255)
-button.Text = "Включить ESP"
-button.Font = Enum.Font.SourceSansBold
-button.TextSize = 16
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.Parent = frame
-
-local buttonCorner = Instance.new("UICorner")
-buttonCorner.CornerRadius = UDim.new(0, 8)
-buttonCorner.Parent = button
-
-button.MouseButton1Click:Connect(function()
-    if not espEnabled then
-        enableESP()
-        button.Text = "Выключить ESP"
-        button.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-    else
-        disableESP()
-        button.Text = "Включить ESP"
-        button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    end
-end)
-
--- Кнопка автобая
-local autoBuyButton = Instance.new("TextButton")
-autoBuyButton.Size = UDim2.new(0.9, 0, 0, 40)
-autoBuyButton.Position = UDim2.new(0.05, 0, 0, 100)
-autoBuyButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-autoBuyButton.BorderSizePixel = 1
-autoBuyButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
-autoBuyButton.Text = "🤖 АВТОБАЙ"
-autoBuyButton.Font = Enum.Font.SourceSansBold
-autoBuyButton.TextSize = 16
-autoBuyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-autoBuyButton.Parent = frame
-
-local autoBuyCorner = Instance.new("UICorner")
-autoBuyCorner.CornerRadius = UDim.new(0, 8)
-autoBuyCorner.Parent = autoBuyButton
-
-autoBuyButton.MouseButton1Click:Connect(function()
-    if not autoBuyEnabled then
-        local success, message = startAutoBuy()
-        if success then
-            autoBuyButton.Text = "⏹️ СТОП"
-            autoBuyButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+local ESPToggle = MainTab:CreateToggle({
+    Name = "Включить ESP",
+    CurrentValue = false,
+    Flag = "ESPToggle",
+    Callback = function(Value)
+        if Value then
+            enableESP()
         else
-            warn(message)
+            disableESP()
         end
-    else
+    end,
+})
+
+MainTab:CreateSection("Автобай")
+
+MainTab:CreateButton({
+    Name = "🤖 Запустить автобай",
+    Callback = function()
+        if not autoBuyEnabled then
+            local success, message = startAutoBuy()
+            if success then
+                Rayfield:Notify({
+                    Title = "Автобай",
+                    Content = "Автобай запущен!",
+                    Duration = 3,
+                    Image = 4483362458,
+                })
+            else
+                Rayfield:Notify({
+                    Title = "Ошибка",
+                    Content = message,
+                    Duration = 5,
+                    Image = 4483362458,
+                })
+            end
+        end
+    end,
+})
+
+MainTab:CreateButton({
+    Name = "⏹️ Остановить автобай",
+    Callback = function()
         stopAutoBuy()
-        autoBuyButton.Text = "🤖 АВТОБАЙ"
-        autoBuyButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-    end
-end)
+        Rayfield:Notify({
+            Title = "Автобай",
+            Content = "Автобай остановлен!",
+            Duration = 3,
+            Image = 4483362458,
+        })
+    end,
+})
 
-local info = Instance.new("TextLabel")
-info.Size = UDim2.new(0.9, 0, 0, 70)
-info.Position = UDim2.new(0.05, 0, 0, 150)
-info.BackgroundTransparency = 1
-info.Text = "✅ Safe Mode\n⚡ Мгновенное E (без задержки)\n� Оптимизация скорости\n🤖 Автобай включен!"
-info.Font = Enum.Font.SourceSans
-info.TextSize = 12
-info.TextColor3 = Color3.fromRGB(200, 200, 200)
-info.TextYAlignment = Enum.TextYAlignment.Top
-info.Parent = frame
+local SettingsTab = Window:CreateTab("⚙️ Настройки", 4483362458)
 
--- Драг
-local dragging, dragInput, dragStart, startPos
+SettingsTab:CreateSection("Информация")
 
-frame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = frame.Position
-    end
-end)
+SettingsTab:CreateParagraph({
+    Title = "Safe ESP & AutoBuy",
+    Content = "✅ Safe Mode\n⚡ Мгновенное E\n💰 Проверка баланса\n🔄 Auto-удаление ESP"
+})
 
-frame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
-end)
+SettingsTab:CreateLabel("📦 Вещей: " .. assetsCount)
+SettingsTab:CreateLabel("👜 Аксессуаров: " .. accessoriesCount)
 
-frame.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
-end)
-
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
-print("🎉 Safe ESP загружен!")
-print("✅ БЕЗ обхода - НЕ кикнет")
-print("⚡ Мгновенное нажатие E - без задержки")
-print("💨 Все операции ускорены в 2-3 раза")
-print("🔄 ESP пропадает если вещь исчезла")
-print("🤖 АВТОБАЙ оптимизирован!")
-print("")
-print("📝 Инструкция:")
-print("1. Нажми 'Включить ESP' - найдет все вещи")
-print("2. Нажми 'АВТОБАЙ' - купит все быстро")
-print("")
-print("🎮 GUI в левой верхней части экрана")
+print("🎉 Safe ESP загружен с Rayfield GUI!")
 print("Готов к использованию!")
