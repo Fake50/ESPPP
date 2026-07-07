@@ -282,6 +282,31 @@
         local results = {}
         for _, zone in pairs(workspace:GetChildren()) do
             if zone:IsA("Model") and zone.Name:match("Shop_ShopZone") then
+                -- Проверяем ItemSlots для аксессуаров
+                local slots = zone:FindFirstChild("ItemSlots")
+                if slots then
+                    for _, slot in pairs(slots:GetChildren()) do
+                        if slot.Name:match("Slot_") then
+                            for _, child in pairs(slot:GetChildren()) do
+                                if child:IsA("Model") and child.Name:match("^M_") then
+                                    local target = child:FindFirstChild("Handle") or child:FindFirstChild("Body")
+                                    if target and target:IsA("MeshPart") and target.MeshId then
+                                        local id = target.MeshId:match("%d+")
+                                        if id and ACCESSORIES[id] then
+                                            table.insert(results, {
+                                                model = child,
+                                                meshId = id,
+                                                slot = slot
+                                            })
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                -- Проверяем аксессуары вне слотов
                 for _, child in pairs(zone:GetChildren()) do
                     if child:IsA("Model") and child.Name:match("^M_") then
                         local target = child:FindFirstChild("Handle") or child:FindFirstChild("Body")
@@ -290,7 +315,8 @@
                             if id and ACCESSORIES[id] then
                                 table.insert(results, {
                                     model = child,
-                                    meshId = id
+                                    meshId = id,
+                                    slot = nil
                                 })
                             end
                         end
@@ -849,6 +875,7 @@
         
         local model = accessoryData.model
         local meshId = accessoryData.meshId
+        local slot = accessoryData.slot
         
         -- Проверка существования модели
         if not model or not model.Parent then
@@ -868,7 +895,14 @@
         
         -- Проверка баланса
         local playerMoney = getPlayerMoney()
-        local itemPrice = getAccessoryPrice(model)
+        local itemPrice = 0
+        
+        -- Пытаемся получить цену из слота или модели
+        if slot then
+            itemPrice = getItemPrice(slot)
+        else
+            itemPrice = getAccessoryPrice(model)
+        end
         
         print("")
         print("═══════════════════════════════")
@@ -887,11 +921,21 @@
         print("═══════════════════════════════")
         
         -- Получаем SlotId
-        local slotId = getAccessorySlotId(model)
+        local slotId
+        if slot then
+            slotId = getSlotId(slot)
+        else
+            slotId = getAccessorySlotId(model)
+        end
         print("🆔 SlotId:", slotId)
         
         -- Получаем зону
-        local zoneName = model.Parent.Name
+        local zoneName
+        if slot then
+            zoneName = slot.Parent.Parent.Name
+        else
+            zoneName = model.Parent.Name
+        end
         print("📍 Зона:", zoneName)
         
         -- Шаг 1: Телепорт к аксессуару
@@ -917,7 +961,16 @@
         -- Шаг 2: Взять аксессуар (нажать E)
         print("")
         print("👜 ШАГ 2: Нажимаю E на аксессуаре...")
-        if not takeAccessory(model) then
+        local takeSuccess = false
+        if slot then
+            -- Если есть слот, используем takeItem как для вещей
+            takeSuccess = takeItem(slotId, slot)
+        else
+            -- Иначе используем takeAccessory
+            takeSuccess = takeAccessory(model)
+        end
+        
+        if not takeSuccess then
             autoBuyRunning = false
             print("❌ Не удалось взять аксессуар")
             return false, "Не удалось взять аксессуар"
@@ -1016,11 +1069,13 @@
                 local success, message = buyItem(data)
                 if success then
                     boughtClothing = boughtClothing + 1
+                    print("⏳ Ожидание 3 секунды перед следующей покупкой...")
+                    task.wait(3)
                 elseif message == "Недостаточно денег" then
                     skipped = skipped + 1
+                else
+                    task.wait(1)
                 end
-                
-                task.wait(0.5)
             end
             
             -- Покупка аксессуаров
@@ -1036,11 +1091,13 @@
                     local success, message = buyAccessory(data)
                     if success then
                         boughtAccessories = boughtAccessories + 1
+                        print("⏳ Ожидание 3 секунды перед следующей покупкой...")
+                        task.wait(3)
                     elseif message == "Недостаточно денег" then
                         skipped = skipped + 1
+                    else
+                        task.wait(1)
                     end
-                    
-                    task.wait(0.5)
                 end
             end
             
@@ -1069,8 +1126,8 @@
     local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
     local Window = Rayfield:CreateWindow({
-        Name = "🔥 Safe ESP & AutoBuy",
-        LoadingTitle = "Safe ESP",
+        Name = "тгк:FirmaModeHub",
+        LoadingTitle = "FirmaModeHub",
         LoadingSubtitle = "by Kiro",
         ConfigurationSaving = {
             Enabled = false
