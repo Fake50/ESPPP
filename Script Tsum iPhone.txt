@@ -278,6 +278,29 @@ local function getAllMannequins()
     return results
 end
 
+local function getAllAccessories()
+    local results = {}
+    for _, zone in pairs(workspace:GetChildren()) do
+        if zone:IsA("Model") and zone.Name:match("Shop_ShopZone") then
+            for _, child in pairs(zone:GetChildren()) do
+                if child:IsA("Model") and child.Name:match("^M_") then
+                    local target = child:FindFirstChild("Handle") or child:FindFirstChild("Body")
+                    if target and target:IsA("MeshPart") and target.MeshId then
+                        local id = target.MeshId:match("%d+")
+                        if id and ACCESSORIES[id] then
+                            table.insert(results, {
+                                model = child,
+                                meshId = id
+                            })
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return results
+end
+
 -- ============================================
 -- ESP ФУНКЦИИ
 -- ============================================
@@ -334,6 +357,8 @@ local function enableESP()
     clearESP()
     
     local found = 0
+    
+    -- Вещи
     for _, data in pairs(getAllMannequins()) do
         local names = {}
         if data.clothingData.shirtId then
@@ -348,6 +373,16 @@ local function enableESP()
         if #names > 0 then
             createHighlight(data.mannequin)
             createLabel(data.mannequin, table.concat(names, " + "))
+            found = found + 1
+        end
+    end
+    
+    -- Аксессуары
+    for _, data in pairs(getAllAccessories()) do
+        local item = ACCESSORIES[data.meshId]
+        if item then
+            createHighlight(data.model)
+            createLabel(data.model, item.name)
             found = found + 1
         end
     end
