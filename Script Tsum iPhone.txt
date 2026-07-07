@@ -690,12 +690,12 @@ local function purchaseItem(slotId)
         end
     end
     
-    -- Отправляем RemoteFunction для покупки
+    -- Отправляем ремоут подтверждения покупки
     task.wait(0.3) -- Уменьшенная задержка
-    print("📡 Вызываю RemoteFunction ShopPurchase...")
+    print("📡 Вызываю ремоут ConfirmPurchase...")
     local success, result = pcall(function()
         local args = {"ShopPurchase", {slotId}}
-        return game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("RemoteFunction"):InvokeServer(unpack(args))
+        return game:GetService("ReplicatedStorage"):WaitForChild("ShopRemotes"):WaitForChild("ConfirmPurchase"):InvokeServer(unpack(args))
     end)
     
     if success then
