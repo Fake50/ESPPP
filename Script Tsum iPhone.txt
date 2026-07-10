@@ -504,11 +504,11 @@ end)
 -- ============================================
 
 -- Плавный полет к объекту с TweenService
-local function tweenToObject(targetObj)
+local function tweenToObject(targetObj, checkForNewItems)
     local char = player.Character
-    if not char then return false end
+    if not char then return false, nil end
     local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return false end
+    if not root then return false, nil end
     
     local targetPart = targetObj
     if targetObj:IsA("Model") then
@@ -517,7 +517,7 @@ local function tweenToObject(targetObj)
     
     if not targetPart or not targetPart:IsA("BasePart") then
         print("[AutoBuy] Не удалось найти позицию для полета")
-        return false
+        return false, nil
     end
     
     -- Вычисляем расстояние и время полета
@@ -535,7 +535,7 @@ local function tweenToObject(targetObj)
     tween.Completed:Wait()
     
     print("[AutoBuy] ✅ Прилетел к цели")
-    return true
+    return true, nil
 end
 
 -- Отладка структуры объекта
@@ -751,8 +751,8 @@ local function findShopZone(obj)
     return nil
 end
 
--- Поиск ближайшего Seller в той же ShopZone
-local function findSellerInShop(itemObj)
+-- Поиск ближайшего Seller в той же ShopZone (с возможностью исключить конкретного)
+local function findSellerInShop(itemObj, excludeSeller)
     print("[AutoBuy] 🔍 Ищу Seller в той же ShopZone...")
     
     -- Получаем текущую позицию игрока
@@ -785,7 +785,12 @@ local function findSellerInShop(itemObj)
     
     for _, obj in pairs(workspace:GetDescendants()) do
         if obj.Name == "Seller" and obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") then
-            table.insert(allSellers, obj)
+            -- Исключаем конкретного seller, если указан
+            if not excludeSeller or obj ~= excludeSeller then
+                table.insert(allSellers, obj)
+            else
+                print("[AutoBuy] ⚠️ Исключаю предыдущего Seller из списка")
+            end
         end
     end
     
@@ -892,6 +897,7 @@ end
 
 -- Основной цикл автобая
 local autoBuyCounter = 0
+
 local function autoBuyCycle()
     if not autoBuyEnabled then return end
     
@@ -920,7 +926,8 @@ local function autoBuyCycle()
     
     -- 3. Летим к предмету
     print("[AutoBuy] ✈️ Лечу к предмету...")
-    if not tweenToObject(targetItem.object) then
+    local success, _ = tweenToObject(targetItem.object, false)
+    if not success then
         print("[AutoBuy] ❌ Не удалось долететь до предмета")
         return
     end
@@ -928,7 +935,7 @@ local function autoBuyCycle()
     task.wait(0.5)
     
     -- 4. Берем предмет (клик)
-    print("[AutoBuy] � Беру предмет в корзину...")
+    print("[AutoBuy] 🛒 Беру предмет в корзину...")
     if not clickObject(targetItem.object) then
         print("[AutoBuy] ❌ Не удалось взять предмет")
         return
@@ -938,35 +945,104 @@ local function autoBuyCycle()
     task.wait(0.5)
     
     -- 5. Ищем Seller в том же магазине
-    print("[AutoBuy] 🔍 Ищу продавца (Seller)...")
-    local seller = findSellerInShop(targetItem.object)
-    if not seller then
-        print("[AutoBuy] ❌ Seller не найден в магазине")
-        return
+    local excludedSeller = nil  -- Seller которого нужно исключить из поиска
+    local maxRetries = 3  -- Максимум 3 попытки с разными seller
+    local retryCount = 0
+    
+    while retryCount < maxRetries do
+        print("[AutoBuy] 🔍 Ищу продавца (Seller)...")
+        if excludedSeller then
+            print("[AutoBuy] ⚠️ Исключаю неправильного Seller из поиска")
+        end
+        
+        local seller = findSellerInShop(targetItem.object, excludedSeller)
+        if not seller then
+            print("[AutoBuy] ❌ Seller не найден в магазине")
+            return
+        end
+        
+        -- 6. Летим к Seller
+        print("[AutoBuy] ✈️ Лечу к продавцу...")
+        local successFly, _ = tweenToObject(seller, false)
+        if not successFly then
+            print("[AutoBuy] ❌ Не удалось долететь до Seller")
+            return
+        end
+        
+        task.wait(0.3)
+        
+        -- 7. Покупаем (клик по Seller)
+        print("[AutoBuy] � Покупаю предмет...")
+        if not clickObject(seller) then
+            print("[AutoBuy] ❌ Не удалось кликнуть по Seller")
+            return
+        end
+        
+        -- 8. ПРОВЕРКА: Продался ли предмет?
+        task.wait(1.0)  -- Даем время на обработку покупки
+        
+        -- Обновляем ESP и проверяем, остался ли предмет
+        local itemsAfter = findAllItems()
+        local itemStillExists = false
+        
+        for _, item in pairs(itemsAfter) do
+            if item.assetId == targetItem.assetId then
+                -- Проверяем, что это тот же предмет (по позиции)
+                local dist = getDistance(item.object)
+                if dist and dist < 100 then  -- Если предмет рядом
+                    itemStillExists = true
+                    targetItem = item  -- Обновляем ссылку на предмет
+                    break
+                end
+            end
+        end
+        
+        if not itemStillExists then
+            -- Предмет исчез - покупка успешна!
+            autoBuyCounter = autoBuyCounter + 1
+            print("[AutoBuy] ✅✅✅ ПОКУПКА ЗАВЕРШЕНА! ✅✅✅")
+            print("[AutoBuy] 📈 Всего куплено: " .. autoBuyCounter)
+            print("[AutoBuy] ═══════════════════════════════\n")
+            break
+        else
+            -- Предмет всё ещё есть - корзина была пустая!
+            print("[AutoBuy] ⚠️⚠️⚠️ КОРЗИНА ПУСТАЯ! Предмет не был куплен!")
+            print("[AutoBuy] � Возвращаюсь к предмету и ищу другого Seller...")
+            
+            -- Исключаем этого seller из следующего поиска
+            excludedSeller = seller
+            retryCount = retryCount + 1
+            
+            if retryCount >= maxRetries then
+                print("[AutoBuy] ❌ Превышено количество попыток, пропускаю предмет")
+                return
+            end
+            
+            -- Возвращаемся к предмету
+            print("[AutoBuy] ✈️ Лечу обратно к предмету...")
+            local successReturn, _ = tweenToObject(targetItem.object, false)
+            if not successReturn then
+                print("[AutoBuy] ❌ Не удалось вернуться к предмету")
+                return
+            end
+            
+            task.wait(0.5)
+            
+            -- Снова берем предмет
+            print("[AutoBuy] � Беру предмет в корзину заново...")
+            if not clickObject(targetItem.object) then
+                print("[AutoBuy] ❌ Не удалось взять предмет повторно")
+                return
+            end
+            
+            print("[AutoBuy] ✅ Предмет снова в корзине, ищу другого Seller...")
+            task.wait(0.5)
+            
+            -- Цикл продолжится и найдет другого seller
+        end
     end
     
-    -- 6. Летим к Seller
-    print("[AutoBuy] ✈️ Лечу к продавцу...")
-    if not tweenToObject(seller) then
-        print("[AutoBuy] ❌ Не удалось долететь до Seller")
-        return
-    end
-    
-    task.wait(0.3)
-    
-    -- 7. Покупаем (клик по Seller)
-    print("[AutoBuy] 💰 Покупаю предмет...")
-    if not clickObject(seller) then
-        print("[AutoBuy] ❌ Не удалось кликнуть по Seller")
-        return
-    end
-    
-    autoBuyCounter = autoBuyCounter + 1
-    print("[AutoBuy] ✅✅✅ ПОКУПКА ЗАВЕРШЕНА! ✅✅✅")
-    print("[AutoBuy] 📈 Всего куплено: " .. autoBuyCounter)
-    print("[AutoBuy] ═══════════════════════════════\n")
-    
-    -- 8. Обновляем ESP
+    -- 9. Обновляем ESP
     task.wait(0.5)
     if espEnabled then
         updateESP()
