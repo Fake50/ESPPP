@@ -764,20 +764,23 @@ local function findSellerInShop(itemObj)
 end
 
 -- Основной цикл автобая
+local autoBuyCounter = 0
 local function autoBuyCycle()
     if not autoBuyEnabled then return end
     
     print("\n[AutoBuy] ═══════════════════════════════")
-    print("[AutoBuy] 🔄 Начинаю цикл покупки...")
+    print("[AutoBuy] 🔄 Цикл покупки #" .. (autoBuyCounter + 1))
     
     -- 1. Находим предметы с ESP
     local items = findAllItems()
     if #items == 0 then
-        print("[AutoBuy] ❌ Нет предметов с ESP")
+        print("[AutoBuy] ⏸️ Нет предметов с ESP, жду...")
         return
     end
     
-    -- 2. Выбираем первый попавшийся предмет (или самый близкий)
+    print("[AutoBuy] 📊 Найдено предметов: " .. #items)
+    
+    -- 2. Выбираем ближайший предмет
     table.sort(items, function(a, b)
         local distA = getDistance(a.object) or math.huge
         local distB = getDistance(b.object) or math.huge
@@ -785,36 +788,38 @@ local function autoBuyCycle()
     end)
     
     local targetItem = items[1]
-    print(string.format("[AutoBuy] 🎯 Цель: %s (%s)", targetItem.name, targetItem.rarity))
-    print("[AutoBuy] 📦 Структура объекта:")
-    debugObject(targetItem.object)
+    local distance = getDistance(targetItem.object)
+    print(string.format("[AutoBuy] 🎯 Цель: %s (%s) - %.0f м", targetItem.name, targetItem.rarity, distance or 0))
     
     -- 3. Летим к предмету
+    print("[AutoBuy] ✈️ Лечу к предмету...")
     if not tweenToObject(targetItem.object) then
         print("[AutoBuy] ❌ Не удалось долететь до предмета")
         return
     end
     
-    task.wait(0.5)  -- Увеличил задержку
+    task.wait(0.5)
     
-    -- 4. Кликаем по предмету (добавляется в корзину)
-    print("[AutoBuy] 🖱️ Попытка взять предмет...")
+    -- 4. Берем предмет (клик)
+    print("[AutoBuy] � Беру предмет в корзину...")
     if not clickObject(targetItem.object) then
-        print("[AutoBuy] ❌ Не удалось кликнуть по предмету")
+        print("[AutoBuy] ❌ Не удалось взять предмет")
         return
     end
     
-    print("[AutoBuy] ✅ Предмет добавлен в корзину")
+    print("[AutoBuy] ✅ Предмет взят в корзину")
     task.wait(0.5)
     
     -- 5. Ищем Seller в том же магазине
+    print("[AutoBuy] 🔍 Ищу продавца (Seller)...")
     local seller = findSellerInShop(targetItem.object)
     if not seller then
-        print("[AutoBuy] ❌ Seller не найден")
+        print("[AutoBuy] ❌ Seller не найден в магазине")
         return
     end
     
     -- 6. Летим к Seller
+    print("[AutoBuy] ✈️ Лечу к продавцу...")
     if not tweenToObject(seller) then
         print("[AutoBuy] ❌ Не удалось долететь до Seller")
         return
@@ -822,13 +827,16 @@ local function autoBuyCycle()
     
     task.wait(0.3)
     
-    -- 7. Кликаем по Seller (покупка)
+    -- 7. Покупаем (клик по Seller)
+    print("[AutoBuy] 💰 Покупаю предмет...")
     if not clickObject(seller) then
         print("[AutoBuy] ❌ Не удалось кликнуть по Seller")
         return
     end
     
-    print("[AutoBuy] ✅ Покупка завершена!")
+    autoBuyCounter = autoBuyCounter + 1
+    print("[AutoBuy] ✅✅✅ ПОКУПКА ЗАВЕРШЕНА! ✅✅✅")
+    print("[AutoBuy] 📈 Всего куплено: " .. autoBuyCounter)
     print("[AutoBuy] ═══════════════════════════════\n")
     
     -- 8. Обновляем ESP
@@ -845,10 +853,16 @@ local function startAutoBuy()
     print("[AutoBuy] 🚀 AutoBuy запущен")
     autoBuyThread = task.spawn(function()
         while autoBuyEnabled do
-            pcall(function()
+            local success, err = pcall(function()
                 autoBuyCycle()
             end)
-            task.wait(2) -- Задержка между циклами
+            
+            if not success then
+                print("[AutoBuy] ⚠️ Ошибка в цикле: " .. tostring(err))
+            end
+            
+            -- Короткая задержка между циклами (1 секунда)
+            task.wait(1)
         end
         autoBuyThread = nil
         print("[AutoBuy] ⏹️ AutoBuy остановлен")
@@ -861,6 +875,11 @@ local function stopAutoBuy()
         task.cancel(autoBuyThread)
         autoBuyThread = nil
     end
+    
+    -- Возвращаем камеру в нормальный режим
+    local camera = workspace.CurrentCamera
+    camera.CameraType = Enum.CameraType.Custom
+    print("[AutoBuy] 🛑 AutoBuy остановлен, камера восстановлена")
 end
 
 -- ============================================
@@ -1018,6 +1037,7 @@ local StatsSection = StatsTab:CreateSection("Информация")
 
 local ItemCountLabel = StatsTab:CreateLabel("Предметов в базе: Загрузка...")
 local FoundItemsLabel = StatsTab:CreateLabel("Найдено предметов: 0")
+local BoughtItemsLabel = StatsTab:CreateLabel("Куплено предметов: 0")
 
 -- Обновление статистики
 task.spawn(function()
@@ -1031,6 +1051,7 @@ task.spawn(function()
         
         ItemCountLabel:Set("Предметов в базе: " .. totalItems)
         FoundItemsLabel:Set("Найдено предметов в мире: " .. foundItems)
+        BoughtItemsLabel:Set("Куплено предметов: " .. autoBuyCounter)
         
         task.wait(5)
     end
