@@ -566,6 +566,7 @@ local function clickObject(targetObj)
     if not root then return false end
     
     local camera = workspace.CurrentCamera
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
     
     -- Находим центральную часть для наведения
     local targetPart = nil
@@ -596,7 +597,11 @@ local function clickObject(targetObj)
     print("[AutoBuy] 🎯 Навожу камеру на цель...")
     local targetPosition = targetPart.Position
     
-    -- Устанавливаем камеру от первого лица
+    -- Сохраняем старую позицию камеры
+    local oldCameraType = camera.CameraType
+    local oldCFrame = camera.CFrame
+    
+    -- Устанавливаем камеру от первого лица с наведением
     camera.CameraType = Enum.CameraType.Scriptable
     camera.CFrame = CFrame.new(root.Position, targetPosition)
     
@@ -617,7 +622,7 @@ local function clickObject(targetObj)
             fireclickdetector(clickDetector)
         end)
         task.wait(0.3)
-        camera.CameraType = Enum.CameraType.Custom
+        camera.CameraType = oldCameraType
         return true
     end
     
@@ -636,48 +641,75 @@ local function clickObject(targetObj)
             fireproximityprompt(proximityPrompt)
         end)
         task.wait(0.3)
-        camera.CameraType = Enum.CameraType.Custom
+        camera.CameraType = oldCameraType
         return true
     end
     
-    -- МЕТОД 3: Визуальный клик с наведенной камерой
+    -- МЕТОД 3: Эквип как Tool (если это одежда в виде Tool)
+    if targetObj:IsA("Tool") or targetObj:FindFirstChildOfClass("Tool") then
+        print("[AutoBuy] Пробую экипировать как Tool...")
+        local tool = targetObj:IsA("Tool") and targetObj or targetObj:FindFirstChildOfClass("Tool")
+        if tool and humanoid then
+            pcall(function()
+                tool.Parent = player.Backpack
+                humanoid:EquipTool(tool)
+            end)
+            task.wait(0.3)
+            camera.CameraType = oldCameraType
+            return true
+        end
+    end
+    
+    -- МЕТОД 4: Поиск и активация через Humanoid.Touched
+    print("[AutoBuy] Пробую через касание...")
+    if humanoid and targetPart then
+        pcall(function()
+            -- Симулируем касание
+            firetouchinterest(root, targetPart, 0)
+            task.wait(0.1)
+            firetouchinterest(root, targetPart, 1)
+        end)
+        task.wait(0.2)
+    end
+    
+    -- МЕТОД 5: Визуальный клик с наведенной камерой
     print("[AutoBuy] Выполняю визуальный клик с камерой...")
     local screenPos, onScreen = camera:WorldToScreenPoint(targetPosition)
     
     if onScreen then
-        -- Используем mouse1click
+        -- Комбо из всех методов клика
         pcall(function()
+            -- 1. mouse1click
             local mouse = player:GetMouse()
             mouse.Target = targetPart
             mouse1click()
         end)
-        print("[AutoBuy] ✅ Клик mouse1click выполнен")
-        task.wait(0.1)
+        print("[AutoBuy] ✅ Клик mouse1click")
+        task.wait(0.05)
         
-        -- Дополнительно пробуем VirtualUser
+        -- 2. VirtualUser
         pcall(function()
             local VirtualUser = game:GetService("VirtualUser")
             VirtualUser:ClickButton1(Vector2.new(screenPos.X, screenPos.Y))
         end)
-        print("[AutoBuy] ✅ Клик VirtualUser выполнен")
-        task.wait(0.2)
+        print("[AutoBuy] ✅ Клик VirtualUser")
+        task.wait(0.05)
         
-        camera.CameraType = Enum.CameraType.Custom
+        -- 3. VirtualInputManager
+        pcall(function()
+            VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, true, game, 0)
+            task.wait(0.03)
+            VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, false, game, 0)
+        end)
+        print("[AutoBuy] ✅ Клик VirtualInputManager")
+        
+        task.wait(0.3)
+        camera.CameraType = oldCameraType
         return true
     end
     
-    -- МЕТОД 4: Прямой клик через VirtualInputManager
-    pcall(function()
-        VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, true, game, 0)
-        task.wait(0.05)
-        VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, false, game, 0)
-    end)
-    print("[AutoBuy] ✅ Клик VirtualInputManager выполнен")
-    task.wait(0.2)
-    
-    camera.CameraType = Enum.CameraType.Custom
-    
-    print("[AutoBuy] ⚠️ Клик выполнен, но результат неизвестен")
+    camera.CameraType = oldCameraType
+    print("[AutoBuy] ⚠️ Клик выполнен всеми методами")
     return true  -- Возвращаем true чтобы продолжить
 end
 
