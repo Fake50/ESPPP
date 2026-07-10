@@ -327,38 +327,81 @@ local function findAllItems()
                 assetId = string.match(tostring(obj.PantsTemplate), "%d+")
             elseif obj:IsA("Shirt") then
                 assetId = string.match(tostring(obj.ShirtTemplate), "%d+")
-            elseif obj:IsA("Accessory") and obj:FindFirstChild("Handle") then
-                local handle = obj.Handle
-                if handle:FindFirstChildOfClass("SpecialMesh") then
-                    assetId = string.match(tostring(handle:FindFirstChildOfClass("SpecialMesh").MeshId), "%d+")
-                elseif handle:FindFirstChildOfClass("MeshPart") then
-                    assetId = string.match(tostring(handle:FindFirstChildOfClass("MeshPart").MeshId), "%d+")
+            elseif obj:IsA("Accessory") then
+                -- Ищем Handle в аксессуаре
+                local handle = obj:FindFirstChild("Handle")
+                if handle then
+                    -- Проверяем SpecialMesh
+                    local specialMesh = handle:FindFirstChildOfClass("SpecialMesh")
+                    if specialMesh and specialMesh.MeshId then
+                        assetId = string.match(tostring(specialMesh.MeshId), "%d+")
+                    end
+                    
+                    -- Если не нашли, проверяем MeshPart
+                    if not assetId then
+                        local meshPart = handle:FindFirstChildOfClass("MeshPart")
+                        if meshPart and meshPart.MeshId then
+                            assetId = string.match(tostring(meshPart.MeshId), "%d+")
+                        end
+                    end
+                    
+                    -- Если не нашли, проверяем TextureID
+                    if not assetId and specialMesh and specialMesh.TextureId then
+                        assetId = string.match(tostring(specialMesh.TextureId), "%d+")
+                    end
+                end
+                
+                -- Дополнительно проверяем сам Accessory на наличие MeshId
+                if not assetId and obj:FindFirstChild("MeshId") then
+                    assetId = string.match(tostring(obj.MeshId), "%d+")
                 end
             end
             
             if assetId then
                 local itemData = findItemById(assetId)
                 if itemData then
-                    -- Поднимаемся до Model
-                    local target = obj.Parent
-                    while target and not target:IsA("Model") do
-                        target = target.Parent
-                        if target == workspace or target == game then
-                            target = nil
-                            break
+                    -- Для аксессуаров: если это отдельная модель, используем её
+                    -- Иначе поднимаемся до родительской Model
+                    local target = obj
+                    
+                    if obj:IsA("Accessory") then
+                        -- Для аксессуаров проверяем, есть ли родительская Model
+                        if obj.Parent:IsA("Model") and obj.Parent ~= workspace then
+                            target = obj.Parent
+                        else
+                            target = obj  -- Сам аксессуар как цель
+                        end
+                    else
+                        -- Для одежды поднимаемся до Model
+                        target = obj.Parent
+                        while target and not target:IsA("Model") do
+                            target = target.Parent
+                            if target == workspace or target == game then
+                                target = nil
+                                break
+                            end
                         end
                     end
                     
                     -- Проверяем, что это не игрок и не дубликат
                     if target and not isPlayerModel(target) and not processedModels[target] then
                         processedModels[target] = true
+                        
+                        -- Определяем тип предмета
+                        local itemType = "Item"
+                        if obj:IsA("Accessory") then
+                            itemType = "Accessory"
+                        elseif obj:IsA("Pants") or obj:IsA("Shirt") then
+                            itemType = "Clothing"
+                        end
+                        
                         table.insert(results, {
                             object = target,
                             name = itemData.name,
                             price = 0,
                             resellMulti = 0,
                             rarity = itemData.rarity,
-                            type = "Item",
+                            type = itemType,
                             quality = "",
                             assetId = assetId,
                         })
