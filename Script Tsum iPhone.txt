@@ -249,10 +249,13 @@ end
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local player = Players.LocalPlayer
 local espEnabled = true
 local autoBuyEnabled = false
 local autoSellEnabled = false
+local autoBuySpeed = 21 -- Скорость полета
 
 local FILTER = {
     minPrice = 0,
@@ -469,6 +472,238 @@ workspace.DescendantRemoving:Connect(function(descendant)
 end)
 
 -- ============================================
+-- AUTOBUY ФУНКЦИИ
+-- ============================================
+
+-- Плавный полет к объекту с TweenService
+local function tweenToObject(targetObj)
+    local char = player.Character
+    if not char then return false end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return false end
+    
+    local targetPart = targetObj
+    if targetObj:IsA("Model") then
+        targetPart = targetObj.PrimaryPart or targetObj:FindFirstChildWhichIsA("BasePart")
+    end
+    
+    if not targetPart or not targetPart:IsA("BasePart") then
+        print("[AutoBuy] Не удалось найти позицию для полета")
+        return false
+    end
+    
+    -- Вычисляем расстояние и время полета
+    local distance = (root.Position - targetPart.Position).Magnitude
+    local duration = distance / autoBuySpeed
+    
+    print(string.format("[AutoBuy] Лечу к цели (%.0f м, %.1f сек)", distance, duration))
+    
+    -- Создаем Tween для плавного перемещения
+    local targetCFrame = CFrame.new(targetPart.Position) * CFrame.new(0, 3, 0)
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(root, tweenInfo, {CFrame = targetCFrame})
+    
+    tween:Play()
+    tween.Completed:Wait()
+    
+    print("[AutoBuy] ✅ Прилетел к цели")
+    return true
+end
+
+-- Симуляция клика по объекту
+local function clickObject(targetObj)
+    print("[AutoBuy] 🖱️ Кликаю по объекту: " .. targetObj.Name)
+    
+    local char = player.Character
+    if not char then return false end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return false end
+    
+    -- Находим ClickDetector
+    local clickDetector = targetObj:FindFirstChildOfClass("ClickDetector", true)
+    if clickDetector then
+        print("[AutoBuy] ✅ Найден ClickDetector, активирую...")
+        fireclickdetector(clickDetector)
+        task.wait(0.2)
+        return true
+    end
+    
+    -- Если нет ClickDetector, симулируем клик мышкой
+    print("[AutoBuy] Симулирую клик мышкой...")
+    local camera = workspace.CurrentCamera
+    local targetPart = targetObj
+    if targetObj:IsA("Model") then
+        targetPart = targetObj.PrimaryPart or targetObj:FindFirstChildWhichIsA("BasePart")
+    end
+    
+    if targetPart and targetPart:IsA("BasePart") then
+        -- Наводим камеру на объект
+        local targetPos = targetPart.Position
+        local screenPos, onScreen = camera:WorldToScreenPoint(targetPos)
+        
+        if onScreen then
+            -- Симулируем клик мышкой
+            VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, true, game, 0)
+            task.wait(0.05)
+            VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, false, game, 0)
+            print("[AutoBuy] ✅ Клик выполнен")
+            task.wait(0.2)
+            return true
+        end
+    end
+    
+    print("[AutoBuy] ⚠️ Не удалось кликнуть по объекту")
+    return false
+end
+
+-- Поиск Seller в той же зоне магазина
+local function findSellerInShop(itemObj)
+    print("[AutoBuy] 🔍 Ищу Seller в магазине...")
+    
+    -- Поднимаемся по иерархии до магазина
+    local current = itemObj
+    local shopModel = nil
+    
+    -- Ищем родительский объект магазина (обычно это Model в ActiveShops)
+    while current and current.Parent do
+        if current.Parent.Name == "ActiveShops" then
+            shopModel = current
+            break
+        end
+        current = current.Parent
+    end
+    
+    if not shopModel then
+        print("[AutoBuy] ❌ Не удалось определить магазин предмета")
+        return nil
+    end
+    
+    print("[AutoBuy] 🏪 Магазин: " .. shopModel.Name)
+    
+    -- Ищем Seller в этом магазине
+    local seller = nil
+    
+    -- Проверяем структуру: Магазин -> NPC -> Seller
+    local npcFolder = shopModel:FindFirstChild("NPC")
+    if npcFolder then
+        seller = npcFolder:FindFirstChild("Seller")
+        if seller then
+            print("[AutoBuy] ✅ Найден Seller в NPC папке")
+            return seller
+        end
+    end
+    
+    -- Альтернативный поиск: ищем по всем детям магазина
+    for _, child in pairs(shopModel:GetDescendants()) do
+        if child.Name == "Seller" and (child:IsA("Model") or child:IsA("Part")) then
+            print("[AutoBuy] ✅ Найден Seller в магазине (альтернативный поиск)")
+            seller = child
+            return seller
+        end
+    end
+    
+    print("[AutoBuy] ❌ Seller не найден в магазине " .. shopModel.Name)
+    return nil
+end
+
+-- Основной цикл автобая
+local function autoBuyCycle()
+    if not autoBuyEnabled then return end
+    
+    print("\n[AutoBuy] ═══════════════════════════════")
+    print("[AutoBuy] 🔄 Начинаю цикл покупки...")
+    
+    -- 1. Находим предметы с ESP
+    local items = findAllItems()
+    if #items == 0 then
+        print("[AutoBuy] ❌ Нет предметов с ESP")
+        return
+    end
+    
+    -- 2. Выбираем первый попавшийся предмет (или самый близкий)
+    table.sort(items, function(a, b)
+        local distA = getDistance(a.object) or math.huge
+        local distB = getDistance(b.object) or math.huge
+        return distA < distB
+    end)
+    
+    local targetItem = items[1]
+    print(string.format("[AutoBuy] 🎯 Цель: %s (%s)", targetItem.name, targetItem.rarity))
+    
+    -- 3. Летим к предмету
+    if not tweenToObject(targetItem.object) then
+        print("[AutoBuy] ❌ Не удалось долететь до предмета")
+        return
+    end
+    
+    task.wait(0.3)
+    
+    -- 4. Кликаем по предмету (добавляется в корзину)
+    if not clickObject(targetItem.object) then
+        print("[AutoBuy] ❌ Не удалось кликнуть по предмету")
+        return
+    end
+    
+    print("[AutoBuy] ✅ Предмет добавлен в корзину")
+    task.wait(0.5)
+    
+    -- 5. Ищем Seller в том же магазине
+    local seller = findSellerInShop(targetItem.object)
+    if not seller then
+        print("[AutoBuy] ❌ Seller не найден")
+        return
+    end
+    
+    -- 6. Летим к Seller
+    if not tweenToObject(seller) then
+        print("[AutoBuy] ❌ Не удалось долететь до Seller")
+        return
+    end
+    
+    task.wait(0.3)
+    
+    -- 7. Кликаем по Seller (покупка)
+    if not clickObject(seller) then
+        print("[AutoBuy] ❌ Не удалось кликнуть по Seller")
+        return
+    end
+    
+    print("[AutoBuy] ✅ Покупка завершена!")
+    print("[AutoBuy] ═══════════════════════════════\n")
+    
+    -- 8. Обновляем ESP
+    task.wait(0.5)
+    if espEnabled then
+        updateESP()
+    end
+end
+
+-- Поток автобая
+local autoBuyThread = nil
+local function startAutoBuy()
+    if autoBuyThread then return end
+    print("[AutoBuy] 🚀 AutoBuy запущен")
+    autoBuyThread = task.spawn(function()
+        while autoBuyEnabled do
+            pcall(function()
+                autoBuyCycle()
+            end)
+            task.wait(2) -- Задержка между циклами
+        end
+        autoBuyThread = nil
+        print("[AutoBuy] ⏹️ AutoBuy остановлен")
+    end)
+end
+
+local function stopAutoBuy()
+    autoBuyEnabled = false
+    if autoBuyThread then
+        task.cancel(autoBuyThread)
+        autoBuyThread = nil
+    end
+end
+
+-- ============================================
 -- RAYFIELD GUI
 -- ============================================
 local Window = Rayfield:CreateWindow({
@@ -538,6 +773,83 @@ local RefreshButton = ESPTab:CreateButton({
             })
         end
     end,
+})
+
+-- Вкладка AutoBuy
+local AutoBuyTab = Window:CreateTab("🛒 AutoBuy", 4483362458)
+local AutoBuySection = AutoBuyTab:CreateSection("Автоматическая покупка")
+
+local AutoBuyToggle = AutoBuyTab:CreateToggle({
+    Name = "Включить AutoBuy",
+    CurrentValue = autoBuyEnabled,
+    Flag = "AutoBuyEnabled",
+    Callback = function(Value)
+        autoBuyEnabled = Value
+        if autoBuyEnabled then
+            startAutoBuy()
+            Rayfield:Notify({
+                Title = "AutoBuy Включен",
+                Content = "Автоматическая покупка запущена",
+                Duration = 3,
+                Image = 4483362458,
+            })
+        else
+            stopAutoBuy()
+            Rayfield:Notify({
+                Title = "AutoBuy Выключен",
+                Content = "Автоматическая покупка остановлена",
+                Duration = 3,
+                Image = 4483362458,
+            })
+        end
+    end,
+})
+
+local SpeedSlider = AutoBuyTab:CreateSlider({
+    Name = "Скорость полета",
+    Range = {10, 50},
+    Increment = 1,
+    Suffix = " м/с",
+    CurrentValue = autoBuySpeed,
+    Flag = "AutoBuySpeed",
+    Callback = function(Value)
+        autoBuySpeed = Value
+        Rayfield:Notify({
+            Title = "Скорость изменена",
+            Content = "Новая скорость: " .. Value .. " м/с",
+            Duration = 2,
+            Image = 4483362458,
+        })
+    end,
+})
+
+local ManualBuyButton = AutoBuyTab:CreateButton({
+    Name = "🔄 Выполнить один цикл покупки",
+    Callback = function()
+        if autoBuyEnabled then
+            Rayfield:Notify({
+                Title = "Ошибка",
+                Content = "Сначала выключите AutoBuy!",
+                Duration = 2,
+                Image = 4483362458,
+            })
+        else
+            Rayfield:Notify({
+                Title = "Запуск...",
+                Content = "Выполняю один цикл покупки",
+                Duration = 2,
+                Image = 4483362458,
+            })
+            task.spawn(function()
+                pcall(autoBuyCycle)
+            end)
+        end
+    end,
+})
+
+AutoBuyTab:CreateParagraph({
+    Title = "ℹ️ Как работает AutoBuy",
+    Content = "1. Находит ближайший предмет с ESP\n2. Летит к нему плавно (Tween)\n3. Кликает по предмету (добавление в корзину)\n4. Находит Seller в том же магазине\n5. Летит к Seller\n6. Кликает по Seller (покупка)"
 })
 
 -- Вкладка Статистика
