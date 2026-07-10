@@ -1,1348 +1,1449 @@
 -- ============================================
--- ESP + AUTOBUY + AUTOSELL
--- Made by: Firma Mode Hub
--- Telegram: @Firma Mode Hub
+-- 🔥 ESP ULTRA MODERN - КЛИЕНТ (ЗАЩИЩЁННЫЙ)
 -- ============================================
 
--- Загружаем Rayfield
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
-print("[Rayfield] Библиотека загружена")
+print("🔄 Загрузка ESP Ultra Modern (Protected)...")
 
 -- ============================================
--- СПИСОК ПРЕДМЕТОВ ДЛЯ ESP
+-- КОНФИГУРАЦИЯ
 -- ============================================
-local ASSETS_DATA = {
-    -- ===== ⚫ JACKPOT =====
-    ["6004029863"] = { name = "Haliky Худи", rarity = "Legendary", chance = 0.001 },
-    ["8631671219"] = { name = "Stone Island Big Loom Camo-Tc", rarity = "Legendary", chance = 0.002 },
-    ["10443560332"] = { name = "Raf Simons AW01 Runway", rarity = "Legendary", chance = 0.002 },
-    ["6676412078"] = { name = "Haliky Gang Bears", rarity = "Legendary", chance = 0.003 },
-    ["71906531939193"] = { name = "Yohji Yamamoto Куртка Темно-Синяя", rarity = "Legendary", chance = 0.003 },
-    ["130162125639664"] = { name = "Yohji Yamamoto Куртка Красная", rarity = "Legendary", chance = 0.004 },
-    ["1329266661"] = { name = "BAPE Full Zip Shark", rarity = "Legendary", chance = 0.005 },
-    ["8631708414"] = { name = "Stone Island Big Loom Camo-Tc (Штаны)", rarity = "Legendary", chance = 0.005 },
-    ["92502686962334"] = { name = "Yohji Yamamoto Свитер Кожанка", rarity = "Legendary", chance = 0.005 },
-    ["7369775832"] = { name = "Chrome Hearts x LV Jacket", rarity = "Legendary", chance = 0.005 },
-    ["13429337006"] = { name = "Moncler x PA Fiber Light Puffer", rarity = "Legendary", chance = 0.005 },
-    ["74621497123361"] = { name = "Raf Simons Pharaxus Green Black (Штаны)", rarity = "Legendary", chance = 0.005 },
-    ["85073157438003"] = { name = "Maison Margiela Куртка из Ремней", rarity = "Legendary", chance = 0.005 },
-    ["6071739641"] = { name = "Off-White Virgil Abloh Красный", rarity = "Legendary", chance = 0.005 },
-    ["1103783722"] = { name = "Bape x Supreme", rarity = "Legendary", chance = 0.007 },
-    ["7205233873"] = { name = "Palm Angels Zip Кислотный", rarity = "Legendary", chance = 0.007 },
-    ["78339652684003"] = { name = "Stone Island x Supreme Белые", rarity = "Legendary", chance = 0.008 },
-    ["13876916067"] = { name = "Stone Island x Supreme", rarity = "Legendary", chance = 0.008 },
-    ["6501833581"] = { name = "Palm Angels Zip Цветок", rarity = "Legendary", chance = 0.009 },
-    ["119801182639139"] = { name = "Palm Angels Zip Фиолетовый", rarity = "Legendary", chance = 0.009 },
-    ["112790132457513"] = { name = "Stone Island x Supreme White (Штаны)", rarity = "Legendary", chance = 0.01 },
-    ["116321915070400"] = { name = "Stone Island x Supreme (Штаны)", rarity = "Legendary", chance = 0.01 },
-    ["118565360972858"] = { name = "Balenciaga Nasa Bomber Jacket", rarity = "Legendary", chance = 0.01 },
-    ["16662225319"] = { name = "Balenciaga Runway", rarity = "Legendary", chance = 0.01 },
-    ["127906814275652"] = { name = "Balenciaga Leather (Штаны)", rarity = "Legendary", chance = 0.01 },
-    ["5944585412"] = { name = "Chrome Hearts x Off-White Hoodie", rarity = "Legendary", chance = 0.01 },
-    ["126218652868749"] = { name = "Number(N)ine Shield Черное Худи", rarity = "Legendary", chance = 0.01 },
-    ["5972477551"] = { name = "Гоша Рубчинский Рождественский", rarity = "Legendary", chance = 0.015 },
-    ["126602708675680"] = { name = "Гоша Рубчинский Вдруг Друг", rarity = "Legendary", chance = 0.015 },
-    ["101546483409686"] = { name = "Racer WorldWide Лонгслив Катя Кищук", rarity = "Legendary", chance = 0.015 },
-    ["116197719499900"] = { name = "Gutta Opiy Shirt", rarity = "Legendary", chance = 0.02 },
-    ["102649937877868"] = { name = "Palm Angels x Raf Blue Red", rarity = "Legendary", chance = 0.02 },
-    ["96072265863113"] = { name = "Stone Island Comfort Tech Purple", rarity = "Legendary", chance = 0.02 },
-    ["1081054865"] = { name = "Gucci Coco Capitan", rarity = "Legendary", chance = 0.02 },
-    ["2074367265"] = { name = "TH Hoodie X Balenciaga x RAF", rarity = "Legendary", chance = 0.02 },
-    ["130342095571450"] = { name = "Balenciaga Paris", rarity = "Legendary", chance = 0.02 },
-    ["72161303025169"] = { name = "ERD Красная Джинсовка", rarity = "Legendary", chance = 0.02 },
-    ["772695234"] = { name = "Гоша Рубчинский Зеленый Свитер", rarity = "Legendary", chance = 0.03 },
-    ["297942902"] = { name = "Cav Empt Бомбер", rarity = "Legendary", chance = 0.04 },
-    ["436720175"] = { name = "Гоша Рубчинский X Thrasher", rarity = "Legendary", chance = 0.04 },
-    ["914784451"] = { name = "Cav Empt FW 17", rarity = "Legendary", chance = 0.05 },
-    ["80849817692916"] = { name = "Chrome Hearts Camo Matty", rarity = "Legendary", chance = 0.05 },
-    ["112414916707189"] = { name = "ERD Archive Худи Красный", rarity = "Legendary", chance = 0.05 },
-    ["117808202442208"] = { name = "ERD Archive Лонгслив", rarity = "Legendary", chance = 0.05 },
-    ["17573405255"] = { name = "Number(N)ine Серый Лонгслив", rarity = "Legendary", chance = 0.05 },
-    ["3052304804"] = { name = "BAPE Tiger Camo", rarity = "Legendary", chance = 0.06 },
-    ["11796928274"] = { name = "Гоша Рубчинский Рождество (Штаны)", rarity = "Legendary", chance = 0.06 },
-    ["18280893501"] = { name = "Cav Empt Joker", rarity = "Legendary", chance = 0.07 },
-    ["126486170842278"] = { name = "BAPE Tiger Штаны Фиолетовые", rarity = "Legendary", chance = 0.08 },
-    ["93929061709529"] = { name = "Racer WorldWide Куртка из Овечьей Шкуры", rarity = "Legendary", chance = 0.08 },
-    ["13778721234"] = { name = "Stone Island Skin Touch Purple", rarity = "Legendary", chance = 0.08 },
-    ["13779001394"] = { name = "Stone Island Purple Skin Touch (Штаны)", rarity = "Legendary", chance = 0.08 },
-    ["100168311309116"] = { name = "Gallery Dept Кепка Шамана", rarity = "Legendary", chance = 0.08 },
-    
-    -- ===== 🟡 ОЧЕНЬ РЕДКИЕ =====
-    ["1002344601"] = { name = "Cav Empt MD Document Crewneck", rarity = "Legendary", chance = 0.1 },
-    ["1565502110"] = { name = "Supreme x Bape x LV", rarity = "Legendary", chance = 0.1 },
-    ["92202912411173"] = { name = "Raf Simons SS10 Sterling Ruby Shirt", rarity = "Legendary", chance = 0.1 },
-    ["322189905"] = { name = "Cav Empt Not Impossible Crewneck", rarity = "Legendary", chance = 0.15 },
-    ["15706847529"] = { name = "Гоша Рубчинский x Rassvet", rarity = "Legendary", chance = 0.15 },
-    ["1213373788"] = { name = "Off-White Camo", rarity = "Legendary", chance = 0.15 },
-    ["121413776309543"] = { name = "Number(N)ine Серая Zip Jacket", rarity = "Legendary", chance = 0.15 },
-    ["78070667368419"] = { name = "Maison Margiela Женская Меховая Куртка", rarity = "Legendary", chance = 0.2 },
-    ["2474144248"] = { name = "Off-White MonoLisa", rarity = "Legendary", chance = 0.25 },
-    ["4843433312"] = { name = "BAPE Yellow Camo Shark", rarity = "Legendary", chance = 0.3 },
-    ["123206690688862"] = { name = "Gutta Snake Year", rarity = "Legendary", chance = 0.3 },
-    ["133885913046054"] = { name = "Number(N)ine Zip Jacket", rarity = "Legendary", chance = 0.3 },
-    ["113679737601896"] = { name = "Stone Island Off Day Blue", rarity = "Legendary", chance = 0.35 },
-    ["81220837440974"] = { name = "Stone Island Red Hoodie Off Dye", rarity = "Legendary", chance = 0.35 },
-    ["105050054678663"] = { name = "BAPE Tiger Штаны Темно-Зеленые", rarity = "Legendary", chance = 0.4 },
-    ["116825151038506"] = { name = "Gutta Raiders Camo Shirt", rarity = "Legendary", chance = 0.4 },
-    ["1824185877"] = { name = "Гоша Рубчинский x Kappa", rarity = "Legendary", chance = 0.4 },
-    ["5611331856"] = { name = "Palm Angels Flame", rarity = "Legendary", chance = 0.4 },
-    ["119505659829019"] = { name = "BAPE Red Panda", rarity = "Legendary", chance = 0.5 },
-    ["136214158712256"] = { name = "BAPE Tiger Штаны Синие", rarity = "Legendary", chance = 0.5 },
-    ["91431686212610"] = { name = "BAPE Tiger Штаны Красные", rarity = "Legendary", chance = 0.5 },
-    ["1518645601"] = { name = "Gucci Tiger Hoodie", rarity = "Legendary", chance = 0.5 },
-    ["2109554074"] = { name = "Gucci x LV Jacket", rarity = "Legendary", chance = 0.5 },
-    ["70522682896000"] = { name = "Zapatillas Gucci X Amiri", rarity = "Legendary", chance = 0.5 },
-    ["5226567361"] = { name = "Supreme x LV", rarity = "Legendary", chance = 0.5 },
-    ["3244925420"] = { name = "Cav Empt Свитшот Symptom Heavy", rarity = "Legendary", chance = 0.6 },
-    ["13444831655"] = { name = "Supreme x BB", rarity = "Legendary", chance = 0.8 },
-    ["124794708387683"] = { name = "Гоша Рубчинский Fila Yellow LS", rarity = "Legendary", chance = 0.8 },
-    ["8631755137"] = { name = "Stone Island WATRO-TC Jacket", rarity = "Legendary", chance = 0.15 },
-    ["98404573180892"] = { name = "CP Company Navy Windbreaker", rarity = "Legendary", chance = 0.15 },
-    ["11290616968"] = { name = "Vetements Бомбер Полиции", rarity = "Legendary", chance = 0.15 },
-    ["98965932254784"] = { name = "Comme des Garcons X Rolling Stones", rarity = "Legendary", chance = 0.15 },
-    ["9930373233"] = { name = "NeNet Худи Фиолетовая", rarity = "Legendary", chance = 0.15 },
-    ["137358532054126"] = { name = "Moncler Beanie Black and Blue", rarity = "Legendary", chance = 0.15 },
-    ["84903025841942"] = { name = "CP Company Goggle Beanie Red", rarity = "Legendary", chance = 0.15 },
-    ["85692687437028"] = { name = "Balenciaga x Chrome Cotton White", rarity = "Legendary", chance = 0.15 },
-    ["131336649441063"] = { name = "CP Company Navy Windbreaker", rarity = "Legendary", chance = 0.15 }
-}
+local SERVER_URL = _G.ESP_SERVER_URL or "https://esp-ultra-server.onrender.com"
+local USER_KEY = _G.ESP_USER_KEY or "DEMO-KEY-12345" -- Ключ приходит от loader'а
 
--- ============================================
--- ПОЛНАЯ БАЗА ДАННЫХ ACCESSORIES
--- ============================================
-local ACCESSORIES_DATA = {
-    ["14523189142"] = { name = "Maksakov Ghost", rarity = "Legendary", chance = 0.005 },
-    ["14615310668"] = { name = "Red Maksakov Ghost", rarity = "Legendary", chance = 0.08 },
-    ["14615304098"] = { name = "Pink Maksakov Ghost", rarity = "Legendary", chance = 0.08 },
-    ["14615307025"] = { name = "White Maksakov Ghost", rarity = "Legendary", chance = 0.1 },
-    ["85865866386997"] = { name = "Bape Маска", rarity = "Legendary", chance = 0.15 },
-    ["70765247277282"] = { name = "Baby Milo Рюкзак", rarity = "Legendary", chance = 0.003 },
-    ["115389802684898"] = { name = "Bape Рюкзак Camo", rarity = "Legendary", chance = 0.4 },
-    ["89846079310975"] = { name = "Bape Panda Shark Шапка", rarity = "Legendary", chance = 0.07 },
-    ["101486965390763"] = { name = "Red BAPE Tiger Backpack", rarity = "Legendary", chance = 0.6 },
-    ["130822108945941"] = { name = "MCM Рюкзак Красный", rarity = "Legendary", chance = 0.4 },
-    ["113057369240600"] = { name = "MCM Рюкзак", rarity = "Legendary", chance = 0.5 },
-    ["122914640223931"] = { name = "MCM Рюкзак Белый", rarity = "Legendary", chance = 0.6 },
-    ["116403395006931"] = { name = "MCM Рюкзак X SprayGround", rarity = "Legendary", chance = 0.04 },
-    ["71040675246222"] = { name = "CP Company Goggle Beanie Light Blue", rarity = "Legendary", chance = 0.5 },
-    ["96236164474655"] = { name = "CP Company Goggle Beanie Sail", rarity = "Legendary", chance = 0.3 },
-    ["84903025841942"] = { name = "CP Company Goggle Beanie Red", rarity = "Legendary", chance = 0.15 },
-    ["109191017280869"] = { name = "CP Company Goggle Beanie Pink", rarity = "Legendary", chance = 0.08 },
-    ["96068891445307"] = { name = "Balenciaga Alien Рюкзак", rarity = "Legendary", chance = 0.6 },
-    ["91603290514384"] = { name = "Balenciaga Gamer Distressed Cap", rarity = "Legendary", chance = 0.8 },
-    ["111982024415210"] = { name = "Ebay X Balenciaga Trucker", rarity = "Legendary", chance = 0.2 },
-    ["18147597296"] = { name = "Balenciaga Sports Icon Distressed Cap", rarity = "Legendary", chance = 0.07 },
-    ["117973635335653"] = { name = "Balenciaga x Chrome Cotton Blue", rarity = "Legendary", chance = 0.3 },
-    ["127277375292070"] = { name = "Balenciaga x Chrome Cotton Yellow", rarity = "Legendary", chance = 0.25 },
-    ["85692687437028"] = { name = "Balenciaga x Chrome Cotton White", rarity = "Legendary", chance = 0.15 },
-    ["89723156077371"] = { name = "Balenciaga Distressed White Cap", rarity = "Legendary", chance = 0.5 },
-    ["104126944758670"] = { name = "Balenciaga Blue Explorer", rarity = "Legendary", chance = 0.5 },
-    ["81550191875286"] = { name = "Balenciaga X Under Armour Duffel", rarity = "Legendary", chance = 0.8 },
-    ["106641690712546"] = { name = "Balenciaga Patchwork Bag", rarity = "Legendary", chance = 0.3 },
-    ["119024772298896"] = { name = "Balenciaga Graffiti City White", rarity = "Legendary", chance = 0.06 },
-    ["71591468298793"] = { name = "Balenciaga Graffiti City Black", rarity = "Legendary", chance = 0.05 },
-    ["99189491919957"] = { name = "Balenciaga X Under Armour Piercing", rarity = "Legendary", chance = 0.09 },
-    ["99692493214274"] = { name = "Balenciaga Garment Large Tote", rarity = "Legendary", chance = 0.02 },
-    ["134357315882448"] = { name = "Balenciaga Black Duffel", rarity = "Legendary", chance = 0.003 },
-    ["119249567021092"] = { name = "Balenciaga White Duffel", rarity = "Legendary", chance = 0.004 },
-    ["129539513019418"] = { name = "Balenciaga Reverse Xpander Sunglasses", rarity = "Legendary", chance = 0.02 },
-    ["129758048256121"] = { name = "Balenciaga Butterfly Shades", rarity = "Legendary", chance = 0.007 },
-    ["94671579377101"] = { name = "Balenciaga Black Spike Eyewear", rarity = "Legendary", chance = 0.002 },
-    ["92884235090318"] = { name = "Balenciaga Red Spike Eyewear", rarity = "Legendary", chance = 0.01 },
-    ["76486673718873"] = { name = "Gucci Goggles", rarity = "Legendary", chance = 0.3 },
-    ["16344213019"] = { name = "Gucci Ophidia GG Backpack", rarity = "Legendary", chance = 0.015 },
-    ["16301624126"] = { name = "Gucci Savoy Small Hat Box", rarity = "Legendary", chance = 0.04 },
-    ["115400611080426"] = { name = "Balenciaga x Gucci Duffle", rarity = "Legendary", chance = 0.008 },
-    ["6803402872"] = { name = "Gucci Dionysus Bag with Bee", rarity = "Legendary", chance = 0.04 },
-    ["104339539451912"] = { name = "Gucci Duffel Bag Beige", rarity = "Legendary", chance = 0.8 },
-    ["106839053930915"] = { name = "Gucci Duffel Bag Black", rarity = "Legendary", chance = 0.8 },
-    ["83731330884409"] = { name = "Blumarine Очки Классик", rarity = "Legendary", chance = 0.007 },
-    ["77676520738963"] = { name = "Gucci Маска", rarity = "Legendary", chance = 0.09 },
-    ["74493965787309"] = { name = "Gucci Сумка Global", rarity = "Legendary", chance = 0.3 },
-    ["123152452514671"] = { name = "Gucci Angry Glasses", rarity = "Legendary", chance = 0.001 },
-    ["128111835687158"] = { name = "Gucci Сумка", rarity = "Legendary", chance = 0.4 },
-    ["100680712845143"] = { name = "Gucci Flashtrek (Left)", rarity = "Legendary", chance = 0.02 },
-    ["108881975046000"] = { name = "Gucci Flashtrek (Right)", rarity = "Legendary", chance = 0.02 },
-    ["6783142181"] = { name = "Gucci Diamond-Framed Sunglasses", rarity = "Legendary", chance = 0.15 },
-    ["132695427826329"] = { name = "Chrome Hearts Crosses Beanie", rarity = "Legendary", chance = 0.3 },
-    ["125854200114380"] = { name = "Chrome Hearts Pink Beanie", rarity = "Legendary", chance = 0.6 },
-    ["135279723356196"] = { name = "Chrome Hearts Purple Beanie", rarity = "Legendary", chance = 0.4 },
-    ["125357035013809"] = { name = "Chrome Hearts Duffle Bag", rarity = "Legendary", chance = 0.3 },
-    ["87874224966717"] = { name = "Chrome Hearts Zebra Leather Bag", rarity = "Legendary", chance = 0.01 },
-    ["98026639580728"] = { name = "Chrome Hearts Camo Grunge Leather", rarity = "Legendary", chance = 0.08 },
-    ["107066313514551"] = { name = "Chrome Hearts Street Dirty Leather", rarity = "Legendary", chance = 0.7 },
-    ["120186577797659"] = { name = "Chrome Hearts Black Glasses", rarity = "Legendary", chance = 0.4 },
-    ["109761541704044"] = { name = "Chrome Hearts White Glasses", rarity = "Legendary", chance = 0.5 },
-    ["94612984046803"] = { name = "Chrome Hearts Cross Necklace Silver", rarity = "Legendary", chance = 0.02 },
-    ["96209722328474"] = { name = "Chrome Hearts Cross Chain Stacked", rarity = "Legendary", chance = 0.003 },
-    ["108747673267074"] = { name = "Chrome Hearts Silver Bracelet", rarity = "Legendary", chance = 0.15 },
-    ["137358532054126"] = { name = "Moncler Beanie Black and Blue", rarity = "Legendary", chance = 0.15 },
-    ["98077128019618"] = { name = "Moncler Logo Beanie Black", rarity = "Legendary", chance = 0.04 },
-    ["6847974055"] = { name = "LV Monogram Bucket Hat", rarity = "Legendary", chance = 0.08 },
-    ["6847979005"] = { name = "LV Monogram Cap", rarity = "Legendary", chance = 0.2 },
-    ["7495514829"] = { name = "LV Keepall 55 Monogram", rarity = "Legendary", chance = 0.002 },
-    ["6847991145"] = { name = "LV Christopher Backpack", rarity = "Legendary", chance = 0.001 },
-    ["6847995221"] = { name = "LV District Messenger", rarity = "Legendary", chance = 0.015 },
-    ["7495518344"] = { name = "LV Bumbag Monogram", rarity = "Legendary", chance = 0.03 },
-    ["82737430290621"] = { name = "LV Boing 747", rarity = "Legendary", chance = 0.001 },
-    ["90893801653709"] = { name = "ERD Классическая Кепка", rarity = "Legendary", chance = 0.15 },
-    ["133988893738584"] = { name = "OffWhite Рюкзак", rarity = "Legendary", chance = 0.015 },
-    ["5460373518"] = { name = "OffWhite Сумка", rarity = "Legendary", chance = 0.5 },
-    ["102784336050801"] = { name = "Off White Out Of Office", rarity = "Legendary", chance = 0.3 },
-    ["89818592943048"] = { name = "NeNet Берет", rarity = "Legendary", chance = 0.09 },
-    ["118231617266072"] = { name = "Рюкзак NeNet", rarity = "Legendary", chance = 0.003 },
-    ["120296789227673"] = { name = "Amiri Бриллиантовая Цепочка", rarity = "Legendary", chance = 0.08 },
-    ["88660799116081"] = { name = "Amiri Skeleton", rarity = "Legendary", chance = 0.15 },
-    ["135241025390136"] = { name = "Amiri MA-1 Голубые", rarity = "Legendary", chance = 0.4 },
-    ["100351258840519"] = { name = "Goyard Graffiti Рюкзак", rarity = "Legendary", chance = 0.5 },
-    ["78438678589037"] = { name = "Goyard Желтый Рюкзак", rarity = "Legendary", chance = 0.8 },
-    ["100702892962731"] = { name = "Dior Лыжная Маска", rarity = "Legendary", chance = 0.08 },
-    ["82508073931214"] = { name = "Dior Рюкзак", rarity = "Legendary", chance = 0.12 },
-    ["92420837177718"] = { name = "Maison Margiela Шарф Черный", rarity = "Legendary", chance = 0.2 },
-    ["95715426059863"] = { name = "Maison Margiela Тоут", rarity = "Legendary", chance = 0.5 },
-    ["101158083917641"] = { name = "Maison Margiela Сумка Olivie", rarity = "Legendary", chance = 0.001 },
-    ["104467521699761"] = { name = "Rick Owens Drkshdw Рюкзак", rarity = "Legendary", chance = 0.5 },
-    ["85028391876506"] = { name = "Rick Owens Цепочка", rarity = "Legendary", chance = 0.001 },
-    ["140525091977150"] = { name = "RayBan Meta Smart Очки", rarity = "Legendary", chance = 0.001 },
-    ["108914282771759"] = { name = "Burberry Очки", rarity = "Legendary", chance = 0.3 },
-    ["71146177247977"] = { name = "Сумка George Gina & Lucy", rarity = "Legendary", chance = 0.001 },
-    ["124837470634133"] = { name = "1017 Alyx 9SM Mini Tank Красный Рюкзак", rarity = "Legendary", chance = 0.003 },
-    ["131705692271561"] = { name = "1017 Alyx 9SM Mini Tank Рюкзак", rarity = "Legendary", chance = 0.7 },
-    ["120823175427702"] = { name = "Raf Simons Тоут", rarity = "Legendary", chance = 0.007 },
-    ["72553364992946"] = { name = "Raf Simons x Eastpak Backpack", rarity = "Legendary", chance = 0.004 },
-    ["84288129132005"] = { name = "ARMY x BENZO TRUCKER HAT", rarity = "Legendary", chance = 0.001 },
-    ["136175219569950"] = { name = "Balenciaga Runner Черно-Белые", rarity = "Legendary", chance = 0.001 },
-    ["109837841091755"] = { name = "Rick Owens Большие Ботинки", rarity = "Legendary", chance = 0.001 },
-    ["134123291764431"] = { name = "Rick Owens Tractor", rarity = "Legendary", chance = 0.002 },
-    ["121105827477042"] = { name = "Balenciaga Runner Черные", rarity = "Legendary", chance = 0.003 },
-    ["117031897089009"] = { name = "Dior B23 Белые", rarity = "Legendary", chance = 0.003 },
-    ["140560964765540"] = { name = "Maison Margiela Future", rarity = "Legendary", chance = 0.003 },
-    ["88187426598743"] = { name = "Balenciaga Track Красные", rarity = "Legendary", chance = 0.004 },
-    ["107470281269035"] = { name = "Balenciaga Track Faded Черные", rarity = "Legendary", chance = 0.005 },
-    ["128837829969207"] = { name = "Dior B22 Черные", rarity = "Legendary", chance = 0.004 },
-    ["111856812062327"] = { name = "Balenciaga Track Burgery", rarity = "Legendary", chance = 0.008 },
-    ["83139787354012"] = { name = "Rick Owens GeoBasket", rarity = "Legendary", chance = 0.02 },
-    ["81932153540529"] = { name = "Balenciaga Track 2", rarity = "Legendary", chance = 0.04 },
-    ["117040887104405"] = { name = "Maison Margiela Replica", rarity = "Legendary", chance = 0.04 },
-    ["133663475114410"] = { name = "Balenciaga Track Orange", rarity = "Legendary", chance = 0.001 },
-    ["103190071706436"] = { name = "Balenciaga Duffel White", rarity = "Legendary", chance = 0.004 },
-    ["138830952908268"] = { name = "Gallery Dept Кепка Paint", rarity = "Legendary", chance = 0.008 },
-    ["109597568684201"] = { name = "Balenciaga X Under Armour Piercing", rarity = "Legendary", chance = 0.09 },
-    ["91951186785557"] = { name = "Goyard Graffiti Рюкзак", rarity = "Legendary", chance = 0.5 },
-    ["116688991245886"] = { name = "USA Сумка", rarity = "Legendary", chance = 0.001 },
-    ["132852801767004"] = { name = "Balenciaga Flash Track", rarity = "Legendary", chance = 0.001 }
-}
-
--- Объединяем оба списка
-local ALL_ITEMS = {}
-for id, data in pairs(ASSETS_DATA) do
-    ALL_ITEMS[id] = data
-end
-for id, data in pairs(ACCESSORIES_DATA) do
-    ALL_ITEMS[id] = data
-end
-
--- ============================================
--- ОСНОВНОЙ КОД
--- ============================================
-local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
-local espEnabled = true
-local autoBuyEnabled = false
-local autoSellEnabled = false
-local autoBuySpeed = 21 -- Скорость полета
-
-local FILTER = {
-    minPrice = 0,
-    maxPrice = 1000,
-    minResellMulti = 2,
-    excludedQualities = {"Poor", "Worn"},
-}
 
 -- ============================================
--- РАБОТА С JSON И ПОИСК ПРЕДМЕТОВ
+-- ПОЛУЧЕНИЕ HWID
 -- ============================================
-local function decodeItemData(jsonString)
-    if not jsonString or type(jsonString) ~= "string" then return nil end
-    if #jsonString == 0 then return nil end
-    local first, last = string.sub(jsonString, 1, 1), string.sub(jsonString, -1)
-    if first == "}" and last == "{" then
-        jsonString = string.reverse(jsonString)
-    end
-    local success, data = pcall(function()
-        return HttpService:JSONDecode(jsonString)
+local function getHWID()
+    local success, hwid = pcall(function()
+        return game:GetService("RbxAnalyticsService"):GetClientId()
     end)
-    if success and data then
-        return data
-    else
+    return success and hwid or "unknown-hwid"
+end
+
+-- ============================================
+-- HTTP REQUEST (ОБЁРТКА)
+-- ============================================
+local function makeRequest(endpoint, data)
+    local success, result = pcall(function()
+        local response = request({
+            Url = SERVER_URL .. endpoint,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = HttpService:JSONEncode(data)
+        })
+        return HttpService:JSONDecode(response.Body)
+    end)
+    
+    if not success then
+        warn("[ESP] Ошибка запроса:", result)
         return nil
     end
-end
-
--- Функция поиска по ID предмета из списка
-local function findItemById(assetId)
-    return ALL_ITEMS[tostring(assetId)]
-end
-
--- Проверка, является ли объект частью игрока
-local function isPlayerModel(obj)
-    -- Поднимаемся по иерархии и проверяем, не находится ли объект в игроке
-    local current = obj
-    while current and current ~= workspace do
-        -- Проверяем, есть ли Humanoid (признак персонажа)
-        if current:FindFirstChildOfClass("Humanoid") then
-            -- Проверяем, принадлежит ли персонаж игроку
-            for _, player in pairs(Players:GetPlayers()) do
-                if player.Character == current then
-                    return true
-                end
-            end
-        end
-        current = current.Parent
-    end
-    return false
-end
-
-local function findAllItems()
-    local results = {}
-    local processedModels = {} -- Чтобы не добавлять дубликаты
     
-    -- Ищем по всем объектам в workspace
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Pants") or obj:IsA("Shirt") or obj:IsA("Accessory") or obj:IsA("MeshPart") then
-            -- ВАЖНО: Пропускаем объекты, которые находятся в игроках
-            if isPlayerModel(obj) then
-                continue
-            end
-            
-            local assetId = nil
-            local itemType = "Item"
-            
-            -- Получаем AssetId из Pants/Shirt
-            if obj:IsA("Pants") then
-                assetId = string.match(tostring(obj.PantsTemplate), "%d+")
-                itemType = "Clothing"
-            elseif obj:IsA("Shirt") then
-                assetId = string.match(tostring(obj.ShirtTemplate), "%d+")
-                itemType = "Clothing"
-            elseif obj:IsA("Accessory") then
-                -- Ищем Handle в аксессуаре
-                local handle = obj:FindFirstChild("Handle")
-                if handle then
-                    -- Проверяем SpecialMesh
-                    local specialMesh = handle:FindFirstChildOfClass("SpecialMesh")
-                    if specialMesh and specialMesh.MeshId then
-                        assetId = string.match(tostring(specialMesh.MeshId), "%d+")
-                    end
-                    
-                    -- Если не нашли, проверяем MeshPart
-                    if not assetId then
-                        local meshPart = handle:FindFirstChildOfClass("MeshPart")
-                        if meshPart and meshPart.MeshId then
-                            assetId = string.match(tostring(meshPart.MeshId), "%d+")
-                        end
-                    end
-                    
-                    -- Если не нашли, проверяем TextureID
-                    if not assetId and specialMesh and specialMesh.TextureId then
-                        assetId = string.match(tostring(specialMesh.TextureId), "%d+")
-                    end
-                end
-                itemType = "Accessory"
-            elseif obj:IsA("MeshPart") and obj.MeshId ~= "" then
-                -- ЛОГИКА ИЗ ESP ACS: Ищем аксессуары в моделях M_*
-                -- Проверяем, что это Handle, Body, L или R
-                if obj.Name == "Handle" or obj.Name == "Body" or obj.Name == "L" or obj.Name == "R" then
-                    local parentModel = obj.Parent
-                    -- Проверяем что родитель - это модель M_*
-                    if parentModel and parentModel:IsA("Model") and parentModel.Name:match("^M_") then
-                        assetId = string.match(tostring(obj.MeshId), "%d+")
-                        itemType = "Accessory"
-                    end
-                end
-            end
-            
-            if assetId then
-                local itemData = findItemById(assetId)
-                if itemData then
-                    -- Определяем целевой объект
-                    local target = obj
-                    
-                    if obj:IsA("Accessory") then
-                        -- Для аксессуаров проверяем, есть ли родительская Model
-                        if obj.Parent:IsA("Model") and obj.Parent ~= workspace then
-                            target = obj.Parent
-                        else
-                            target = obj  -- Сам аксессуар как цель
-                        end
-                    elseif obj:IsA("MeshPart") then
-                        -- Для MeshPart (Handle, Body, L, R) используем родительскую Model M_*
-                        if obj.Parent and obj.Parent:IsA("Model") then
-                            target = obj.Parent
-                        else
-                            target = obj
-                        end
-                    else
-                        -- Для одежды поднимаемся до Model
-                        target = obj.Parent
-                        while target and not target:IsA("Model") do
-                            target = target.Parent
-                            if target == workspace or target == game then
-                                target = nil
-                                break
-                            end
-                        end
-                    end
-                    
-                    -- Проверяем, что это не игрок и не дубликат
-                    if target and not isPlayerModel(target) and not processedModels[target] then
-                        processedModels[target] = true
-                        
-                        table.insert(results, {
-                            object = target,
-                            name = itemData.name,
-                            price = 0,
-                            resellMulti = 0,
-                            rarity = itemData.rarity,
-                            type = itemType,
-                            quality = "",
-                            assetId = assetId,
-                        })
-                    end
-                end
-            end
-        end
-    end
-    return results
+    return result
 end
 
 -- ============================================
--- ESP
+-- ПРОВЕРКА КЛЮЧА
 -- ============================================
-local function clearESP()
-    -- Ищем и удаляем все ESP Billboard
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name == "ESP_Billboard" and obj:IsA("BillboardGui") then
-            obj:Destroy()
-        end
-    end
-end
-
-local rarityColors = {
-    Common = Color3.fromRGB(255, 255, 255),
-    Uncommon = Color3.fromRGB(0, 255, 0),
-    Rare = Color3.fromRGB(0, 150, 255),
-    Epic = Color3.fromRGB(200, 0, 255),
-    Legendary = Color3.fromRGB(255, 180, 0),
-    Purple = Color3.fromRGB(200, 0, 255),
-}
-
-local function getDistance(obj)
-    local char = player.Character
-    if not char then return nil end
-    local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
-    if not root then return nil end
-    local pos
-    if obj:IsA("BasePart") then
-        pos = obj.Position
-    elseif obj:IsA("Model") then
-        if obj.PrimaryPart then
-            pos = obj.PrimaryPart.Position
-        else
-            local part = obj:FindFirstChildWhichIsA("BasePart")
-            if part then pos = part.Position end
-        end
-    end
-    if not pos then return nil end
-    return (root.Position - pos).Magnitude
-end
-
-local function createESP(obj, item)
-    if not obj or not obj.Parent then return end
-    if obj:FindFirstChild("ESP_Billboard") then return end
-
-    -- Находим самую высокую видимую часть предмета
-    local targetPart = nil
-    local highestY = -math.huge
+local function validateKey()
+    print("[AUTH] Проверка ключа...")
     
-    if obj:IsA("Model") then
-        -- Проходим по всем частям модели и находим самую высокую
-        for _, part in pairs(obj:GetDescendants()) do
-            if part:IsA("BasePart") and part.Transparency < 1 then
-                local partY = part.Position.Y + (part.Size.Y / 2)
-                if partY > highestY then
-                    highestY = partY
-                    targetPart = part
-                end
-            end
-        end
-        
-        -- Если не нашли прозрачные части, берем PrimaryPart или первую BasePart
-        if not targetPart then
-            targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
-        end
-    elseif obj:IsA("BasePart") then
-        targetPart = obj
-    end
+    local authData = {
+        key = USER_KEY,
+        hwid = getHWID(),
+        userId = player.UserId,
+        game = game.PlaceId
+    }
     
-    if not targetPart then return end
-
-    local distance = getDistance(obj)
-    local distText = distance and string.format("%.0f м", distance) or ""
-
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "ESP_Billboard"
-    billboard.Adornee = targetPart  -- Прикрепляем к самой высокой части
-    billboard.Size = UDim2.new(0, 300, 0, 70)
-    billboard.StudsOffset = Vector3.new(0, 3, 0)  -- Поднимаем выше
-    billboard.AlwaysOnTop = true
-    billboard.Parent = targetPart  -- Родитель - сама часть, а не модель
-
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundTransparency = 1
-    frame.Parent = billboard
-
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
-    nameLabel.Position = UDim2.new(0, 0, 0, 0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.Text = item.name
-    nameLabel.TextColor3 = rarityColors[item.rarity] or Color3.fromRGB(255, 255, 255)
-    nameLabel.Font = Enum.Font.SourceSansBold
-    nameLabel.TextSize = 16
-    nameLabel.TextStrokeTransparency = 0.3
-    nameLabel.Parent = frame
-
-    local infoLabel = Instance.new("TextLabel")
-    infoLabel.Size = UDim2.new(1, 0, 0.5, 0)
-    infoLabel.Position = UDim2.new(0, 0, 0.5, 0)
-    infoLabel.BackgroundTransparency = 1
-    infoLabel.Text = string.format("[%s]  %s", item.rarity, distText)
-    infoLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    infoLabel.Font = Enum.Font.SourceSans
-    infoLabel.TextSize = 14
-    infoLabel.TextStrokeTransparency = 0.3
-    infoLabel.Parent = frame
-end
-
-local function updateESP()
-    clearESP()
-    if not espEnabled then return end
-    local items = findAllItems()
-    for _, item in pairs(items) do
-        createESP(item.object, item)
-    end
-    print("[ESP] Обновлено. Найдено предметов: " .. #items)
-end
-
-workspace.DescendantRemoving:Connect(function(descendant)
-    if descendant:FindFirstChild("ESP_Billboard") or descendant.Name:find("Display_") then
-        task.wait(0.1)
-        if espEnabled then
-            updateESP()
-        end
-    end
-end)
-
--- ============================================
--- AUTOBUY ФУНКЦИИ
--- ============================================
-
--- Плавный полет к объекту с TweenService
-local function tweenToObject(targetObj, checkForNewItems)
-    local char = player.Character
-    if not char then return false, nil end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return false, nil end
+    local response = makeRequest("/api/validate", authData)
     
-    local targetPart = targetObj
-    if targetObj:IsA("Model") then
-        targetPart = targetObj.PrimaryPart or targetObj:FindFirstChildWhichIsA("BasePart")
-    end
-    
-    if not targetPart or not targetPart:IsA("BasePart") then
-        print("[AutoBuy] Не удалось найти позицию для полета")
-        return false, nil
-    end
-    
-    -- Вычисляем расстояние и время полета
-    local distance = (root.Position - targetPart.Position).Magnitude
-    local duration = distance / autoBuySpeed
-    
-    print(string.format("[AutoBuy] Лечу к цели (%.0f м, %.1f сек)", distance, duration))
-    
-    -- Создаем Tween для плавного перемещения
-    local targetCFrame = CFrame.new(targetPart.Position) * CFrame.new(0, 3, 0)
-    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
-    local tween = TweenService:Create(root, tweenInfo, {CFrame = targetCFrame})
-    
-    tween:Play()
-    tween.Completed:Wait()
-    
-    print("[AutoBuy] ✅ Прилетел к цели")
-    return true, nil
-end
-
--- Отладка структуры объекта
-local function debugObject(obj, depth)
-    depth = depth or 0
-    local indent = string.rep("  ", depth)
-    
-    print(indent .. "┣ " .. obj.Name .. " (" .. obj.ClassName .. ")")
-    
-    if depth < 2 then
-        for _, child in pairs(obj:GetChildren()) do
-            if child:IsA("ClickDetector") or child:IsA("ProximityPrompt") or 
-               child:IsA("Pants") or child:IsA("Shirt") or 
-               child:IsA("BasePart") or child:IsA("Model") then
-                debugObject(child, depth + 1)
-            end
-        end
-    end
-end
-
--- Симуляция клика по объекту с автонаведением камеры (AIM)
-local function clickObject(targetObj)
-    print("[AutoBuy] 🖱️ Кликаю по объекту: " .. targetObj.Name)
-    
-    local char = player.Character
-    if not char then return false end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return false end
-    
-    local camera = workspace.CurrentCamera
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    
-    -- Находим центральную часть для наведения
-    local targetPart = nil
-    if targetObj:IsA("Model") then
-        -- Ищем PrimaryPart или первую видимую часть
-        targetPart = targetObj.PrimaryPart
-        if not targetPart then
-            for _, part in pairs(targetObj:GetDescendants()) do
-                if part:IsA("BasePart") and part.Transparency < 1 then
-                    targetPart = part
-                    break
-                end
-            end
-        end
-        if not targetPart then
-            targetPart = targetObj:FindFirstChildWhichIsA("BasePart")
-        end
-    elseif targetObj:IsA("BasePart") then
-        targetPart = targetObj
-    end
-    
-    if not targetPart then
-        print("[AutoBuy] ❌ Не найдена часть для наведения")
+    if not response then
+        player:Kick("❌ Не удалось подключиться к серверу")
         return false
     end
     
-    -- АВТОНАВЕДЕНИЕ КАМЕРЫ (AIM)
-    print("[AutoBuy] 🎯 Навожу камеру на цель...")
-    local targetPosition = targetPart.Position
-    
-    -- Сохраняем старую позицию камеры
-    local oldCameraType = camera.CameraType
-    local oldCFrame = camera.CFrame
-    
-    -- Устанавливаем камеру от первого лица с наведением
-    camera.CameraType = Enum.CameraType.Scriptable
-    camera.CFrame = CFrame.new(root.Position, targetPosition)
-    
-    task.wait(0.2)
-    
-    -- МЕТОД 1: Поиск ClickDetector (во всех потомках)
-    local clickDetector = nil
-    for _, descendant in pairs(targetObj:GetDescendants()) do
-        if descendant:IsA("ClickDetector") then
-            clickDetector = descendant
-            print("[AutoBuy] ✅ Найден ClickDetector: " .. descendant:GetFullName())
-            break
-        end
-    end
-    
-    if clickDetector then
-        pcall(function()
-            fireclickdetector(clickDetector)
-        end)
-        task.wait(0.3)
-        camera.CameraType = oldCameraType
-        return true
-    end
-    
-    -- МЕТОД 2: Поиск ProximityPrompt
-    local proximityPrompt = nil
-    for _, descendant in pairs(targetObj:GetDescendants()) do
-        if descendant:IsA("ProximityPrompt") then
-            proximityPrompt = descendant
-            print("[AutoBuy] ✅ Найден ProximityPrompt: " .. descendant:GetFullName())
-            break
-        end
-    end
-    
-    if proximityPrompt then
-        pcall(function()
-            fireproximityprompt(proximityPrompt)
-        end)
-        task.wait(0.3)
-        camera.CameraType = oldCameraType
-        return true
-    end
-    
-    -- МЕТОД 3: Эквип как Tool (если это одежда в виде Tool)
-    if targetObj:IsA("Tool") or targetObj:FindFirstChildOfClass("Tool") then
-        print("[AutoBuy] Пробую экипировать как Tool...")
-        local tool = targetObj:IsA("Tool") and targetObj or targetObj:FindFirstChildOfClass("Tool")
-        if tool and humanoid then
-            pcall(function()
-                tool.Parent = player.Backpack
-                humanoid:EquipTool(tool)
-            end)
-            task.wait(0.3)
-            camera.CameraType = oldCameraType
-            return true
-        end
-    end
-    
-    -- МЕТОД 4: Поиск и активация через Humanoid.Touched
-    print("[AutoBuy] Пробую через касание...")
-    if humanoid and targetPart then
-        pcall(function()
-            -- Симулируем касание
-            firetouchinterest(root, targetPart, 0)
-            task.wait(0.1)
-            firetouchinterest(root, targetPart, 1)
-        end)
-        task.wait(0.2)
-    end
-    
-    -- МЕТОД 5: Визуальный клик с наведенной камерой
-    print("[AutoBuy] Выполняю визуальный клик с камерой...")
-    local screenPos, onScreen = camera:WorldToScreenPoint(targetPosition)
-    
-    if onScreen then
-        -- Комбо из всех методов клика
-        pcall(function()
-            -- 1. mouse1click
-            local mouse = player:GetMouse()
-            mouse.Target = targetPart
-            mouse1click()
-        end)
-        print("[AutoBuy] ✅ Клик mouse1click")
-        task.wait(0.05)
-        
-        -- 2. VirtualUser
-        pcall(function()
-            local VirtualUser = game:GetService("VirtualUser")
-            VirtualUser:ClickButton1(Vector2.new(screenPos.X, screenPos.Y))
-        end)
-        print("[AutoBuy] ✅ Клик VirtualUser")
-        task.wait(0.05)
-        
-        -- 3. VirtualInputManager
-        pcall(function()
-            VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, true, game, 0)
-            task.wait(0.03)
-            VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, false, game, 0)
-        end)
-        print("[AutoBuy] ✅ Клик VirtualInputManager")
-        
-        task.wait(0.3)
-        camera.CameraType = oldCameraType
-        return true
-    end
-    
-    camera.CameraType = oldCameraType
-    print("[AutoBuy] ⚠️ Клик выполнен всеми методами")
-    return true  -- Возвращаем true чтобы продолжить
-end
-
--- Определение ShopZone для объекта (предмета или Seller)
-local function findShopZone(obj)
-    -- Получаем позицию объекта
-    local objPos = nil
-    if obj:IsA("Model") then
-        if obj.PrimaryPart then
-            objPos = obj.PrimaryPart.Position
+    if not response.success then
+        -- Проверяем истёк ли ключ
+        if response.expired or response.kickPlayer then
+            -- Ключ истёк - кикаем с особым сообщением
+            local kickMessage = response.message or "⏰ Срок действия ключа истёк"
+            kickMessage = kickMessage .. "\n\n🔑 Купите новый ключ в loader'е"
+            player:Kick(kickMessage)
         else
-            local part = obj:FindFirstChildWhichIsA("BasePart")
-            if part then objPos = part.Position end
+            -- Обычный кик
+            player:Kick(response.message or "❌ Доступ запрещён")
         end
-    elseif obj:IsA("BasePart") then
-        objPos = obj.Position
+        return false
     end
     
-    if not objPos then return nil end
+    print("[AUTH] ✅ Авторизация успешна")
+    print("[AUTH] Тип подписки:", response.tier)
+    print("[AUTH] Истекает:", response.expiry)
     
-    -- Ищем все ShopZone в workspace
-    for _, zone in pairs(workspace:GetDescendants()) do
-        if zone.Name:match("^Shop_ShopZone") and zone:IsA("BasePart") then
-            -- Проверяем находится ли объект внутри зоны
-            local zonePos = zone.Position
-            local zoneSize = zone.Size
-            
-            -- Проверка по осям X, Y, Z
-            local inX = math.abs(objPos.X - zonePos.X) <= zoneSize.X / 2
-            local inY = math.abs(objPos.Y - zonePos.Y) <= zoneSize.Y / 2
-            local inZ = math.abs(objPos.Z - zonePos.Z) <= zoneSize.Z / 2
-            
-            if inX and inY and inZ then
-                return zone
-            end
-        end
-    end
-    
-    return nil
+    return true
 end
 
--- Поиск ближайшего Seller в той же ShopZone (с возможностью исключить конкретного)
-local function findSellerInShop(itemObj, excludeSeller)
-    print("[AutoBuy] 🔍 Ищу Seller в той же ShopZone...")
+-- ============================================
+-- ПОЛУЧЕНИЕ КОНФИГА С СЕРВЕРА
+-- ============================================
+local function loadConfig()
+    print("[CONFIG] Загрузка конфигурации...")
     
-    -- Получаем текущую позицию игрока
-    local char = player.Character
-    if not char then 
-        print("[AutoBuy] ❌ Персонаж не найден")
-        return nil 
-    end
+    local response = makeRequest("/api/config", { key = USER_KEY })
     
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then 
-        print("[AutoBuy] ❌ HumanoidRootPart не найден")
-        return nil 
-    end
-    
-    local playerPos = root.Position
-    local playerY = playerPos.Y
-    print(string.format("[AutoBuy] 📍 Позиция игрока: X=%.0f Y=%.0f Z=%.0f", playerPos.X, playerPos.Y, playerPos.Z))
-    
-    -- Определяем ShopZone предмета
-    local itemZone = findShopZone(itemObj)
-    if itemZone then
-        print("[AutoBuy] 🏪 Предмет находится в зоне: " .. itemZone.Name)
-    else
-        print("[AutoBuy] ⚠️ Не удалось определить ShopZone предмета")
-    end
-    
-    -- Глобальный поиск всех Seller в workspace
-    local allSellers = {}
-    
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name == "Seller" and obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") then
-            -- Исключаем конкретного seller, если указан
-            if not excludeSeller or obj ~= excludeSeller then
-                table.insert(allSellers, obj)
-            else
-                print("[AutoBuy] ⚠️ Исключаю предыдущего Seller из списка")
-            end
-        end
-    end
-    
-    if #allSellers == 0 then
-        print("[AutoBuy] ❌ Не найдено ни одного Seller в игре!")
+    if not response then
+        player:Kick("❌ Не удалось загрузить конфигурацию")
         return nil
     end
     
-    print("[AutoBuy] ✅ Найдено Seller в игре: " .. #allSellers)
+    print("[CONFIG] ✅ Конфиг загружен")
+    print("[CONFIG] Предметов:", response.ASSETS and #response.ASSETS or 0)
+    print("[CONFIG] Аксессуаров:", response.ACCESSORIES and #response.ACCESSORIES or 0)
     
-    -- Фильтруем Seller по той же ShopZone
-    local sellersInZone = {}
-    
-    if itemZone then
-        for _, seller in pairs(allSellers) do
-            local sellerZone = findShopZone(seller)
-            if sellerZone and sellerZone == itemZone then
-                table.insert(sellersInZone, seller)
-                print("[AutoBuy] ✅ Seller в той же зоне: " .. itemZone.Name)
-            else
-                if sellerZone then
-                    print("[AutoBuy] ❌ Seller в другой зоне: " .. sellerZone.Name)
-                else
-                    print("[AutoBuy] ⚠️ Seller не в зоне")
-                end
-            end
-        end
+    return response
+end
+
+-- ============================================
+-- ОСНОВНАЯ ЛОГИКА
+-- ============================================
+local function main()
+    -- 1. Проверка ключа (уже проверен в loader, но проверяем ещё раз для безопасности)
+    if not validateKey() then
+        return
     end
     
-    -- Если нашли Seller в той же зоне, ищем среди них
-    local searchList = #sellersInZone > 0 and sellersInZone or allSellers
-    
-    if #sellersInZone > 0 then
-        print("[AutoBuy] ✅ Найдено Seller в той же ShopZone: " .. #sellersInZone)
-    else
-        print("[AutoBuy] ⚠️ Seller в той же зоне не найден, ищу среди всех")
+    -- 2. Загрузка конфига
+    local config = loadConfig()
+    if not config then
+        return
     end
     
-    -- Выбираем ближайшего Seller (на том же этаже)
-    local closestSeller = nil
-    local closestDist = math.huge
-    local maxHeightDiff = 15 -- Максимальная разница по высоте
+    -- 3. Инициализация переменных
+    _G.ASSETS = config.ASSETS
+    _G.ACCESSORIES = config.ACCESSORIES
+    _G.SETTINGS = config.SETTINGS
     
-    for _, seller in pairs(searchList) do
-        local sellerRoot = seller:FindFirstChild("HumanoidRootPart")
-        if sellerRoot then
-            local sellerPos = sellerRoot.Position
-            local sellerY = sellerPos.Y
-            
-            -- Проверяем разницу по высоте
-            local heightDiff = math.abs(playerY - sellerY)
-            
-            -- Если Seller на том же этаже
-            if heightDiff <= maxHeightDiff then
-                -- Считаем горизонтальную дистанцию
-                local horizontalDist = math.sqrt(
-                    (playerPos.X - sellerPos.X)^2 + 
-                    (playerPos.Z - sellerPos.Z)^2
-                )
-                
-                print(string.format("[AutoBuy] ✅ Seller подходит! Дистанция: %.0f м, высота: %.0f", horizontalDist, heightDiff))
-                
-                if horizontalDist < closestDist then
-                    closestDist = horizontalDist
-                    closestSeller = seller
-                end
-            else
-                print(string.format("[AutoBuy] ⚠️ Seller на другом этаже (разница: %.0f)", heightDiff))
-            end
-        end
+    print("🎉 ESP загружен успешно!")
+    print("🔑 Ключ: " .. USER_KEY)
+    
+    
+    -- ============================================
+    -- ESP КОД (ИСПОЛЬЗУЕТ _G.ASSETS и _G.ACCESSORIES)
+    -- RAYFIELD GUI - COMPLETE VERSION
+    -- ============================================
+    print("🔄 Загрузка ESP Ultra Modern...")
+
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local Camera = workspace.CurrentCamera
+    local player = Players.LocalPlayer
+    local UserInputService = game:GetService("UserInputService")
+
+    local espItemsEnabled = false
+    local espAccessoriesEnabled = false
+    local espEnabled = false -- совместимость (true если хоть одно включено)
+    local espObjects = {}
+    local updateThread = nil
+    local tracerConnection = nil
+    local tracers = {}
+    local tracerGui = nil
+    local foundItems = {}
+
+    local settings = {
+        chams = true,
+        tracers = true,
+        highlightMode = "all",
+        highlightColor = Color3.fromRGB(255, 50, 50),
+        speedEnabled = false,
+        walkSpeed = 16,
+        fastTakeEnabled = false,
+        accessoriesESPEnabled = false,
+        accessoriesHighlightMode = "all"
+    }
+
+    -- ============================================
+    --          ANTI-CHEAT BYPASS (для спидхака)
+    -- ============================================
+    local antiCheatHooked = false
+    local oldNamecall = nil
+    local function bypassAntiCheat()
+    if antiCheatHooked then return end
+    local ok, err = pcall(function()
+    if not hookmetamethod or not newcclosure or not getnamecallmethod then
+    print("[ESP] Anti-cheat: hookmetamethod not supported, skipping")
+    return
     end
-    
-    if closestSeller then
-        local zone = findShopZone(closestSeller)
-        local zoneName = zone and zone.Name or "неизвестная зона"
-        print(string.format("[AutoBuy] ✅✅✅ Выбран Seller в зоне '%s': %.0f м", zoneName, closestDist))
-        return closestSeller
-    end
-    
-    -- Если не нашли на том же этаже, берем просто ближайшего из зоны
-    print("[AutoBuy] ⚠️ Не найден Seller на том же этаже, ищу любого в зоне...")
-    closestSeller = nil
-    closestDist = math.huge
-    
-    for _, seller in pairs(searchList) do
-        local sellerRoot = seller:FindFirstChild("HumanoidRootPart")
-        if sellerRoot then
-            local dist = (playerPos - sellerRoot.Position).Magnitude
-            if dist < closestDist then
-                closestDist = dist
-                closestSeller = seller
-            end
-        end
-    end
-    
-    if closestSeller then
-        print(string.format("[AutoBuy] ✅ Выбран ближайший Seller: %.0f м", closestDist))
-        return closestSeller
-    end
-    
-    print("[AutoBuy] ❌ Не удалось выбрать Seller")
+    oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    if method == "FireServer" or method == "InvokeServer" then
+    local callerName = tostring(self.Name):lower()
+    local parentName = ""
+    pcall(function()
+    parentName = tostring(self.Parent and self.Parent.Name or ""):lower()
+    end)
+    local blocked = {"anticheat", "anti_cheat", "anti-cheat","exploitdetect", "hackdetect","speedhack", "speedcheck","kickplayer", "banservice","detectcheat", "cheatdetect","anticheatreport", "flagplayer"}
+    for _, word in ipairs(blocked) do
+    if callerName:find(word) or parentName:find(word) then
     return nil
-end
-
--- Основной цикл автобая
-local autoBuyCounter = 0
-
-local function autoBuyCycle()
-    if not autoBuyEnabled then return end
-    
-    print("\n[AutoBuy] ═══════════════════════════════")
-    print("[AutoBuy] 🔄 Цикл покупки #" .. (autoBuyCounter + 1))
-    
-    -- 1. Находим предметы с ESP
-    local items = findAllItems()
-    if #items == 0 then
-        print("[AutoBuy] ⏸️ Нет предметов с ESP, жду...")
-        return
     end
-    
-    print("[AutoBuy] 📊 Найдено предметов: " .. #items)
-    
-    -- 2. Выбираем ближайший предмет
-    table.sort(items, function(a, b)
-        local distA = getDistance(a.object) or math.huge
-        local distB = getDistance(b.object) or math.huge
-        return distA < distB
+    end
+    end
+    return oldNamecall(self, ...)
+    end))
     end)
+    if ok then
+    antiCheatHooked = true
+    print("[ESP] Anti-cheat bypass active")
+    else
+    antiCheatHooked = false
+    print("[ESP] Anti-cheat bypass failed: " .. tostring(err))
+    end
+    end
+
+    -- ============================================
+    --          SPEED HACK (CFrame push + WalkSpeed)
+    -- ============================================
+    local speedFrameCount = 0
+    local speedConnection = nil
+    local function applySpeed(speed)
+    pcall(function()
+    local char = player.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    hum.WalkSpeed = speed
+    if settings.speedEnabled then
+    local moveDir = hum.MoveDirection
+    if moveDir.Magnitude > 0 then
+    speedFrameCount = speedFrameCount + 1
+    if speedFrameCount % 2 == 0 then
+    local extraSpeed = (speed - 16) / 16
+    if extraSpeed > 0 then
+    local push = moveDir * extraSpeed * 0.8
+    rootPart.CFrame = rootPart.CFrame + push
+    end
+    end
+    end
+    end
+    end)
+    end
+
+    local function enableSpeedHack()
+    if speedConnection then return end
+    settings.speedEnabled = true
+    speedConnection = RunService.RenderStepped:Connect(function()
+    if settings.speedEnabled then
+    applySpeed(settings.walkSpeed)
+    end
+    end)
+    print("[ESP] Speed hack enabled: " .. settings.walkSpeed)
+    end
+
+    local function disableSpeedHack()
+    if speedConnection then
+    speedConnection:Disconnect()
+    speedConnection = nil
+    end
+    settings.speedEnabled = false
+    pcall(function()
+    local char = player.Character
+    if char then
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then hum.WalkSpeed = 16 end
+    end
+    end)
+    print("[ESP] Speed hack disabled")
+    end
+
+    -- ============================================
+    --          FAST TAKE (Instant Take Bypass)
+    -- ============================================
+    local fastTakeConnection = nil
+    local ProximityPromptService = game:GetService("ProximityPromptService")
+    local originalHoldDurations = {}
+
+    local function applyFastTakeToPrompt(prompt)
+        if not originalHoldDurations[prompt] then
+            originalHoldDurations[prompt] = prompt.HoldDuration
+        end
+        prompt.HoldDuration = 0
+    end
+
+    local function enableFastTake()
+        if fastTakeConnection then return end
+        settings.fastTakeEnabled = true
+
+        -- Убираем HoldDuration и Cooldown со всех ProximityPrompt
+        fastTakeConnection = ProximityPromptService.PromptShown:Connect(function(prompt)
+            if settings.fastTakeEnabled then
+                applyFastTakeToPrompt(prompt)
+            end
+        end)
+
+        -- Обрабатываем уже существующие промпты
+        for _, descendant in pairs(workspace:GetDescendants()) do
+            if descendant:IsA("ProximityPrompt") then
+                applyFastTakeToPrompt(descendant)
+            end
+        end
+
+        -- Следим за новыми промптами
+        workspace.DescendantAdded:Connect(function(descendant)
+            if descendant:IsA("ProximityPrompt") and settings.fastTakeEnabled then
+                applyFastTakeToPrompt(descendant)
+            end
+        end)
+
+        print("[ESP] Fast Take enabled - задержка и кулдаун убраны!")
+    end
+
+    local function disableFastTake()
+        if fastTakeConnection then
+            fastTakeConnection:Disconnect()
+            fastTakeConnection = nil
+        end
+        settings.fastTakeEnabled = false
+
+        -- Возвращаем оригинальные значения
+        for prompt, originalDuration in pairs(originalHoldDurations) do
+            if prompt and prompt.Parent then
+                prompt.HoldDuration = originalDuration
+            end
+        end
+        originalHoldDurations = {}
+
+        print("[ESP] Fast Take disabled - задержка и кулдаун восстановлены")
+    end
+
+    -- ============================================
+    --          SERVER HOP (Поиск сервера с малым онлайном)
+    -- ============================================
+    local TeleportService = game:GetService("TeleportService")
+    local isServerHopping = false
     
-    local targetItem = items[1]
-    local distance = getDistance(targetItem.object)
-    print(string.format("[AutoBuy] 🎯 Цель: %s (%s) - %.0f м", targetItem.name, targetItem.rarity, distance or 0))
-    
-    -- 3. Летим к предмету
-    print("[AutoBuy] ✈️ Лечу к предмету...")
-    local success, _ = tweenToObject(targetItem.object, false)
-    if not success then
-        print("[AutoBuy] ❌ Не удалось долететь до предмета")
-        return
+    local function getServersData(placeId, sortOrder)
+        local serversUrl = string.format(
+            "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=%s&limit=100",
+            placeId,
+            sortOrder
+        )
+        
+        -- Попытка 1: через HttpGet
+        local success1, result1 = pcall(function()
+            return game:HttpGet(serversUrl)
+        end)
+        
+        if success1 then
+            return result1
+        end
+        
+        -- Попытка 2: через request (для некоторых экзекуторов)
+        if request then
+            local success2, result2 = pcall(function()
+                local response = request({
+                    Url = serversUrl,
+                    Method = "GET"
+                })
+                return response.Body
+            end)
+            
+            if success2 then
+                return result2
+            end
+        end
+        
+        error("Не удалось получить список серверов")
     end
     
-    task.wait(0.5)
-    
-    -- 4. Берем предмет (клик)
-    print("[AutoBuy] 🛒 Беру предмет в корзину...")
-    if not clickObject(targetItem.object) then
-        print("[AutoBuy] ❌ Не удалось взять предмет")
-        return
+    local function serverHop(findSmallest)
+        if isServerHopping then
+            warn("[SERVER HOP] Уже идёт поиск сервера...")
+            return false, "Поиск уже запущен"
+        end
+        
+        isServerHopping = true
+        
+        local success, result = pcall(function()
+            local placeId = game.PlaceId
+            local jobId = game.JobId
+            
+            print("[SERVER HOP] Получение списка серверов...")
+            
+            local sortOrder = findSmallest and "Asc" or "Desc"
+            local httpData = getServersData(placeId, sortOrder)
+            local serversData = HttpService:JSONDecode(httpData)
+            
+            if not serversData or not serversData.data then
+                error("Некорректный ответ от API")
+            end
+            
+            local servers = serversData.data
+            
+            if #servers == 0 then
+                error("Нет доступных серверов")
+            end
+            
+            -- Фильтруем сервера
+            local validServers = {}
+            for _, server in ipairs(servers) do
+                -- Исключаем текущий сервер и полные сервера
+                if server.id ~= jobId and server.playing < server.maxPlayers then
+                    table.insert(validServers, {
+                        id = server.id,
+                        playing = server.playing,
+                        maxPlayers = server.maxPlayers
+                    })
+                end
+            end
+            
+            if #validServers == 0 then
+                error("Нет подходящих серверов для телепорта")
+            end
+            
+            -- Сортируем по количеству игроков
+            table.sort(validServers, function(a, b)
+                if findSmallest then
+                    return a.playing < b.playing
+                else
+                    return a.playing > b.playing
+                end
+            end)
+            
+            -- Выбираем лучший сервер
+            local targetServer = validServers[1]
+            
+            print(string.format("[SERVER HOP] Найден сервер: %d/%d игроков", 
+                targetServer.playing, targetServer.maxPlayers))
+            
+            -- Телепортируем
+            TeleportService:TeleportToPlaceInstance(
+                placeId,
+                targetServer.id,
+                player
+            )
+            
+            return targetServer
+        end)
+        
+        isServerHopping = false
+        
+        if not success then
+            warn("[SERVER HOP] Ошибка:", result)
+            return false, result
+        end
+        
+        return true, result
     end
     
-    print("[AutoBuy] ✅ Предмет взят в корзину")
-    task.wait(0.5)
+    local function hopToSmallestServer()
+        return serverHop(true)
+    end
     
-    -- 5. Ищем Seller в том же магазине
-    local excludedSeller = nil  -- Seller которого нужно исключить из поиска
-    local maxRetries = 3  -- Максимум 3 попытки с разными seller
-    local retryCount = 0
-    
-    while retryCount < maxRetries do
-        print("[AutoBuy] 🔍 Ищу продавца (Seller)...")
-        if excludedSeller then
-            print("[AutoBuy] ⚠️ Исключаю неправильного Seller из поиска")
+    local function hopToRandomServer()
+        return serverHop(false)
+    end
+
+    -- ============================================
+    --          CUSTOM NICKNAME (Изменение ника)
+    -- ============================================
+    local customNickEnabled = false
+    local tempNickname = "" -- Временное хранилище для введенного ника
+    local customNickname = ""
+    local oldDisplayName = player.DisplayName
+    local oldName = player.Name
+    local oldUserId = tostring(player.UserId)
+
+    local function processText(text)
+        if not customNickEnabled or customNickname == "" then
+            return text
         end
         
-        local seller = findSellerInShop(targetItem.object, excludedSeller)
-        if not seller then
-            print("[AutoBuy] ❌ Seller не найден в магазине")
-            return
+        if text == nil then
+            return ''
         end
         
-        -- 6. Летим к Seller
-        print("[AutoBuy] ✈️ Лечу к продавцу...")
-        local successFly, _ = tweenToObject(seller, false)
-        if not successFly then
-            print("[AutoBuy] ❌ Не удалось долететь до Seller")
-            return
+        local success, result = pcall(function()
+            -- Заменяем DisplayName, Name и UserId на кастомный ник
+            local newText = string.gsub(tostring(text), oldDisplayName, customNickname)
+            newText = string.gsub(newText, oldName, customNickname)
+            newText = string.gsub(newText, oldUserId, customNickname)
+            return newText
+        end)
+        
+        return success and result or text
+    end
+
+    local function applyNicknameToElement(element)
+        pcall(function()
+            if element:IsA("TextBox") or element:IsA("TextLabel") or element:IsA("TextButton") then
+                local newText = processText(element.Text)
+                if newText and newText ~= element.Text then
+                    element.Text = newText
+                end
+            end
+        end)
+    end
+
+    local textElementConnections = {}
+    local allowedContainers = {"PlayerGui", "CoreGui"}
+
+    local function isAllowedElement(element)
+        -- Проверяем что элемент находится в разрешённых контейнерах
+        local ancestor = element
+        while ancestor do
+            if ancestor.Parent == game then
+                return ancestor.Name == "Players" or 
+                       ancestor.Name == "Workspace" or
+                       table.find(allowedContainers, ancestor.Name) ~= nil
+            end
+            ancestor = ancestor.Parent
+        end
+        return false
+    end
+
+    local function enableCustomNickname(nickname)
+        if customNickEnabled then
+            disableCustomNickname()
         end
         
-        task.wait(0.3)
+        customNickname = nickname
+        customNickEnabled = true
         
-        -- 7. Покупаем (клик по Seller)
-        print("[AutoBuy] � Покупаю предмет...")
-        if not clickObject(seller) then
-            print("[AutoBuy] ❌ Не удалось кликнуть по Seller")
-            return
+        -- Меняем DisplayName безопасно
+        pcall(function()
+            player.DisplayName = nickname
+        end)
+        
+        -- Обрабатываем только PlayerGui элементы для безопасности
+        local playerGui = player:FindFirstChild("PlayerGui")
+        if playerGui then
+            pcall(function()
+                for _, descendant in pairs(playerGui:GetDescendants()) do
+                    if descendant:IsA("TextBox") or descendant:IsA("TextLabel") or descendant:IsA("TextButton") then
+                        applyNicknameToElement(descendant)
+                        
+                        local conn = descendant:GetPropertyChangedSignal("Text"):Connect(function()
+                            if customNickEnabled then
+                                applyNicknameToElement(descendant)
+                            end
+                        end)
+                        table.insert(textElementConnections, conn)
+                    end
+                end
+            end)
+            
+            -- Следим за новыми элементами только в PlayerGui
+            local descendantConn = playerGui.DescendantAdded:Connect(function(descendant)
+                if customNickEnabled then
+                    task.wait(0.1) -- Даём элементу инициализироваться
+                    pcall(function()
+                        if descendant:IsA("TextBox") or descendant:IsA("TextLabel") or descendant:IsA("TextButton") then
+                            applyNicknameToElement(descendant)
+                            
+                            local conn = descendant:GetPropertyChangedSignal("Text"):Connect(function()
+                                if customNickEnabled then
+                                    applyNicknameToElement(descendant)
+                                end
+                            end)
+                            table.insert(textElementConnections, conn)
+                        end
+                    end)
+                end
+            end)
+            table.insert(textElementConnections, descendantConn)
         end
         
-        -- 8. ПРОВЕРКА: Продался ли предмет?
-        task.wait(1.0)  -- Даем время на обработку покупки
+        print("[ESP] Custom nickname enabled: " .. nickname)
+    end
+
+    local function disableCustomNickname()
+        customNickEnabled = false
+        customNickname = ""
         
-        -- Обновляем ESP и проверяем, остался ли предмет
-        local itemsAfter = findAllItems()
-        local itemStillExists = false
+        -- Восстанавливаем оригинальный DisplayName
+        player.DisplayName = oldDisplayName
         
-        for _, item in pairs(itemsAfter) do
-            if item.assetId == targetItem.assetId then
-                -- Проверяем, что это тот же предмет (по позиции)
-                local dist = getDistance(item.object)
-                if dist and dist < 100 then  -- Если предмет рядом
-                    itemStillExists = true
-                    targetItem = item  -- Обновляем ссылку на предмет
-                    break
+        -- Отключаем все соединения
+        for _, conn in pairs(textElementConnections) do
+            if conn and conn.Connected then
+                conn:Disconnect()
+            end
+        end
+        textElementConnections = {}
+        
+        print("[ESP] Custom nickname disabled")
+    end
+
+    local selectedAssets = {}
+    local selectedAccessories = {}
+
+    -- ASSETS загружаются с сервера в _G.ASSETS
+
+    -- ============================================================
+    -- АКСЕССУАРЫ (ACCESSORIES)
+    -- ============================================================
+    -- ACCESSORIES загружаются с сервера в _G.ACCESSORIES
+
+    local RARITY_COLORS = {Legendary = Color3.fromRGB(255, 180, 0)}
+
+    local function getItemInfo(a)if not a then return nil,"Common",nil end local d=_G.ASSETS[tostring(a)]return d and d.name or nil,d and d.rarity or"Common",d and d.chance or nil end
+    local function hasMatchingAsset(c)return(c.shirtId and _G.ASSETS[c.shirtId])or(c.pantsId and _G.ASSETS[c.pantsId])end
+    local function hasSpecificAsset(c,a)if not a then return false end return(c.shirtId==tostring(a))or(c.pantsId==tostring(a))end
+    local function hasAnySelectedAsset(c)for a in pairs(selectedAssets)do if hasSpecificAsset(c,a)then return true end end return false end
+
+    local function getAccessoryInfo(id)
+        if not id then return nil, "Common", nil end
+        local data = _G.ACCESSORIES[tostring(id)]
+        return data and data.name or nil, data and data.rarity or "Common", data and data.chance or nil
+    end
+
+    local function hasMatchingAccessory(meshId)
+        return _G.ACCESSORIES[tostring(meshId)] ~= nil
+    end
+
+    local function hasSpecificAccessory(meshId, id)
+        if not id then return false end
+        return tostring(meshId) == tostring(id)
+    end
+
+    local function hasAnySelectedAccessory(meshId)
+        for id in pairs(selectedAccessories) do
+            if hasSpecificAccessory(meshId, id) then
+                return true
+            end
+        end
+        return false
+    end
+
+    local function getAllAccessories()
+        local results = {}
+        for _, zone in pairs(workspace:GetChildren()) do
+            if zone:IsA("Model") and zone.Name:match("Shop_ShopZone") then
+                for _, child in pairs(zone:GetChildren()) do
+                    if child:IsA("Model") and child.Name:match("^M_") then
+                        -- Ищем Handle или Body (аксессуары)
+                        local target = child:FindFirstChild("Handle") or child:FindFirstChild("Body")
+                        if target and target:IsA("MeshPart") and target.MeshId then
+                            local id = target.MeshId:match("%d+")
+                            if id and _G.ACCESSORIES[id] then
+                                table.insert(results, {
+                                    model = child,
+                                    part = target,
+                                    meshId = id,
+                                    data = _G.ACCESSORIES[id]
+                                })
+                            end
+                        end
+                        -- Ищем L и R (кроссовки)
+                        for _, part in pairs(child:GetChildren()) do
+                            if part:IsA("MeshPart") and (part.Name == "L" or part.Name == "R") and part.MeshId then
+                                local id = part.MeshId:match("%d+")
+                                if id and _G.ACCESSORIES[id] then
+                                    table.insert(results, {
+                                        model = child,
+                                        part = part,
+                                        meshId = id,
+                                        data = _G.ACCESSORIES[id]
+                                    })
+                                    break  -- Только один раз для модели
+                                end
+                            end
+                        end
+                    end
                 end
             end
         end
+        return results
+    end
+    local function getAllMannequins()local r={}for _,z in pairs(workspace:GetChildren())do if z:IsA("Model")and z.Name:match("Shop_ShopZone")then local i=z:FindFirstChild("ItemSlots")if i then for _,s in pairs(i:GetChildren())do if(s:IsA("BasePart")or s:IsA("Model"))and s.Name:match("Slot_")then local m=s:FindFirstChild("Mannequin")if m and m:IsA("Model")then local c,h={},false for _,ch in pairs(m:GetChildren())do if ch:IsA("Shirt")then h=true c.shirtId=ch.ShirtTemplate:match("%d+")elseif ch:IsA("Pants")then h=true c.pantsId=ch.PantsTemplate:match("%d+")end end if h then table.insert(r,{mannequin=m,clothingData=c,slot=s})end end end end end end end return r end
+    local function getClothingInfo(c)local n,r,ch={},"Common",nil if c.shirtId then local nm,ra,ca=getItemInfo(c.shirtId)if nm then table.insert(n,nm)if ra~="Common"then r=ra end if ca then ch=ca end end end if c.pantsId then local nm,ra,ca=getItemInfo(c.pantsId)if nm then table.insert(n,nm)if ra~="Common"then r=ra end if ca then ch=ca end end end return n,r,RARITY_COLORS[r]or RARITY_COLORS.Legendary,ch end
+    local function formatChance(c)if not c then return""end return c>=1 and string.format("%.1f%%",c)or c>=0.1 and string.format("%.2f%%",c)or string.format("%.3f%%",c)end
+    local function clearAllESP()for _,e in pairs(espObjects)do if e and e.Parent then e:Destroy()end end espObjects={}for _,o in pairs(workspace:GetDescendants())do if(o:IsA("Highlight")and o.Name=="ESP_Highlight")or(o:IsA("BillboardGui")and o.Name=="ESP_Info")or(o:IsA("BoxHandleAdornment")and o.Name=="ESP_Box")then o:Destroy()end end end
+    local function clearTracers()for _,l in pairs(tracers)do if l then l:Destroy()end end tracers={}if tracerGui then tracerGui:Destroy()tracerGui=nil end end
+    local function createTracer(m,c)if tracers[m]then return end local playerGui=player:WaitForChild("PlayerGui")if not tracerGui then tracerGui=Instance.new("ScreenGui")tracerGui.Name="ESP_Tracers"tracerGui.IgnoreGuiInset=true tracerGui.ResetOnSpawn=false tracerGui.Parent=playerGui end local l=Instance.new("Frame")l.BorderSizePixel=0 l.BackgroundColor3=c l.AnchorPoint=Vector2.new(0.5,0.5)l.Visible=false l.Parent=tracerGui local grad=Instance.new("UIGradient")grad.Color=ColorSequence.new{ColorSequenceKeypoint.new(0,Color3.fromRGB(255,255,255)),ColorSequenceKeypoint.new(1,c)}grad.Transparency=NumberSequence.new{NumberSequenceKeypoint.new(0,0.3),NumberSequenceKeypoint.new(1,0)}grad.Rotation=90 grad.Parent=l tracers[m]=l table.insert(espObjects,l)end
+
+    local function updateOrCreateHighlight(m)local h=m:FindFirstChild("ESP_Highlight")if h then h.FillColor=settings.highlightColor h.OutlineColor=settings.highlightColor h.Enabled=settings.chams return end h=Instance.new("Highlight")h.Name="ESP_Highlight"h.Adornee=m h.FillTransparency=0.5 h.OutlineTransparency=0 h.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop h.FillColor=settings.highlightColor h.OutlineColor=settings.highlightColor h.Enabled=settings.chams h.Parent=m table.insert(espObjects,h)local rp=m:FindFirstChild("HumanoidRootPart")or m:FindFirstChild("Torso")if rp then local b=Instance.new("BoxHandleAdornment")b.Name="ESP_Box"b.Adornee=rp b.Size=rp.Size*1.1 b.Color3=settings.highlightColor b.Transparency=0.7 b.AlwaysOnTop=true b.ZIndex=10 b.Parent=rp table.insert(espObjects,b)end end
+    local function updateOrCreateBillboard(m,fn,ct,r,c,chance)local playerGui=player:WaitForChild("PlayerGui")local isRare=chance and chance<0.1 local infoColor=isRare and"rgb(0,0,0)"or"rgb(255,215,0)"local rarityColor=isRare and"rgb(0,0,0)"or"rgb(255,180,0)"local bb=m:FindFirstChild("ESP_Info")if bb then for _,ch in pairs(bb:GetChildren())do if ch:IsA("TextLabel")then if ch.Name=="NameLabel"then ch.Text=fn ch.TextColor3=Color3.fromRGB(255,255,255)elseif ch.Name=="InfoLabel"then ch.Text='<font color="'..rarityColor..'">'..r:upper()..'</font> <font color="'..infoColor..'">'..ct..'</font>'end end end return end bb=Instance.new("BillboardGui")bb.Name="ESP_Info"bb.Adornee=m bb.Size=UDim2.new(0,230,0,48)bb.StudsOffset=Vector3.new(0,4,0)bb.AlwaysOnTop=true bb.Parent=playerGui local frame=Instance.new("Frame")frame.Size=UDim2.new(1,0,1,0)frame.BackgroundColor3=Color3.fromRGB(10,10,10)frame.BackgroundTransparency=0.08 frame.BorderSizePixel=0 frame.Parent=bb local corner=Instance.new("UICorner")corner.CornerRadius=UDim.new(0,6)corner.Parent=frame local stroke=Instance.new("UIStroke")stroke.Color=c stroke.Thickness=1.5 stroke.ApplyStrokeMode=Enum.ApplyStrokeMode.Border stroke.Parent=frame local nameLabel=Instance.new("TextLabel")nameLabel.Name="NameLabel"nameLabel.Size=UDim2.new(1,-14,0,24)nameLabel.Position=UDim2.new(0,7,0,4)nameLabel.BackgroundTransparency=1 nameLabel.TextColor3=Color3.fromRGB(255,255,255)nameLabel.Font=Enum.Font.SourceSansSemibold nameLabel.TextSize=13 nameLabel.Text=fn nameLabel.TextXAlignment=Enum.TextXAlignment.Left nameLabel.Parent=frame local infoLabel=Instance.new("TextLabel")infoLabel.Name="InfoLabel"infoLabel.Size=UDim2.new(1,-14,0,16)infoLabel.Position=UDim2.new(0,7,0,28)infoLabel.BackgroundTransparency=1 infoLabel.Font=Enum.Font.SourceSans infoLabel.TextSize=12 infoLabel.RichText=true infoLabel.TextXAlignment=Enum.TextXAlignment.Left infoLabel.Text='<font color="'..rarityColor..'">'..r:upper()..'</font> <font color="'..infoColor..'">'..ct..'</font>'infoLabel.Parent=frame table.insert(espObjects,bb)end
+
+    local function shouldHighlight(d)return settings.highlightMode=="all"or(next(selectedAssets)and hasAnySelectedAsset(d.clothingData))end
+
+    local function shouldHighlightAccessory(meshId)
+        return settings.accessoriesHighlightMode == "all" or (next(selectedAccessories) and hasAnySelectedAccessory(meshId))
+    end
+
+    local function createAccessoryESP(data)
+        local model = data.model
+        local meshId = data.meshId
+        local info = data.data
         
-        if not itemStillExists then
-            -- Предмет исчез - покупка успешна!
-            autoBuyCounter = autoBuyCounter + 1
-            print("[AutoBuy] ✅✅✅ ПОКУПКА ЗАВЕРШЕНА! ✅✅✅")
-            print("[AutoBuy] 📈 Всего куплено: " .. autoBuyCounter)
-            print("[AutoBuy] ═══════════════════════════════\n")
-            break
-        else
-            -- Предмет всё ещё есть - корзина была пустая!
-            print("[AutoBuy] ⚠️⚠️⚠️ КОРЗИНА ПУСТАЯ! Предмет не был куплен!")
-            print("[AutoBuy] � Возвращаюсь к предмету и ищу другого Seller...")
-            
-            -- Исключаем этого seller из следующего поиска
-            excludedSeller = seller
-            retryCount = retryCount + 1
-            
-            if retryCount >= maxRetries then
-                print("[AutoBuy] ❌ Превышено количество попыток, пропускаю предмет")
-                return
-            end
-            
-            -- Возвращаемся к предмету
-            print("[AutoBuy] ✈️ Лечу обратно к предмету...")
-            local successReturn, _ = tweenToObject(targetItem.object, false)
-            if not successReturn then
-                print("[AutoBuy] ❌ Не удалось вернуться к предмету")
-                return
-            end
-            
-            task.wait(0.5)
-            
-            -- Снова берем предмет
-            print("[AutoBuy] � Беру предмет в корзину заново...")
-            if not clickObject(targetItem.object) then
-                print("[AutoBuy] ❌ Не удалось взять предмет повторно")
-                return
-            end
-            
-            print("[AutoBuy] ✅ Предмет снова в корзине, ищу другого Seller...")
-            task.wait(0.5)
-            
-            -- Цикл продолжится и найдет другого seller
+        -- Проверка что модель существует
+        if not model or not model.Parent then return end
+        
+        local name = info.name
+        local rarity = info.rarity or "Legendary"
+        local chance = info.chance
+        local color = RARITY_COLORS[rarity] or RARITY_COLORS.Legendary
+        
+        -- Проверяем что не создали уже ESP для этой модели
+        if model:FindFirstChild("ESP_Highlight") then return end
+        
+        updateOrCreateHighlight(model)
+        
+        local chanceText = chance and (" | " .. formatChance(chance)) or ""
+        updateOrCreateBillboard(model, name, chanceText, rarity, color, chance)
+        createTracer(model, settings.highlightColor)
+        
+        local itemKey = name .. "_" .. tostring(model)
+        if not foundItems[itemKey] then
+            foundItems[itemKey] = {
+                name = name,
+                chance = chance,
+                rarity = rarity,
+                color = color,
+                model = model
+            }
         end
     end
-    
-    -- 9. Обновляем ESP
-    task.wait(0.5)
-    if espEnabled then
-        updateESP()
-    end
-end
+    local function createESP(d)local n,r,c,ch=getClothingInfo(d.clothingData)if #n==0 then return end local fn=table.concat(n," + ")local ct=ch and(" | "..formatChance(ch))or""updateOrCreateHighlight(d.mannequin)updateOrCreateBillboard(d.mannequin,fn,ct,r,c,ch)createTracer(d.mannequin,settings.highlightColor)local ik=fn.."_"..tostring(d.slot)if not foundItems[ik]then foundItems[ik]={name=fn,chance=ch,rarity=r,color=c,mannequin=d.mannequin}end end
+    local function startTracerLoop()if tracerConnection then return end local rgbTick=0 tracerConnection=RunService.RenderStepped:Connect(function()if not settings.tracers then for _,l in pairs(tracers)do l.Visible=false end return end rgbTick=rgbTick+0.005 local hue=rgbTick%1 local rgbColor=Color3.fromHSV(hue,1,1)local char=player.Character if not char then return end local torso=char:FindFirstChild("HumanoidRootPart")or char:FindFirstChild("Torso")if not torso then return end local torsoPos,torsoOnScreen=Camera:WorldToViewportPoint(torso.Position)if not torsoOnScreen then return end local fromPos=Vector2.new(torsoPos.X,torsoPos.Y)for m,l in pairs(tracers)do if not m.Parent or not l.Parent then tracers[m]=nil if l then l:Destroy()end continue end local p=m:FindFirstChild("HumanoidRootPart")or m:FindFirstChild("Torso")or m:FindFirstChildWhichIsA("BasePart")if p then local sp,os=Camera:WorldToViewportPoint(p.Position)if os then local tp=Vector2.new(sp.X,sp.Y)local df=tp-fromPos l.Size=UDim2.new(0,df.Magnitude,0,4)l.Position=UDim2.new(0,fromPos.X+df.X/2,0,fromPos.Y+df.Y/2)l.Rotation=math.deg(math.atan2(df.Y,df.X))l.BackgroundColor3=rgbColor local grad=l:FindFirstChild("UIGradient")if grad then grad.Color=ColorSequence.new{ColorSequenceKeypoint.new(0,Color3.fromRGB(255,255,255)),ColorSequenceKeypoint.new(1,rgbColor)}end l.Visible=true else l.Visible=false end else l.Visible=false end end end)end
+    local function applySettings()if not espEnabled then return end for _,o in pairs(workspace:GetDescendants())do if o:IsA("Highlight")and o.Name=="ESP_Highlight"then o.Enabled=settings.chams end if o:IsA("BoxHandleAdornment")and o.Name=="ESP_Box"then o.Visible=settings.chams end end end
+    local function refreshESP()espEnabled=espItemsEnabled or espAccessoriesEnabled if not espEnabled then return end clearAllESP()clearTracers()foundItems={}pcall(function()if espItemsEnabled then for _,d in pairs(getAllMannequins())do if hasMatchingAsset(d.clothingData)and shouldHighlight(d)then createESP(d)end end end if espAccessoriesEnabled then for _,acc in pairs(getAllAccessories())do if acc.model and acc.model.Parent and hasMatchingAccessory(acc.meshId)and shouldHighlightAccessory(acc.meshId)then createAccessoryESP(acc)end end end end)end
+    local function startUpdateLoop()if updateThread then return end updateThread=task.spawn(function()while espEnabled do task.wait(0.5)pcall(function()if espItemsEnabled then for _,d in pairs(getAllMannequins())do if hasMatchingAsset(d.clothingData)and shouldHighlight(d)then if not d.mannequin:FindFirstChild("ESP_Highlight")or not d.mannequin:FindFirstChild("ESP_Info")or not tracers[d.mannequin]then createESP(d)end end end end if espAccessoriesEnabled then for _,acc in pairs(getAllAccessories())do if acc.model and acc.model.Parent and hasMatchingAccessory(acc.meshId)and shouldHighlightAccessory(acc.meshId)then if not acc.model:FindFirstChild("ESP_Highlight")or not acc.model:FindFirstChild("ESP_Info")or not tracers[acc.model]then createAccessoryESP(acc)end end end end end)end updateThread=nil end)end
+    local function enableItemsESP()espItemsEnabled=true espEnabled=true clearAllESP()clearTracers()foundItems={}local f=0 pcall(function()for _,d in pairs(getAllMannequins())do if hasMatchingAsset(d.clothingData)and shouldHighlight(d)then createESP(d)f=f+1 end end end)startUpdateLoop()startTracerLoop()return f end
+    local function disableItemsESP()espItemsEnabled=false espEnabled=espAccessoriesEnabled if not espEnabled then if updateThread then task.cancel(updateThread)updateThread=nil end if tracerConnection then tracerConnection:Disconnect()tracerConnection=nil end clearTracers()clearAllESP()foundItems={}else refreshESP()end end
+    local function enableAccessoriesESP()espAccessoriesEnabled=true espEnabled=true local f=0 pcall(function()for _,acc in pairs(getAllAccessories())do if acc.model and acc.model.Parent and hasMatchingAccessory(acc.meshId)and shouldHighlightAccessory(acc.meshId)then createAccessoryESP(acc)f=f+1 end end end)startUpdateLoop()startTracerLoop()return f end
+    local function disableAccessoriesESP()espAccessoriesEnabled=false espEnabled=espItemsEnabled if not espEnabled then if updateThread then task.cancel(updateThread)updateThread=nil end if tracerConnection then tracerConnection:Disconnect()tracerConnection=nil end clearTracers()clearAllESP()foundItems={}else refreshESP()end end
+    -- legacy
+    local function enableESP()return enableItemsESP()end
+    local function disableESP()disableItemsESP()end
 
--- Поток автобая
-local autoBuyThread = nil
-local function startAutoBuy()
-    if autoBuyThread then return end
-    print("[AutoBuy] 🚀 AutoBuy запущен")
-    autoBuyThread = task.spawn(function()
-        while autoBuyEnabled do
-            local success, err = pcall(function()
-                autoBuyCycle()
+    -- ============================================
+    --          СИСТЕМА СОХРАНЕНИЯ КОНФИГА
+    -- ============================================
+    local configFileName = "ESP_Ultra_Config.json"
+    
+    -- Проверка поддержки файловой системы
+    local fileSystemSupported = writefile and readfile and isfile
+    
+    local function saveConfig()
+        if not fileSystemSupported then
+            warn("[CONFIG] Файловая система не поддерживается экзекутором")
+            return false
+        end
+        
+        local config = {
+            -- Основные настройки
+            espItemsEnabled = espItemsEnabled,
+            espAccessoriesEnabled = espAccessoriesEnabled,
+            chams = settings.chams,
+            tracers = settings.tracers,
+            highlightMode = settings.highlightMode,
+            accessoriesHighlightMode = settings.accessoriesHighlightMode,
+            
+            -- Speed hack
+            speedEnabled = settings.speedEnabled,
+            walkSpeed = settings.walkSpeed,
+            
+            -- Fast Take
+            fastTakeEnabled = settings.fastTakeEnabled,
+            
+            -- Custom Nickname
+            customNickEnabled = customNickEnabled,
+            customNickname = customNickname,
+            tempNickname = tempNickname,
+            
+            -- Выбранные предметы
+            selectedAssets = {},
+            selectedAccessories = {}
+        }
+        
+        -- Сохраняем выбранные предметы
+        for id in pairs(selectedAssets) do
+            table.insert(config.selectedAssets, id)
+        end
+        
+        -- Сохраняем выбранные аксессуары
+        for id in pairs(selectedAccessories) do
+            table.insert(config.selectedAccessories, id)
+        end
+        
+        local success, encoded = pcall(function()
+            return HttpService:JSONEncode(config)
+        end)
+        
+        if success then
+            local writeSuccess = pcall(function()
+                writefile(configFileName, encoded)
             end)
             
-            if not success then
-                print("[AutoBuy] ⚠️ Ошибка в цикле: " .. tostring(err))
+            if writeSuccess then
+                print("[CONFIG] Конфигурация сохранена")
+                return true
+            else
+                warn("[CONFIG] Ошибка записи файла")
+                return false
             end
-            
-            -- Короткая задержка между циклами (1 секунда)
-            task.wait(1)
+        else
+            warn("[CONFIG] Ошибка кодирования конфигурации:", encoded)
+            return false
         end
-        autoBuyThread = nil
-        print("[AutoBuy] ⏹️ AutoBuy остановлен")
-    end)
-end
-
-local function stopAutoBuy()
-    autoBuyEnabled = false
-    if autoBuyThread then
-        task.cancel(autoBuyThread)
-        autoBuyThread = nil
     end
     
-    -- Возвращаем камеру в нормальный режим
-    local camera = workspace.CurrentCamera
-    camera.CameraType = Enum.CameraType.Custom
-    print("[AutoBuy] 🛑 AutoBuy остановлен, камера восстановлена")
-end
-
--- ============================================
--- RAYFIELD GUI
--- ============================================
-local Window = Rayfield:CreateWindow({
-    Name = "ESP + Item Finder | Firma Mode Hub",
-    LoadingTitle = "Загрузка ESP...",
-    LoadingSubtitle = "by @FirmaModeHub",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "FirmaESP",
-        FileName = "Config"
-    },
-    Discord = {
-        Enabled = false,
-        Invite = "noinvite",
-        RememberJoins = true
-    },
-    KeySystem = false,
-})
-
--- Вкладка ESP
-local ESPTab = Window:CreateTab("🔍 ESP", 4483362458)
-local ESPSection = ESPTab:CreateSection("Настройки ESP")
-
-local ESPToggle = ESPTab:CreateToggle({
-    Name = "Включить ESP",
-    CurrentValue = espEnabled,
-    Flag = "ESPEnabled",
-    Callback = function(Value)
-        espEnabled = Value
-        clearESP()
-        if espEnabled then 
-            updateESP()
-            Rayfield:Notify({
-                Title = "ESP Включен",
-                Content = "Поиск предметов из списка...",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        else
-            Rayfield:Notify({
-                Title = "ESP Выключен",
-                Content = "Все маркеры удалены",
-                Duration = 3,
-                Image = 4483362458,
-            })
+    local function loadConfig()
+        if not fileSystemSupported then
+            print("[CONFIG] Файловая система не поддерживается, используем настройки по умолчанию")
+            return nil
         end
-    end,
-})
-
-local RefreshButton = ESPTab:CreateButton({
-    Name = "🔄 Обновить ESP",
-    Callback = function()
-        if espEnabled then 
-            updateESP()
-            Rayfield:Notify({
-                Title = "ESP Обновлен",
-                Content = "Список предметов обновлен",
-                Duration = 2,
-                Image = 4483362458,
-            })
-        else
-            Rayfield:Notify({
-                Title = "Ошибка",
-                Content = "Сначала включите ESP!",
-                Duration = 2,
-                Image = 4483362458,
-            })
+        
+        local fileExists = pcall(function()
+            return isfile(configFileName)
+        end)
+        
+        if not fileExists or not isfile(configFileName) then
+            print("[CONFIG] Файл конфигурации не найден, используем настройки по умолчанию")
+            return nil
         end
-    end,
-})
-
--- Вкладка AutoBuy
-local AutoBuyTab = Window:CreateTab("🛒 AutoBuy", 4483362458)
-local AutoBuySection = AutoBuyTab:CreateSection("Автоматическая покупка")
-
-local AutoBuyToggle = AutoBuyTab:CreateToggle({
-    Name = "Включить AutoBuy",
-    CurrentValue = autoBuyEnabled,
-    Flag = "AutoBuyEnabled",
-    Callback = function(Value)
-        autoBuyEnabled = Value
-        if autoBuyEnabled then
-            startAutoBuy()
-            Rayfield:Notify({
-                Title = "AutoBuy Включен",
-                Content = "Автоматическая покупка запущена",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        else
-            stopAutoBuy()
-            Rayfield:Notify({
-                Title = "AutoBuy Выключен",
-                Content = "Автоматическая покупка остановлена",
-                Duration = 3,
-                Image = 4483362458,
-            })
+        
+        local success, content = pcall(function()
+            return readfile(configFileName)
+        end)
+        
+        if not success then
+            warn("[CONFIG] Ошибка чтения файла конфигурации")
+            return nil
         end
-    end,
-})
+        
+        local decoded
+        success, decoded = pcall(function()
+            return HttpService:JSONDecode(content)
+        end)
+        
+        if not success then
+            warn("[CONFIG] Ошибка декодирования конфигурации")
+            return nil
+        end
+        
+        print("[CONFIG] ✅ Конфигурация загружена!")
+        return decoded
+    end
 
-local SpeedSlider = AutoBuyTab:CreateSlider({
-    Name = "Скорость полета",
-    Range = {10, 50},
-    Increment = 1,
-    Suffix = " м/с",
-    CurrentValue = autoBuySpeed,
-    Flag = "AutoBuySpeed",
-    Callback = function(Value)
-        autoBuySpeed = Value
-        Rayfield:Notify({
-            Title = "Скорость изменена",
-            Content = "Новая скорость: " .. Value .. " м/с",
-            Duration = 2,
-            Image = 4483362458,
-        })
-    end,
-})
+    print("🔄 Загрузка Rayfield GUI...")
+    pcall(bypassAntiCheat)
+    local Rayfield=loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+    local Window=Rayfield:CreateWindow({Name="🔥 ESP Ultra Modern",LoadingTitle="Загрузка ESP...",LoadingSubtitle="by YourName",ConfigurationSaving={Enabled=false},KeySystem=false})
+    -- Загрузка конфига перед созданием GUI
+    local savedConfig = loadConfig()
+    
+    local MainTab=Window:CreateTab("🏠 Главная",4483362458)
+    local Section1=MainTab:CreateSection("Основное")
+    
+    -- Применяем сохраненные значения или дефолтные
+    local defaultESPItems = savedConfig and savedConfig.espItemsEnabled or false
+    local defaultESPAcc = savedConfig and savedConfig.espAccessoriesEnabled or false
+    local defaultChams = savedConfig and savedConfig.chams or true
+    local defaultTracers = savedConfig and savedConfig.tracers or true
+    
+    local ESPToggle=MainTab:CreateToggle({Name="🎯 Включить ESP на вещи",CurrentValue=defaultESPItems,Flag="ESPToggle",Callback=function(v)if v then local f=enableItemsESP()or 0 Rayfield:Notify({Title="ESP на вещи Включен",Content="Найдено легендарок: "..tostring(f),Duration=3,Image=4483362458})else disableItemsESP()Rayfield:Notify({Title="ESP на вещи Выключен",Content="Все элементы убраны",Duration=3,Image=4483362458})end saveConfig()end})
+    local AccessoriesESPToggle=MainTab:CreateToggle({Name="👜 Включить ESP на аксессуары",CurrentValue=defaultESPAcc,Flag="AccessoriesESPToggle",Callback=function(v)if v then local f=enableAccessoriesESP()or 0 Rayfield:Notify({Title="ESP на аксессуары Включен",Content="Найдено аксов: "..tostring(f),Duration=3})else disableAccessoriesESP()Rayfield:Notify({Title="ESP на аксессуары Выключен",Content="Аксессуары скрыты",Duration=2})end saveConfig()end})
+    local ChamsToggle=MainTab:CreateToggle({Name="✨ Чамсы (Красная обводка)",CurrentValue=defaultChams,Flag="ChamsToggle",Callback=function(v)settings.chams=v applySettings()saveConfig()end})
+    local TracersToggle=MainTab:CreateToggle({Name="📍 Трассеры (Линии)",CurrentValue=defaultTracers,Flag="TracersToggle",Callback=function(v)settings.tracers=v saveConfig()end})
+    local Section2=MainTab:CreateSection("Режим отображения")
+    
+    local defaultHighlightMode = savedConfig and savedConfig.highlightMode or "all"
+    local defaultAccHighlightMode = savedConfig and savedConfig.accessoriesHighlightMode or "all"
+    
+    local defaultModeOption = defaultHighlightMode == "all" and {"Все вещи"} or {"Выбранные вещи"}
+    local defaultAccModeOption = defaultAccHighlightMode == "all" and {"Все аксессуары"} or {"Выбранные аксессуары"}
+    
+    local ModeDropdown=MainTab:CreateDropdown({Name="🔍 Режим поиска вещей",Options={"Все вещи","Выбранные вещи"},CurrentOption=defaultModeOption,MultipleOptions=false,Flag="ModeDropdown",Callback=function(o)if o[1]=="Все вещи"then settings.highlightMode="all"else settings.highlightMode="specific"end refreshESP()saveConfig()end})
+    local AccModeDropdown=MainTab:CreateDropdown({Name="🔍 Режим поиска аксессуаров",Options={"Все аксессуары","Выбранные аксессуары"},CurrentOption=defaultAccModeOption,MultipleOptions=false,Flag="AccModeDropdown",Callback=function(o)if o[1]=="Все аксессуары"then settings.accessoriesHighlightMode="all"else settings.accessoriesHighlightMode="specific"end refreshESP()saveConfig()end})
+    local Section3=MainTab:CreateSection("📦 Найденные вещи")
+    MainTab:CreateParagraph({Title="Список обновляется автоматически",Content="Здесь будут показаны найденные легендарные вещи"})
+    local foundItemsLabel=MainTab:CreateLabel("ESP выключен. Включи чтобы увидеть вещи")
+    local function updateFoundItemsList()local count=0 local listText=""local sortedItems={}for _,item in pairs(foundItems)do table.insert(sortedItems,item)count=count+1 end table.sort(sortedItems,function(a,b)return(a.chance or 999)<(b.chance or 999)end)if count==0 then foundItemsLabel:Set("Ничего не найдено")else listText=string.format("🎉 Найдено: %d шт.\n",count)for i,item in ipairs(sortedItems)do if i<=5 then local chanceText=item.chance and formatChance(item.chance)or "N/A"listText=listText..string.format("%d. %s (%s)\n",i,item.name or "Unknown",chanceText)end end if count>5 then listText=listText..string.format("...ещё %d",count-5)end foundItemsLabel:Set(listText)end end
+    task.spawn(function()while true do task.wait(1)if espEnabled then updateFoundItemsList()end end end)
+    local ItemsTab=Window:CreateTab("🎽 Выбор вещей",4483362458)
+    local Section4=ItemsTab:CreateSection("Выбери вещи для поиска")
+    ItemsTab:CreateLabel("Выбери вещи, которые хочешь найти")
+    local selectedCount=0
+    local CountLabel=ItemsTab:CreateLabel("Выбрано: 0 вещей")
+    local function updateCountLabel()local c=0 for _ in pairs(selectedAssets)do c=c+1 end CountLabel:Set("Выбрано: "..c.." вещей")end
+    local itemToggles = {}
+    
+    -- Восстанавливаем выбранные предметы из конфига
+    if savedConfig and savedConfig.selectedAssets then
+        for _, id in ipairs(savedConfig.selectedAssets) do
+            selectedAssets[id] = true
+        end
+    end
+    
+    local brands={}for id,data in pairs(_G.ASSETS)do local brand=data.name:match("^([^%s]+)")if not brands[brand]then brands[brand]={}end table.insert(brands[brand],{id=id,name=data.name,chance=data.chance})end
+    for brand,items in pairs(brands)do local brandSection=ItemsTab:CreateSection("📦 "..brand)for _,item in pairs(items)do local isSelected=selectedAssets[item.id]==true local t=ItemsTab:CreateToggle({Name=item.name.." ("..formatChance(item.chance)..")",CurrentValue=isSelected,Flag="Item_"..item.id,Callback=function(v)if v then selectedAssets[item.id]=true else selectedAssets[item.id]=nil end updateCountLabel()if settings.highlightMode=="specific"then refreshESP()end saveConfig()end})itemToggles[item.id]=t end end
+    local ItemsManageSection=ItemsTab:CreateSection("Управление")
+    ItemsTab:CreateButton({Name="✅ Выбрать все вещи",Callback=function()for id in pairs(_G.ASSETS)do selectedAssets[id]=true if itemToggles[id]then itemToggles[id]:Set(true)end end updateCountLabel()if settings.highlightMode=="specific"then refreshESP()end saveConfig()Rayfield:Notify({Title="Готово",Content="Все вещи выбраны!",Duration=2})end})
+    ItemsTab:CreateButton({Name="❌ Очистить выбор",Callback=function()for id in pairs(_G.ASSETS)do if itemToggles[id]then itemToggles[id]:Set(false)end end selectedAssets={}updateCountLabel()if settings.highlightMode=="specific"then clearAllESP()clearTracers()end saveConfig()Rayfield:Notify({Title="Готово",Content="Выбор очищен",Duration=2})end})
 
-local ManualBuyButton = AutoBuyTab:CreateButton({
-    Name = "🔄 Выполнить один цикл покупки",
-    Callback = function()
-        if autoBuyEnabled then
-            Rayfield:Notify({
-                Title = "Ошибка",
-                Content = "Сначала выключите AutoBuy!",
-                Duration = 2,
-                Image = 4483362458,
+    -- Accessories Tab (ESP Аксы)
+    local AccessoriesTab=Window:CreateTab("� ESP Аксы",4483362458)
+    local AccSection1=AccessoriesTab:CreateSection("ESP Аксессуаров")
+    AccessoriesTab:CreateLabel("Выбери аксессуары для поиска")
+    local accSelectedCount=0
+    local AccCountLabel=AccessoriesTab:CreateLabel("Выбрано: 0 аксессуаров")
+    local function updateAccCountLabel()local c=0 for _ in pairs(selectedAccessories)do c=c+1 end AccCountLabel:Set("Выбрано: "..c.." аксессуаров")end
+
+    local accToggles = {}
+    local accBrands={}
+    
+    -- Восстанавливаем выбранные аксессуары из конфига
+    if savedConfig and savedConfig.selectedAccessories then
+        for _, id in ipairs(savedConfig.selectedAccessories) do
+            selectedAccessories[id] = true
+        end
+    end
+    
+    for id,data in pairs(_G.ACCESSORIES)do 
+        local brand=data.name:match("^([^%s]+)")
+        if not accBrands[brand]then accBrands[brand]={}end 
+        table.insert(accBrands[brand],{id=id,name=data.name,chance=data.chance})
+    end
+
+    for brand,items in pairs(accBrands)do 
+        local brandSection=AccessoriesTab:CreateSection("👜 "..brand)
+        for _,item in pairs(items)do 
+            local isSelected=selectedAccessories[item.id]==true
+            local t=AccessoriesTab:CreateToggle({
+                Name=item.name.." ("..formatChance(item.chance)..")",
+                CurrentValue=isSelected,
+                Flag="Acc_"..item.id,
+                Callback=function(v)
+                    if v then 
+                        selectedAccessories[item.id]=true 
+                    else 
+                        selectedAccessories[item.id]=nil 
+                    end 
+                    updateAccCountLabel()
+                    if settings.accessoriesHighlightMode=="specific"then refreshESP()end
+                    saveConfig()
+                end
             })
-        else
+            accToggles[item.id]=t
+        end 
+    end
+
+    local AccSection2=AccessoriesTab:CreateSection("Управление")
+    AccessoriesTab:CreateButton({
+        Name="✅ Выбрать все аксессуары",
+        Callback=function()
+            for id in pairs(_G.ACCESSORIES)do 
+                selectedAccessories[id]=true
+                if accToggles[id]then accToggles[id]:Set(true)end
+            end 
+            updateAccCountLabel()
+            if settings.accessoriesHighlightMode=="specific"then refreshESP()end
+            saveConfig()
+            Rayfield:Notify({Title="Готово",Content="Все аксессуары выбраны!",Duration=2})
+        end
+    })
+
+    AccessoriesTab:CreateButton({
+        Name="❌ Очистить выбор аксессуаров",
+        Callback=function()
+            for id in pairs(_G.ACCESSORIES)do
+                if accToggles[id]then accToggles[id]:Set(false)end
+            end
+            selectedAccessories={}
+            updateAccCountLabel()
+            if settings.accessoriesHighlightMode=="specific"then clearAllESP()clearTracers()end
+            saveConfig()
+            Rayfield:Notify({Title="Готово",Content="Выбор аксессуаров очищен",Duration=2})
+        end
+    })
+
+    local accCount=0 
+    for _ in pairs(_G.ACCESSORIES)do accCount=accCount+1 end
+    AccessoriesTab:CreateLabel("")
+    AccessoriesTab:CreateLabel("Всего аксессуаров: "..tostring(accCount))
+
+    -- Speed Tab
+    local SpeedTab=Window:CreateTab("⚡️ Скорость",4483362458)
+    local SpeedSection1=SpeedTab:CreateSection("Speed Hack")
+    
+    local defaultSpeedEnabled = savedConfig and savedConfig.speedEnabled or false
+    local defaultWalkSpeed = savedConfig and savedConfig.walkSpeed or 16
+    
+    local SpeedToggle=SpeedTab:CreateToggle({Name="🚀 Включить Speed Hack",CurrentValue=defaultSpeedEnabled,Flag="SpeedToggle",Callback=function(v)if v then enableSpeedHack()Rayfield:Notify({Title="Speed Hack Включен",Content="Скорость: "..settings.walkSpeed,Duration=2})else disableSpeedHack()Rayfield:Notify({Title="Speed Hack Выключен",Content="Скорость сброшена на 16",Duration=2})end saveConfig()end})
+    local SpeedSlider=SpeedTab:CreateSlider({Name="⚡️ Скорость ходьбы",Range={16,100},Increment=1,CurrentValue=defaultWalkSpeed,Flag="SpeedSlider",Callback=function(v)settings.walkSpeed=v if settings.speedEnabled then applySpeed(v)end saveConfig()end})
+    local SpeedSection2=SpeedTab:CreateSection("Информация")
+    SpeedTab:CreateLabel("🔧 Обход античита: Активен")
+    SpeedTab:CreateLabel("📍 CFrame Push + WalkSpeed комбо")
+    SpeedTab:CreateLabel("⚠️ Рекомендуется: 16-50 для безопасности")
+    SpeedTab:CreateLabel("")
+    SpeedTab:CreateButton({Name="🔄 Сбросить скорость на 16",Callback=function()settings.walkSpeed=16 SpeedSlider:Set(16)if settings.speedEnabled then applySpeed(16)end saveConfig()Rayfield:Notify({Title="Сброшено",Content="Скорость установлена на 16",Duration=2})end})
+
+    -- Custom Nickname Tab
+    local NickTab=Window:CreateTab("👤 Кастомный ник",4483362458)
+    local NickSection1=NickTab:CreateSection("Изменение отображаемого имени")
+    NickTab:CreateLabel("💡 Введи свой ник и активируй")
+    
+    -- Восстанавливаем никнейм из конфига
+    if savedConfig and savedConfig.tempNickname then
+        tempNickname = savedConfig.tempNickname
+    end
+    
+    local NickInput=NickTab:CreateInput({
+        Name="📝 Твой новый ник",
+        PlaceholderText="Введи ник здесь...",
+        RemoveTextAfterFocusLost=false,
+        Callback=function(text)
+            -- Сохраняем введенный текст
+            tempNickname = text
+            saveConfig()
+        end
+    })
+    
+    -- Устанавливаем сохраненный ник в Input
+    if tempNickname ~= "" then
+        task.defer(function()
+            NickInput:Set(tempNickname)
+        end)
+    end
+    
+    local defaultNickEnabled = savedConfig and savedConfig.customNickEnabled or false
+    
+    local NickToggle=NickTab:CreateToggle({
+        Name="✅ Активировать кастомный ник",
+        CurrentValue=defaultNickEnabled,
+        Flag="NickToggle",
+        Callback=function(v)
+            if v then
+                if tempNickname == "" then
+                    Rayfield:Notify({
+                        Title="❌ Ошибка",
+                        Content="Сначала введи ник!",
+                        Duration=3
+                    })
+                    -- Выключаем toggle обратно
+                    NickToggle:Set(false)
+                else
+                    enableCustomNickname(tempNickname)
+                    saveConfig()
+                    Rayfield:Notify({
+                        Title="✅ Ник изменен",
+                        Content="Новый ник: " .. tempNickname,
+                        Duration=3
+                    })
+                end
+            else
+                disableCustomNickname()
+                saveConfig()
+                Rayfield:Notify({
+                    Title="🔄 Ник сброшен",
+                    Content="Ник восстановлен на: " .. oldDisplayName,
+                    Duration=2
+                })
+            end
+        end
+    })
+    
+    local NickSection2=NickTab:CreateSection("Информация")
+    NickTab:CreateLabel("📌 Как использовать:")
+    NickTab:CreateLabel("1. Введи желаемый ник в поле выше")
+    NickTab:CreateLabel("2. Активируй переключатель")
+    NickTab:CreateLabel("3. Твой ник изменится в игре!")
+    NickTab:CreateLabel("")
+    NickTab:CreateLabel("⚙️ Что меняется:")
+    NickTab:CreateLabel("• DisplayName (отображаемое имя)")
+    NickTab:CreateLabel("• Все текстовые элементы в игре")
+    NickTab:CreateLabel("• Ники в чате и интерфейсе")
+    NickTab:CreateLabel("")
+    NickTab:CreateLabel("ℹ️ Примечание:")
+    NickTab:CreateLabel("• Изменения видны только тебе")
+    NickTab:CreateLabel("• Другие игроки видят твой настоящий ник")
+    NickTab:CreateLabel("• Можно менять ник в любой момент")
+
+    local FastTakeTab=Window:CreateTab("📦 Fast Take",4483362458)
+    local FastTakeSection1=FastTakeTab:CreateSection("Мгновенное взятие предметов")
+    
+    local defaultFastTake = savedConfig and savedConfig.fastTakeEnabled or false
+    
+    local FastTakeToggle=FastTakeTab:CreateToggle({Name="⚡ Включить Fast Take",CurrentValue=defaultFastTake,Flag="FastTakeToggle",Callback=function(v)if v then enableFastTake()Rayfield:Notify({Title="Fast Take Включен",Content="Задержка взятия отключена!",Duration=3})else disableFastTake()Rayfield:Notify({Title="Fast Take Выключен",Content="Задержка взятия восстановлена",Duration=2})end saveConfig()end})
+    local FastTakeSection2=FastTakeTab:CreateSection("Информация")
+    FastTakeTab:CreateLabel("💡 Как работает:")
+    FastTakeTab:CreateLabel("• Убирает задержку зажатия E")
+    FastTakeTab:CreateLabel("• Нажми E - предмет сразу в корзине")
+    FastTakeTab:CreateLabel("• Работает на всех предметах")
+    FastTakeTab:CreateLabel("")
+    FastTakeTab:CreateLabel("⚙️ Технические детали:")
+    FastTakeTab:CreateLabel("• Обнуляет HoldDuration у ProximityPrompt")
+    FastTakeTab:CreateLabel("• Автоматически для новых предметов")
+    FastTakeTab:CreateLabel("• Восстанавливает при выключении")
+    FastTakeTab:CreateLabel("")
+    FastTakeTab:CreateLabel("✅ Преимущества:")
+    FastTakeTab:CreateLabel("• Мгновенное взятие")
+    FastTakeTab:CreateLabel("• Нет задержек")
+    FastTakeTab:CreateLabel("• Быстрый фарм")
+
+    -- Server Hop Tab
+    local ServerHopTab=Window:CreateTab("🌐 Server Hop",4483362458)
+    local ServerHopSection1=ServerHopTab:CreateSection("Поиск лучшего сервера")
+    ServerHopTab:CreateLabel("💡 Поиск сервера с наименьшим онлайном")
+    ServerHopTab:CreateLabel("для увеличения шансов найти легендарки")
+    ServerHopTab:CreateLabel("")
+    
+    ServerHopTab:CreateButton({
+        Name="🎯 Small Server (Малый онлайн)",
+        Callback=function()
             Rayfield:Notify({
-                Title = "Запуск...",
-                Content = "Выполняю один цикл покупки",
-                Duration = 2,
-                Image = 4483362458,
+                Title="🔄 Поиск сервера...",
+                Content="Ищем сервер с минимальным онлайном",
+                Duration=3
             })
+            
             task.spawn(function()
-                pcall(autoBuyCycle)
+                local success, result = hopToSmallestServer()
+                
+                if success then
+                    print("[SERVER HOP] Телепортация на сервер с " .. result.playing .. " игроками")
+                else
+                    Rayfield:Notify({
+                        Title="❌ Ошибка",
+                        Content="Не удалось найти сервер",
+                        Duration=3
+                    })
+                end
             end)
         end
-    end,
-})
+    })
+    
+    ServerHopTab:CreateButton({
+        Name="🎲 Random Server (Случайный)",
+        Callback=function()
+            Rayfield:Notify({
+                Title="🔄 Поиск сервера...",
+                Content="Ищем случайный сервер",
+                Duration=3
+            })
+            
+            task.spawn(function()
+                local success, result = hopToRandomServer()
+                
+                if success then
+                    print("[SERVER HOP] Телепортация на случайный сервер")
+                else
+                    Rayfield:Notify({
+                        Title="❌ Ошибка",
+                        Content="Не удалось найти сервер",
+                        Duration=3
+                    })
+                end
+            end)
+        end
+    })
+    
+    local ServerHopSection2=ServerHopTab:CreateSection("Информация о текущем сервере")
+    local currentPlayers = #Players:GetPlayers()
+    ServerHopTab:CreateLabel("👥 Игроков на сервере: " .. tostring(currentPlayers))
+    ServerHopTab:CreateLabel("🆔 Server ID: " .. game.JobId)
+    ServerHopTab:CreateLabel("")
+    
+    local ServerHopSection3=ServerHopTab:CreateSection("📋 Как это работает")
+    ServerHopTab:CreateLabel("🔍 Small Server:")
+    ServerHopTab:CreateLabel("• Ищет сервер с минимальным онлайном")
+    ServerHopTab:CreateLabel("• Больше шансов найти легендарки")
+    ServerHopTab:CreateLabel("• Меньше конкуренции за предметы")
+    ServerHopTab:CreateLabel("")
+    ServerHopTab:CreateLabel("🎲 Random Server:")
+    ServerHopTab:CreateLabel("• Телепортирует на случайный сервер")
+    ServerHopTab:CreateLabel("• Быстрая смена сервера")
+    ServerHopTab:CreateLabel("")
+    ServerHopTab:CreateLabel("⚠️ Примечание:")
+    ServerHopTab:CreateLabel("• Телепортация занимает 5-15 секунд")
+    ServerHopTab:CreateLabel("• Текущий сервер исключается из поиска")
+    ServerHopTab:CreateLabel("• API может быть временно недоступно")
 
-AutoBuyTab:CreateParagraph({
-    Title = "ℹ️ Как работает AutoBuy",
-    Content = "1. Находит ближайший предмет с ESP\n2. Летит к нему плавно (Tween)\n3. Кликает по предмету (добавление в корзину)\n4. Находит Seller в том же магазине\n5. Летит к Seller\n6. Кликает по Seller (покупка)"
-})
-
--- Вкладка Статистика
-local StatsTab = Window:CreateTab("📊 Статистика", 4483362458)
-local StatsSection = StatsTab:CreateSection("Информация")
-
-local ItemCountLabel = StatsTab:CreateLabel("Предметов в базе: Загрузка...")
-local FoundItemsLabel = StatsTab:CreateLabel("Найдено предметов: 0")
-local BoughtItemsLabel = StatsTab:CreateLabel("Куплено предметов: 0")
-
--- Обновление статистики
-task.spawn(function()
-    while true do
-        local totalItems = 0
-        for _ in pairs(ALL_ITEMS) do
-            totalItems = totalItems + 1
+    -- Key Expiry Tab (Срок ключа)
+    local KeyExpiryTab=Window:CreateTab("⏰ Срок ключа",4483362458)
+    local KeyExpirySection1=KeyExpiryTab:CreateSection("Информация о ключе")
+    
+    local keyInfoLabel=KeyExpiryTab:CreateLabel("🔄 Загрузка информации о ключе...")
+    local keyTypeLabel=KeyExpiryTab:CreateLabel("Тип ключа: Загрузка...")
+    local keyStatusLabel=KeyExpiryTab:CreateLabel("Статус: Загрузка...")
+    local timeLeftLabel=KeyExpiryTab:CreateLabel("Осталось времени: Загрузка...")
+    local devicesLabel=KeyExpiryTab:CreateLabel("Устройств: Загрузка...")
+    
+    local KeyExpirySection2=KeyExpiryTab:CreateSection("Детали времени")
+    local daysLabel=KeyExpiryTab:CreateLabel("Дней: -")
+    local hoursLabel=KeyExpiryTab:CreateLabel("Часов: -")
+    local minutesLabel=KeyExpiryTab:CreateLabel("Минут: -")
+    
+    local KeyExpirySection3=KeyExpiryTab:CreateSection("Дополнительная информация")
+    local activatedLabel=KeyExpiryTab:CreateLabel("Активирован: -")
+    local tierLabel=KeyExpiryTab:CreateLabel("Уровень: -")
+    
+    -- Функция обновления информации о ключе
+    local function updateKeyInfo()
+        local response = makeRequest("/api/key-info", { key = USER_KEY })
+        
+        if not response then
+            keyInfoLabel:Set("❌ Не удалось получить информацию о ключе")
+            keyTypeLabel:Set("Тип ключа: -")
+            keyStatusLabel:Set("Статус: -")
+            timeLeftLabel:Set("Осталось времени: -")
+            devicesLabel:Set("Устройств: -")
+            daysLabel:Set("Дней: -")
+            hoursLabel:Set("Часов: -")
+            minutesLabel:Set("Минут: -")
+            activatedLabel:Set("Активирован: -")
+            tierLabel:Set("Уровень: -")
+            return
         end
         
-        local foundItems = #findAllItems()
+        if not response.success then
+            keyInfoLabel:Set("❌ " .. (response.message or "Ошибка"))
+            keyTypeLabel:Set("Тип ключа: -")
+            keyStatusLabel:Set("Статус: -")
+            timeLeftLabel:Set("Осталось времени: -")
+            devicesLabel:Set("Устройств: -")
+            daysLabel:Set("Дней: -")
+            hoursLabel:Set("Часов: -")
+            minutesLabel:Set("Минут: -")
+            activatedLabel:Set("Активирован: -")
+            tierLabel:Set("Уровень: -")
+            return
+        end
         
-        ItemCountLabel:Set("Предметов в базе: " .. totalItems)
-        FoundItemsLabel:Set("Найдено предметов в мире: " .. foundItems)
-        BoughtItemsLabel:Set("Куплено предметов: " .. autoBuyCounter)
+        -- Обновляем основную информацию
+        keyInfoLabel:Set("✅ Ключ действителен")
+        keyTypeLabel:Set("Тип ключа: " .. (response.type or "Неизвестно"))
         
-        task.wait(5)
+        if response.isPermanent then
+            keyStatusLabel:Set("Статус: ✅ Активен (бессрочно)")
+            timeLeftLabel:Set("Осталось времени: ∞ (Бессрочный)")
+            daysLabel:Set("Дней: ∞")
+            hoursLabel:Set("Часов: ∞")
+            minutesLabel:Set("Минут: ∞")
+        elseif response.timeLeft then
+            local tl = response.timeLeft
+            keyStatusLabel:Set("Статус: ✅ Активен")
+            timeLeftLabel:Set("Осталось времени: " .. (tl.display or "0ч 0м"))
+            daysLabel:Set("Дней: " .. tostring(tl.days or 0))
+            hoursLabel:Set("Часов: " .. tostring(tl.hours or 0))
+            hoursLabel:Set("Часов: " .. tostring(tl.hours or 0) .. " (всего " .. tostring(tl.totalHours or 0) .. ")")
+            minutesLabel:Set("Минут: " .. tostring(tl.minutes or 0) .. " (всего " .. tostring(tl.totalMinutes or 0) .. ")")
+        else
+            keyStatusLabel:Set("Статус: ⏳ Не активирован")
+            timeLeftLabel:Set("Осталось времени: Ключ не активирован")
+            daysLabel:Set("Дней: -")
+            hoursLabel:Set("Часов: -")
+            minutesLabel:Set("Минут: -")
+        end
+        
+        devicesLabel:Set("Устройств: " .. tostring(response.devices or 0) .. " / " .. tostring(response.maxDevices or 1))
+        
+        -- Дополнительная информация
+        if response.activatedAt then
+            local activatedDate = os.date("%d.%m.%Y %H:%M:%S", response.activatedAt / 1000)
+            activatedLabel:Set("Активирован: " .. activatedDate)
+        else
+            activatedLabel:Set("Активирован: Не активирован")
+        end
+        
+        tierLabel:Set("Уровень: " .. string.upper(response.tier or "PREMIUM"))
     end
-end)
+    
+    -- Обновляем информацию при открытии вкладки
+    updateKeyInfo()
+    
+    -- Кнопка обновления
+    KeyExpiryTab:CreateButton({
+        Name="🔄 Обновить информацию",
+        Callback=function()
+            Rayfield:Notify({
+                Title="🔄 Обновление",
+                Content="Получение актуальной информации о ключе...",
+                Duration=2
+            })
+            updateKeyInfo()
+        end
+    })
+    
+    local KeyExpirySection4=KeyExpiryTab:CreateSection("Автообновление")
+    KeyExpiryTab:CreateLabel("Информация обновляется автоматически каждые 60 секунд")
+    
+    -- Автоматическое обновление каждые 60 секунд
+    task.spawn(function()
+        while true do
+            task.wait(60)
+            updateKeyInfo()
+        end
+    end)
 
--- Вкладка О скрипте
-local AboutTab = Window:CreateTab("ℹ️ О скрипте", 4483362458)
-local AboutSection = AboutTab:CreateSection("Информация")
-
-AboutTab:CreateParagraph({
-    Title = "Firma Mode Hub ESP",
-    Content = "Скрипт для поиска редких предметов\n\nTelegram: @FirmaModeHub\n\nВерсия: 2.0"
-})
-
-AboutTab:CreateButton({
-    Name = "Копировать Telegram",
-    Callback = function()
-        setclipboard("@FirmaModeHub")
-        Rayfield:Notify({
-            Title = "Скопировано!",
-            Content = "Telegram ссылка в буфере обмена",
-            Duration = 3,
-            Image = 4483362458,
+    -- Settings Tab (в конце)
+    local SettingsTab=Window:CreateTab("⚙️ Настройки",4483362458)
+    local SettingsSection=SettingsTab:CreateSection("Информация")
+    SettingsTab:CreateLabel("🔥 ESP Ultra Modern v2.0")
+    local assetCount=0 for _ in pairs(_G.ASSETS)do assetCount=assetCount+1 end
+    SettingsTab:CreateLabel("Всего вещей: "..tostring(assetCount))
+    local accCount=0 for _ in pairs(_G.ACCESSORIES)do accCount=accCount+1 end
+    SettingsTab:CreateLabel("Всего аксессуаров: "..tostring(accCount))
+    SettingsTab:CreateLabel("")
+    SettingsTab:CreateLabel("⌨️ Горячие клавиши:")
+    SettingsTab:CreateLabel("F - Быстрое вкл/выкл ESP")
+    SettingsTab:CreateLabel("H - Server Hop (малый онлайн)")
+    
+    local ConfigSection=SettingsTab:CreateSection("💾 Управление конфигом")
+    
+    if fileSystemSupported then
+        SettingsTab:CreateLabel("✅ Файловая система поддерживается")
+        SettingsTab:CreateLabel("Конфиг сохраняется автоматически")
+        SettingsTab:CreateLabel("при изменении настроек")
+    else
+        SettingsTab:CreateLabel("❌ Файловая система не поддерживается")
+        SettingsTab:CreateLabel("Настройки не будут сохраняться")
+        SettingsTab:CreateLabel("Используйте другой экзекутор")
+    end
+    
+    SettingsTab:CreateLabel("")
+    
+    if fileSystemSupported then
+        SettingsTab:CreateButton({
+            Name="💾 Сохранить конфиг вручную",
+            Callback=function()
+                if saveConfig() then
+                    Rayfield:Notify({
+                        Title="✅ Сохранено",
+                        Content="Конфигурация успешно сохранена!",
+                        Duration=2
+                    })
+                else
+                    Rayfield:Notify({
+                        Title="❌ Ошибка",
+                        Content="Не удалось сохранить конфиг",
+                        Duration=3
+                    })
+                end
+            end
         })
-    end,
-})
+        
+        SettingsTab:CreateButton({
+            Name="🔄 Перезагрузить конфиг",
+            Callback=function()
+                Rayfield:Notify({
+                    Title="🔄 Перезагрузка",
+                    Content="Перезапусти ESP для применения",
+                    Duration=3
+                })
+            end
+        })
+        
+        SettingsTab:CreateLabel("")
+        SettingsTab:CreateLabel("📁 Файл: ESP_Ultra_Config.json")
+        SettingsTab:CreateLabel("📍 Папка workspace вашего экзекутора")
+    end
+
+    game:GetService("UserInputService").InputBegan:Connect(function(i,g)
+        if g then return end
+        
+        -- F - Переключение ESP
+        if i.KeyCode==Enum.KeyCode.F then
+            if espEnabled then
+                disableESP()
+                pcall(function()ESPToggle:Set(false)end)
+                pcall(function()foundItemsLabel:Set("ESP выключен")end)
+            else
+                enableESP()
+                pcall(function()ESPToggle:Set(true)end)
+                updateFoundItemsList()
+            end
+        end
+        
+        -- H - Server Hop (малый онлайн)
+        if i.KeyCode==Enum.KeyCode.H then
+            Rayfield:Notify({
+                Title="🔄 Server Hop",
+                Content="Ищем сервер с минимальным онлайном...",
+                Duration=3
+            })
+            
+            task.spawn(function()
+                local success, result = hopToSmallestServer()
+                
+                if not success then
+                    Rayfield:Notify({
+                        Title="❌ Ошибка",
+                        Content="Не удалось найти сервер",
+                        Duration=3
+                    })
+                end
+            end)
+        end
+    end)
+    
+    -- Применяем сохраненный конфиг при запуске
+    task.spawn(function()
+        task.wait(0.5)
+        
+        -- Применяем настройки
+        if savedConfig then
+            settings.chams = savedConfig.chams ~= nil and savedConfig.chams or true
+            settings.tracers = savedConfig.tracers ~= nil and savedConfig.tracers or true
+            settings.highlightMode = savedConfig.highlightMode or "all"
+            settings.accessoriesHighlightMode = savedConfig.accessoriesHighlightMode or "all"
+            settings.walkSpeed = savedConfig.walkSpeed or 16
+            
+            -- Восстанавливаем кастомный ник если был активен
+            if savedConfig.customNickEnabled and savedConfig.customNickname and savedConfig.customNickname ~= "" then
+                tempNickname = savedConfig.customNickname
+                enableCustomNickname(tempNickname)
+                print("[CONFIG] Кастомный ник восстановлен: " .. tempNickname)
+            end
+            
+            -- Восстанавливаем спидхак если был включен
+            if savedConfig.speedEnabled then
+                task.wait(0.3)
+                enableSpeedHack()
+                print("[CONFIG] Speed hack восстановлен: " .. settings.walkSpeed)
+            end
+            
+            -- Восстанавливаем Fast Take если был включен
+            if savedConfig.fastTakeEnabled then
+                task.wait(0.2)
+                enableFastTake()
+                print("[CONFIG] Fast Take восстановлен")
+            end
+            
+            -- Обновляем счетчики
+            updateCountLabel()
+            updateAccCountLabel()
+            
+            print("[CONFIG] ✅ Все настройки применены из конфига")
+            
+            Rayfield:Notify({
+                Title="💾 Конфиг загружен",
+                Content="Настройки восстановлены!",
+                Duration=3
+            })
+        else
+            print("[CONFIG] Используются настройки по умолчанию")
+        end
+    end)
+    
+    task.wait(2)local found=enableESP()or 0 pcall(function()ESPToggle:Set(true)end)updateFoundItemsList()Rayfield:Notify({Title="🎉 ESP Запущен!",Content="Найдено "..tostring(found).." легендарок. F - ESP, H - Server Hop",Duration=5,Image=4483362458})
+    print("🟢 ESP Ultra Modern загружен!")
+    print("   [F] - быстрое вкл/выкл ESP")
+    print("   [H] - Server Hop (малый онлайн)")
+
+end
 
 -- ============================================
--- ЗАПУСК
+-- ЗАПУСК СКРИПТА
 -- ============================================
-updateESP()
-
-Rayfield:Notify({
-    Title = "ESP Загружен!",
-    Content = "Скрипт успешно запущен",
-    Duration = 5,
-    Image = 4483362458,
-})
-
-print("[ESP] Скрипт загружен с Rayfield GUI!")
+main()
