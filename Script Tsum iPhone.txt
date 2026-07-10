@@ -656,9 +656,7 @@ local function clickObject(targetObj)
     camera.CameraType = Enum.CameraType.Scriptable
     camera.CFrame = CFrame.new(root.Position, targetPosition)
     
-    task.wait(0.3)
-    
-    local clickSuccess = false
+    task.wait(0.2)
     
     -- МЕТОД 1: Поиск ClickDetector (во всех потомках)
     local clickDetector = nil
@@ -671,217 +669,99 @@ local function clickObject(targetObj)
     end
     
     if clickDetector then
-        print("[AutoBuy] Пробую активировать ClickDetector...")
-        
-        -- Попытка 1: fireclickdetector с 2 параметрами (части)
-        if fireclickdetector then
-            local success1 = pcall(function()
-                fireclickdetector(clickDetector, 0)
-            end)
-            print("[AutoBuy] fireclickdetector(0):", success1)
-            
-            -- Попытка 2: fireclickdetector с 1 параметром
-            local success2 = pcall(function()
-                fireclickdetector(clickDetector)
-            end)
-            print("[AutoBuy] fireclickdetector():", success2)
-            
-            -- Попытка 3: с частями
-            local success3 = pcall(function()
-                fireclickdetector(clickDetector, 0, targetPart)
-            end)
-            print("[AutoBuy] fireclickdetector(part):", success3)
-            
-            if success1 or success2 or success3 then
-                clickSuccess = true
-            end
-        else
-            print("[AutoBuy] ⚠️ fireclickdetector недоступен")
-        end
-        
-        -- Попытка 4: через MouseClick event
-        local success4 = pcall(function()
-            clickDetector.MouseClick:Fire(player)
+        pcall(function()
+            fireclickdetector(clickDetector)
         end)
-        print("[AutoBuy] MouseClick:Fire():", success4)
-        if success4 then clickSuccess = true end
-        
-        -- Попытка 5: через Parent.MouseClick
-        local success5 = pcall(function()
-            if clickDetector.Parent then
-                local event = clickDetector.Parent:FindFirstChild("MouseClick")
-                if event then
-                    event:Fire(player)
-                end
-            end
-        end)
-        print("[AutoBuy] Parent.MouseClick:", success5)
-        if success5 then clickSuccess = true end
-        
-        task.wait(0.4)
+        task.wait(0.3)
+        camera.CameraType = oldCameraType
+        return true
     end
     
     -- МЕТОД 2: Поиск ProximityPrompt
-    if not clickSuccess then
-        local proximityPrompt = nil
-        for _, descendant in pairs(targetObj:GetDescendants()) do
-            if descendant:IsA("ProximityPrompt") then
-                proximityPrompt = descendant
-                print("[AutoBuy] ✅ Найден ProximityPrompt: " .. descendant:GetFullName())
-                break
-            end
-        end
-        
-        if proximityPrompt then
-            print("[AutoBuy] Пробую активировать ProximityPrompt...")
-            
-            -- Попытка 1: fireproximityprompt
-            if fireproximityprompt then
-                local success1 = pcall(function()
-                    fireproximityprompt(proximityPrompt)
-                end)
-                print("[AutoBuy] fireproximityprompt():", success1)
-                if success1 then clickSuccess = true end
-                
-                local success2 = pcall(function()
-                    fireproximityprompt(proximityPrompt, 0)
-                end)
-                print("[AutoBuy] fireproximityprompt(0):", success2)
-                if success2 then clickSuccess = true end
-            else
-                print("[AutoBuy] ⚠️ fireproximityprompt недоступен")
-            end
-            
-            -- Попытка 2: через InputHoldBegin/End
-            local success3 = pcall(function()
-                proximityPrompt:InputHoldBegin()
-                task.wait(0.1)
-                proximityPrompt:InputHoldEnd()
-            end)
-            print("[AutoBuy] InputHold:", success3)
-            if success3 then clickSuccess = true end
-            
-            -- Попытка 3: через Triggered event
-            local success4 = pcall(function()
-                proximityPrompt.Triggered:Fire(player)
-            end)
-            print("[AutoBuy] Triggered:Fire():", success4)
-            if success4 then clickSuccess = true end
-            
-            -- Попытка 4: Устанавливаем HoldDuration = 0 и триггерим
-            local success5 = pcall(function()
-                local oldDuration = proximityPrompt.HoldDuration
-                proximityPrompt.HoldDuration = 0
-                proximityPrompt:InputHoldBegin()
-                task.wait(0.05)
-                proximityPrompt:InputHoldEnd()
-                proximityPrompt.HoldDuration = oldDuration
-            end)
-            print("[AutoBuy] HoldDuration=0:", success5)
-            if success5 then clickSuccess = true end
-            
-            task.wait(0.4)
+    local proximityPrompt = nil
+    for _, descendant in pairs(targetObj:GetDescendants()) do
+        if descendant:IsA("ProximityPrompt") then
+            proximityPrompt = descendant
+            print("[AutoBuy] ✅ Найден ProximityPrompt: " .. descendant:GetFullName())
+            break
         end
     end
     
-    -- МЕТОД 3: Через Remote Events (если есть)
-    if not clickSuccess then
-        print("[AutoBuy] Ищу RemoteEvents...")
-        for _, remote in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
-            if remote:IsA("RemoteEvent") or remote:IsA("RemoteFunction") then
-                local name = remote.Name:lower()
-                if name:find("click") or name:find("interact") or name:find("take") or name:find("buy") or name:find("purchase") then
-                    print("[AutoBuy] Нашел подозрительный Remote:", remote.Name)
-                    local success = pcall(function()
-                        if remote:IsA("RemoteEvent") then
-                            remote:FireServer(targetObj)
-                        else
-                            remote:InvokeServer(targetObj)
-                        end
-                    end)
-                    if success then
-                        print("[AutoBuy] ✅ Remote активирован:", remote.Name)
-                        clickSuccess = true
-                        break
-                    end
-                end
-            end
-        end
-    end
-    
-    -- МЕТОД 4: Визуальный клик через мышь
-    print("[AutoBuy] Пробую визуальные методы клика...")
-    local screenPos, onScreen = camera:WorldToScreenPoint(targetPosition)
-    
-    if onScreen then
-        -- 1. mouse1click
-        if mouse1click then
-            pcall(function()
-                mouse1click()
-            end)
-            print("[AutoBuy] ✅ mouse1click")
-        end
-        task.wait(0.05)
-        
-        -- 2. mouse1press + mouse1release
-        if mouse1press and mouse1release then
-            pcall(function()
-                mouse1press()
-                task.wait(0.05)
-                mouse1release()
-            end)
-            print("[AutoBuy] ✅ mouse1press/release")
-        end
-        task.wait(0.05)
-        
-        -- 3. VirtualUser
+    if proximityPrompt then
         pcall(function()
-            local VirtualUser = game:GetService("VirtualUser")
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton1(Vector2.new(screenPos.X, screenPos.Y))
+            fireproximityprompt(proximityPrompt)
         end)
-        print("[AutoBuy] ✅ VirtualUser")
-        task.wait(0.05)
-        
-        -- 4. VirtualInputManager
-        pcall(function()
-            VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, true, game, 0)
-            task.wait(0.05)
-            VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, false, game, 0)
-        end)
-        print("[AutoBuy] ✅ VirtualInputManager")
-        
-        -- 5. Через UserInputService
-        pcall(function()
-            local UserInputService = game:GetService("UserInputService")
-            UserInputService.InputBegan:Fire({
-                UserInputType = Enum.UserInputType.MouseButton1,
-                Position = Vector3.new(screenPos.X, screenPos.Y, 0)
-            }, false)
-            task.wait(0.05)
-            UserInputService.InputEnded:Fire({
-                UserInputType = Enum.UserInputType.MouseButton1,
-                Position = Vector3.new(screenPos.X, screenPos.Y, 0)
-            }, false)
-        end)
-        print("[AutoBuy] ✅ UserInputService")
-        
         task.wait(0.3)
+        camera.CameraType = oldCameraType
+        return true
     end
     
-    -- МЕТОД 5: Касание через TouchTransmitter
-    pcall(function()
-        if firetouchinterest then
+    -- МЕТОД 3: Эквип как Tool (если это одежда в виде Tool)
+    if targetObj:IsA("Tool") or targetObj:FindFirstChildOfClass("Tool") then
+        print("[AutoBuy] Пробую экипировать как Tool...")
+        local tool = targetObj:IsA("Tool") and targetObj or targetObj:FindFirstChildOfClass("Tool")
+        if tool and humanoid then
+            pcall(function()
+                tool.Parent = player.Backpack
+                humanoid:EquipTool(tool)
+            end)
+            task.wait(0.3)
+            camera.CameraType = oldCameraType
+            return true
+        end
+    end
+    
+    -- МЕТОД 4: Поиск и активация через Humanoid.Touched
+    print("[AutoBuy] Пробую через касание...")
+    if humanoid and targetPart then
+        pcall(function()
+            -- Симулируем касание
             firetouchinterest(root, targetPart, 0)
             task.wait(0.1)
             firetouchinterest(root, targetPart, 1)
-            print("[AutoBuy] ✅ firetouchinterest")
-        end
-    end)
+        end)
+        task.wait(0.2)
+    end
+    
+    -- МЕТОД 5: Визуальный клик с наведенной камерой
+    print("[AutoBuy] Выполняю визуальный клик с камерой...")
+    local screenPos, onScreen = camera:WorldToScreenPoint(targetPosition)
+    
+    if onScreen then
+        -- Комбо из всех методов клика
+        pcall(function()
+            -- 1. mouse1click
+            local mouse = player:GetMouse()
+            mouse.Target = targetPart
+            mouse1click()
+        end)
+        print("[AutoBuy] ✅ Клик mouse1click")
+        task.wait(0.05)
+        
+        -- 2. VirtualUser
+        pcall(function()
+            local VirtualUser = game:GetService("VirtualUser")
+            VirtualUser:ClickButton1(Vector2.new(screenPos.X, screenPos.Y))
+        end)
+        print("[AutoBuy] ✅ Клик VirtualUser")
+        task.wait(0.05)
+        
+        -- 3. VirtualInputManager
+        pcall(function()
+            VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, true, game, 0)
+            task.wait(0.03)
+            VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, false, game, 0)
+        end)
+        print("[AutoBuy] ✅ Клик VirtualInputManager")
+        
+        task.wait(0.3)
+        camera.CameraType = oldCameraType
+        return true
+    end
     
     camera.CameraType = oldCameraType
-    print("[AutoBuy] ⚠️ Все методы клика выполнены")
-    return true
+    print("[AutoBuy] ⚠️ Клик выполнен всеми методами")
+    return true  -- Возвращаем true чтобы продолжить
 end
 
 -- Определение ShopZone для объекта (предмета или Seller)
@@ -1150,7 +1030,7 @@ local function autoBuyCycle()
         end
         
         -- 8. ПРОВЕРКА: Продался ли предмет?
-        task.wait(1.5)  -- Увеличено время ожидания для обработки на ПК
+        task.wait(1.0)  -- Даем время на обработку покупки
         
         -- Обновляем ESP и проверяем, остался ли предмет
         local itemsAfter = findAllItems()
@@ -1224,16 +1104,6 @@ end
 local autoBuyThread = nil
 local function startAutoBuy()
     if autoBuyThread then return end
-    
-    -- Диагностика доступных функций
-    print("[AutoBuy] 🔍 Проверка доступных функций:")
-    print("  fireclickdetector:", fireclickdetector ~= nil)
-    print("  fireproximityprompt:", fireproximityprompt ~= nil)
-    print("  firetouchinterest:", firetouchinterest ~= nil)
-    print("  mouse1click:", mouse1click ~= nil)
-    print("  mouse1press:", mouse1press ~= nil)
-    print("  mouse1release:", mouse1release ~= nil)
-    
     print("[AutoBuy] 🚀 AutoBuy запущен")
     autoBuyThread = task.spawn(function()
         while autoBuyEnabled do
