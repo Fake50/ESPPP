@@ -460,6 +460,7 @@ local function updateESP()
     for _, item in pairs(items) do
         createESP(item.object, item)
     end
+    print("[ESP] Обновлено. Найдено предметов: " .. #items)
 end
 
 workspace.DescendantRemoving:Connect(function(descendant)
