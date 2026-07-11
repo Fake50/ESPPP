@@ -1400,20 +1400,299 @@ local function pressE(barigaNPC)
     return true -- Возвращаем true чтобы продолжить, GUI может открыться
 end
 
--- Получение инвентаря и продажа всех предметов
+-- Получение инвентаря и продажа всех предметов через виртуальные клики GUI
 local function sellAllItems()
-    print("[AutoSell] 📦 Получаю инвентарь...")
+    print("[AutoSell] 📦 Начинаю продажу через GUI...")
     
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local PlayerGui = player:WaitForChild("PlayerGui")
     
-    -- 1. Запрашиваем инвентарь (дважды как в примере)
-    print("[AutoSell] 🔄 Запрашиваю инвентарь...")
-    local successInv1 = pcall(function()
-        ReplicatedStorage:WaitForChild("InventoryRemotes"):WaitForChild("RequestInventory"):FireServer()
-    end)
-    print("[AutoSell] RequestInventory #1:", successInv1)
+    -- Ждем появления GUI (он должен быть открыт после pressE)
+    task.wait(1.5)
     
-    task.wait(0.3)
+    -- Шаг 1: Ищем GUI Бариги
+    print("[AutoSell] 🔍 Ищу GUI Бариги в PlayerGui...")
+    local barigaGui = nil
+    
+    -- Перебираем все GUI
+    for _, gui in pairs(PlayerGui:GetChildren()) do
+        if gui:IsA("ScreenGui") and gui.Enabled then
+            -- Ищем характерные элементы (галочка, предложить, продать)
+            local hasCheckmark = gui:FindFirstChild("Checkmark", true) or 
+                                 gui:FindFirstChild("SelectMode", true) or
+                                 gui:FindFirstChild("MultiSelect", true)
+            
+            if hasCheckmark or gui.Name:lower():find("bariga") or gui.Name:lower():find("sell") or gui.Name:lower():find("shop") then
+                barigaGui = gui
+                print("[AutoSell] ✅ Найден GUI: " .. gui.Name)
+                break
+            end
+        end
+    end
+    
+    if not barigaGui then
+        print("[AutoSell] ❌ GUI Бариги не найден!")
+        print("[AutoSell] Список всех активных GUI:")
+        for _, gui in pairs(PlayerGui:GetChildren()) do
+            if gui:IsA("ScreenGui") and gui.Enabled then
+                print("  - " .. gui.Name)
+            end
+        end
+        return false
+    end
+    
+    -- Функция для клика по GUI элементу
+    local function clickGuiElement(element)
+        if not element then return false end
+        
+        print("[AutoSell] 🖱️ Кликаю по: " .. element.Name)
+        
+        -- Метод 1: getconnections (лучший метод)
+        if element:IsA("GuiButton") or element:IsA("TextButton") or element:IsA("ImageButton") then
+            local success = pcall(function()
+                for _, connection in pairs(getconnections(element.MouseButton1Click)) do
+                    connection:Fire()
+                end
+            end)
+            
+            if success then
+                print("[AutoSell] ✅ Клик успешен (MouseButton1Click)")
+                return true
+            end
+            
+            -- Альтернатива - MouseButton1Down
+            success = pcall(function()
+                for _, connection in pairs(getconnections(element.MouseButton1Down)) do
+                    connection:Fire()
+                end
+            end)
+            
+            if success then
+                print("[AutoSell] ✅ Клик успешен (MouseButton1Down)")
+                return true
+            end
+        end
+        
+        -- Метод 2: VirtualInputManager
+        local success2 = pcall(function()
+            local absPos = element.AbsolutePosition
+            local absSize = element.AbsoluteSize
+            local centerX = absPos.X + (absSize.X / 2)
+            local centerY = absPos.Y + (absSize.Y / 2)
+            
+            VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
+            task.wait(0.05)
+            VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
+        end)
+        
+        if success2 then
+            print("[AutoSell] ✅ Клик успешен (VirtualInputManager)")
+            return true
+        end
+        
+        print("[AutoSell] ⚠️ Клик не удался")
+        return false
+    end
+    
+    -- Шаг 2: Нажимаем зелёную галочку (режим множественного выбора)
+    print("[AutoSell] 🔍 Ищу зелёную галочку (режим выбора)...")
+    local checkmarkButton = nil
+    
+    -- Возможные названия галочки
+    local checkmarkNames = {"Checkmark", "SelectMode", "MultiSelect", "SelectAll", "Check", "Toggle"}
+    
+    for _, name in pairs(checkmarkNames) do
+        checkmarkButton = barigaGui:FindFirstChild(name, true)
+        if checkmarkButton and (checkmarkButton:IsA("ImageButton") or checkmarkButton:IsA("TextButton") or checkmarkButton:IsA("Frame")) then
+            print("[AutoSell] ✅ Нашел галочку: " .. checkmarkButton.Name)
+            break
+        end
+    end
+    
+    -- Если не нашли по имени, ищем по позиции (справа сверху)
+    if not checkmarkButton then
+        print("[AutoSell] 🔍 Ищу галочку по позиции (справа сверху)...")
+        for _, element in pairs(barigaGui:GetDescendants()) do
+            if (element:IsA("ImageButton") or element:IsA("TextButton")) and element.Visible then
+                local pos = element.AbsolutePosition
+                local screenSize = workspace.CurrentCamera.ViewportSize
+                
+                -- Проверяем что элемент в правой верхней части экрана
+                if pos.X > screenSize.X * 0.7 and pos.Y < screenSize.Y * 0.3 then
+                    checkmarkButton = element
+                    print("[AutoSell] ✅ Нашел галочку по позиции: " .. element.Name)
+                    break
+                end
+            end
+        end
+    end
+    
+    if checkmarkButton then
+        clickGuiElement(checkmarkButton)
+        task.wait(0.5)
+    else
+        print("[AutoSell] ⚠️ Галочка не найдена, пробую без неё...")
+    end
+    
+    -- Шаг 3: Нажимаем на все вещи в GUI
+    print("[AutoSell] 🔍 Ищу вещи в GUI...")
+    local clickedItems = 0
+    
+    -- Получаем список всех предметов из базы данных
+    local itemNames = {}
+    for _, data in pairs(ALL_ITEMS) do
+        table.insert(itemNames, data.name)
+    end
+    
+    print(string.format("[AutoSell] 📊 Ищу %d типов предметов...", #itemNames))
+    
+    -- Ищем элементы GUI с текстом предметов
+    for _, element in pairs(barigaGui:GetDescendants()) do
+        if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("ImageButton") then
+            local elementText = element.Text or ""
+            
+            -- Проверяем, совпадает ли текст с названием предмета
+            for _, itemName in pairs(itemNames) do
+                if elementText == itemName or elementText:find(itemName) then
+                    print(string.format("[AutoSell] ✅ Нашел предмет в GUI: %s", itemName))
+                    
+                    -- Если это TextLabel, ищем кликабельный родительский элемент
+                    local clickableElement = element
+                    if element:IsA("TextLabel") then
+                        clickableElement = element.Parent
+                        while clickableElement and not (clickableElement:IsA("TextButton") or clickableElement:IsA("ImageButton") or clickableElement:IsA("Frame")) do
+                            clickableElement = clickableElement.Parent
+                        end
+                    end
+                    
+                    if clickableElement and clickGuiElement(clickableElement) then
+                        clickedItems = clickedItems + 1
+                        task.wait(0.3)
+                    end
+                    
+                    break
+                end
+            end
+        end
+    end
+    
+    print(string.format("[AutoSell] 📊 Кликнул по %d предметам", clickedItems))
+    
+    if clickedItems == 0 then
+        print("[AutoSell] ⚠️ Не найдено ни одного предмета в GUI!")
+        print("[AutoSell] Вывожу все TextLabel в GUI для отладки:")
+        for _, element in pairs(barigaGui:GetDescendants()) do
+            if element:IsA("TextLabel") and element.Visible and element.Text ~= "" then
+                print(string.format("  - %s: '%s'", element.Name, element.Text))
+            end
+        end
+    end
+    
+    task.wait(0.5)
+    
+    -- Шаг 4: Нажимаем кнопку "Предложить" снизу
+    print("[AutoSell] 🔍 Ищу кнопку 'Предложить'...")
+    local offerButton = nil
+    
+    -- Возможные названия кнопки
+    local offerButtonNames = {"Предложить", "Offer", "Submit", "Send", "GetOffer", "Request"}
+    
+    for _, name in pairs(offerButtonNames) do
+        offerButton = barigaGui:FindFirstChild(name, true)
+        if offerButton and (offerButton:IsA("TextButton") or offerButton:IsA("ImageButton")) then
+            print("[AutoSell] ✅ Нашел кнопку 'Предложить': " .. offerButton.Name)
+            break
+        end
+    end
+    
+    -- Ищем по тексту
+    if not offerButton then
+        for _, element in pairs(barigaGui:GetDescendants()) do
+            if (element:IsA("TextButton") or element:IsA("ImageButton")) and element.Visible then
+                local text = element.Text or element.Name or ""
+                for _, keyword in pairs(offerButtonNames) do
+                    if text:lower():find(keyword:lower()) then
+                        offerButton = element
+                        print("[AutoSell] ✅ Нашел кнопку 'Предложить' по тексту: " .. text)
+                        break
+                    end
+                end
+                if offerButton then break end
+            end
+        end
+    end
+    
+    if offerButton then
+        clickGuiElement(offerButton)
+        task.wait(1.0) -- Ждем появления кнопки "Продать"
+    else
+        print("[AutoSell] ❌ Кнопка 'Предложить' не найдена!")
+        return false
+    end
+    
+    -- Шаг 5: Нажимаем кнопку "Продать"
+    print("[AutoSell] 🔍 Ищу кнопку 'Продать'...")
+    local sellButton = nil
+    
+    -- Возможные названия кнопки
+    local sellButtonNames = {"Продать", "Sell", "Confirm", "Accept", "OK", "Yes", "Подтвердить"}
+    
+    for _, name in pairs(sellButtonNames) do
+        sellButton = barigaGui:FindFirstChild(name, true)
+        if sellButton and (sellButton:IsA("TextButton") or sellButton:IsA("ImageButton")) then
+            print("[AutoSell] ✅ Нашел кнопку 'Продать': " .. sellButton.Name)
+            break
+        end
+    end
+    
+    -- Ищем по тексту
+    if not sellButton then
+        for _, element in pairs(barigaGui:GetDescendants()) do
+            if (element:IsA("TextButton") or element:IsA("ImageButton")) and element.Visible then
+                local text = element.Text or element.Name or ""
+                for _, keyword in pairs(sellButtonNames) do
+                    if text:lower():find(keyword:lower()) then
+                        sellButton = element
+                        print("[AutoSell] ✅ Нашел кнопку 'Продать' по тексту: " .. text)
+                        break
+                    end
+                end
+                if sellButton then break end
+            end
+        end
+    end
+    
+    if sellButton then
+        clickGuiElement(sellButton)
+        print("[AutoSell] ✅✅✅ ПРОДАЖА ЗАВЕРШЕНА! ✅✅✅")
+        autoSellCounter = autoSellCounter + 1
+        print(string.format("[AutoSell] 📈 Всего продаж: %d", autoSellCounter))
+        task.wait(0.5)
+        return true
+    else
+        print("[AutoSell] ❌ Кнопка 'Продать' не найдена!")
+        print("[AutoSell] Вывожу все кнопки в GUI:")
+        for _, element in pairs(barigaGui:GetDescendants()) do
+            if (element:IsA("TextButton") or element:IsA("ImageButton")) and element.Visible then
+                print(string.format("  - %s: '%s'", element.Name, element.Text or ""))
+            end
+        end
+        return false
+    end
+end
+
+-- Основной цикл автоселла
+local function autoSellCycle()
+    if not autoSellEnabled then return end
+    
+    print("\n[AutoSell] ═══════════════════════════════")
+    print("[AutoSell] 🔄 Цикл продажи #" .. (autoSellCounter + 1))
+    
+    -- 1. Находим BarigaNPC
+    local barigaNPC = findBarigaNPC()
+    if not barigaNPC then
+        print("[AutoSell] ❌ BarigaNPC не найден, жду...")
+        return
+    end
     
     local successInv2 = pcall(function()
         ReplicatedStorage:WaitForChild("InventoryRemotes"):WaitForChild("RequestInventory"):FireServer()
@@ -1555,6 +1834,165 @@ local function sellAllItems()
     print(string.format("[AutoSell] 📈 Всего продаж: %d", autoSellCounter))
     
     return true
+end
+
+-- Продажа через виртуальные клики по GUI
+local function sellAllItemsViaGUI()
+    print("[AutoSell] 📦 Начинаю продажу через GUI клики...")
+    
+    local PlayerGui = player:WaitForChild("PlayerGui")
+    
+    -- Ждем немного после открытия GUI
+    task.wait(1.0)
+    
+    -- Ищем GUI Бариги
+    print("[AutoSell] 🔍 Ищу GUI Бариги...")
+    local barigaGui = nil
+    
+    -- Проходимся по всем GUI в PlayerGui
+    for _, gui in pairs(PlayerGui:GetChildren()) do
+        if gui:IsA("ScreenGui") and gui.Enabled then
+            print("[AutoSell] Проверяю GUI: " .. gui.Name)
+            
+            -- Ищем характерные элементы для Бариги
+            local hasBarigaElements = false
+            for _, descendant in pairs(gui:GetDescendants()) do
+                local name = descendant.Name:lower()
+                local text = ""
+                
+                if descendant:IsA("TextLabel") or descendant:IsA("TextButton") then
+                    text = (descendant.Text or ""):lower()
+                end
+                
+                -- Проверяем на слова связанные с продажей
+                if name:find("sell") or name:find("bariga") or name:find("продать") or
+                   text:find("sell") or text:find("продать") or text:find("баллов") then
+                    hasBarigaElements = true
+                    print("[AutoSell] ✅ Найден элемент: " .. descendant.Name .. " (" .. text .. ")")
+                    break
+                end
+            end
+            
+            if hasBarigaElements then
+                barigaGui = gui
+                print("[AutoSell] ✅ GUI Бариги: " .. gui.Name)
+                break
+            end
+        end
+    end
+    
+    if not barigaGui then
+        print("[AutoSell] ❌ GUI Бариги не найден!")
+        return false
+    end
+    
+    -- Функция для клика по кнопке
+    local function clickButton(button)
+        if not button then return false end
+        
+        print("[AutoSell] 🖱️ Кликаю по: " .. button.Name)
+        
+        -- Метод 1: getconnections
+        local success1 = pcall(function()
+            if getconnections then
+                for _, connection in pairs(getconnections(button.MouseButton1Click)) do
+                    connection:Fire()
+                end
+            end
+        end)
+        
+        if success1 then
+            print("[AutoSell] ✅ Клик через MouseButton1Click")
+            return true
+        end
+        
+        -- Метод 2: VirtualInputManager
+        local success2 = pcall(function()
+            local absPos = button.AbsolutePosition
+            local absSize = button.AbsoluteSize
+            local x = absPos.X + (absSize.X / 2)
+            local y = absPos.Y + (absSize.Y / 2)
+            
+            VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
+            task.wait(0.05)
+            VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
+        end)
+        
+        if success2 then
+            print("[AutoSell] ✅ Клик через VirtualInputManager")
+            return true
+        end
+        
+        return false
+    end
+    
+    -- Ищем все кнопки в GUI
+    print("[AutoSell] 📋 Все кнопки в GUI:")
+    for _, button in pairs(barigaGui:GetDescendants()) do
+        if button:IsA("TextButton") or button:IsA("ImageButton") then
+            local text = button.Text or ""
+            print(string.format("  - %s: '%s'", button.Name, text))
+        end
+    end
+    
+    -- Шаг 1: Ищем кнопку "Select All" / "Выбрать всё"
+    local selectButton = nil
+    for _, button in pairs(barigaGui:GetDescendants()) do
+        if button:IsA("TextButton") or button:IsA("ImageButton") then
+            local name = button.Name:lower()
+            local text = (button.Text or ""):lower()
+            
+            if name:find("select") or name:find("all") or 
+               text:find("select") or text:find("all") or text:find("выбрать") then
+                selectButton = button
+                print("[AutoSell] ✅ Нашел кнопку выбора: " .. button.Name)
+                break
+            end
+        end
+    end
+    
+    if selectButton then
+        clickButton(selectButton)
+        task.wait(0.5)
+    else
+        print("[AutoSell] ⚠️ Кнопка 'Выбрать всё' не найдена, продолжаю...")
+    end
+    
+    -- Шаг 2: Ищем кнопку "Sell" / "Confirm" / "Продать"
+    local sellButton = nil
+    for _, button in pairs(barigaGui:GetDescendants()) do
+        if button:IsA("TextButton") or button:IsA("ImageButton") then
+            local name = button.Name:lower()
+            local text = (button.Text or ""):lower()
+            
+            if name:find("sell") or name:find("confirm") or name:find("accept") or
+               text:find("sell") or text:find("продать") or text:find("подтвердить") then
+                sellButton = button
+                print("[AutoSell] ✅ Нашел кнопку продажи: " .. button.Name)
+                break
+            end
+        end
+    end
+    
+    if sellButton then
+        clickButton(sellButton)
+        task.wait(0.5)
+        
+        autoSellCounter = autoSellCounter + 1
+        print("[AutoSell] ✅✅✅ ПРОДАЖА ЗАВЕРШЕНА!")
+        print(string.format("[AutoSell] 📈 Всего продаж: %d", autoSellCounter))
+        
+        -- Закрываем GUI
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        pcall(function()
+            ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("CloseBariga"):FireServer()
+        end)
+        
+        return true
+    else
+        print("[AutoSell] ❌ Кнопка 'Продать' не найдена!")
+        return false
+    end
 end
 
 -- Основной цикл автоселла
