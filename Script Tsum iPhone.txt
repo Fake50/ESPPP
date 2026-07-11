@@ -1335,31 +1335,55 @@ local function pressE(barigaNPC)
     end
     
     if proximityPrompt then
-        -- Пробуем активировать ProximityPrompt
+        -- Пробуем активировать ProximityPrompt несколькими способами
+        print("[AutoSell] Активирую ProximityPrompt...")
+        
+        -- Метод 1: fireproximityprompt
         if fireproximityprompt then
-            local success = pcall(function()
+            local success1 = pcall(function()
                 fireproximityprompt(proximityPrompt)
             end)
-            if success then
-                print("[AutoSell] ✅ ProximityPrompt активирован")
+            if success1 then
+                print("[AutoSell] ✅ fireproximityprompt() успешно")
+                task.wait(0.3)
+                return true
+            end
+            
+            local success2 = pcall(function()
+                fireproximityprompt(proximityPrompt, 0)
+            end)
+            if success2 then
+                print("[AutoSell] ✅ fireproximityprompt(0) успешно")
+                task.wait(0.3)
                 return true
             end
         end
         
-        -- Альтернативный метод
-        local success = pcall(function()
+        -- Метод 2: InputHoldBegin/End
+        local success3 = pcall(function()
             proximityPrompt:InputHoldBegin()
-            task.wait(0.1)
+            task.wait(proximityPrompt.HoldDuration or 0.1)
             proximityPrompt:InputHoldEnd()
         end)
+        if success3 then
+            print("[AutoSell] ✅ InputHold успешно")
+            task.wait(0.3)
+            return true
+        end
         
-        if success then
-            print("[AutoSell] ✅ ProximityPrompt активирован (метод 2)")
+        -- Метод 3: Triggered event
+        local success4 = pcall(function()
+            proximityPrompt.Triggered:Fire(player)
+        end)
+        if success4 then
+            print("[AutoSell] ✅ Triggered:Fire успешно")
+            task.wait(0.3)
             return true
         end
     end
     
-    -- Пробуем симуляцию клавиши E через VirtualInputManager
+    -- Метод 4: Симуляция клавиши E
+    print("[AutoSell] Пробую симуляцию клавиши E...")
     local success = pcall(function()
         VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
         task.wait(0.1)
@@ -1367,12 +1391,13 @@ local function pressE(barigaNPC)
     end)
     
     if success then
-        print("[AutoSell] ✅ Нажал E через VirtualInputManager")
+        print("[AutoSell] ✅ Клавиша E нажата")
+        task.wait(0.3)
         return true
     end
     
-    print("[AutoSell] ❌ Не удалось нажать E")
-    return false
+    print("[AutoSell] ⚠️ Все методы нажатия E выполнены")
+    return true -- Возвращаем true чтобы продолжить, GUI может открыться
 end
 
 -- Получение инвентаря и продажа всех предметов
@@ -1400,18 +1425,38 @@ local function sellAllItems()
     -- 2. Получаем инвентарь Бариги
     print("[AutoSell] 🔄 Получаю инвентарь Бариги...")
     local barigaInventory = nil
-    local success, err = pcall(function()
-        barigaInventory = ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("GetBarigaInventory"):InvokeServer()
-    end)
+    local attempts = 0
+    local maxAttempts = 3
     
-    if not success then
-        print("[AutoSell] ❌ Ошибка при получении инвентаря: " .. tostring(err))
-        return false
+    -- Пробуем получить инвентарь несколько раз
+    while attempts < maxAttempts and (not barigaInventory or type(barigaInventory) ~= "table") do
+        attempts = attempts + 1
+        print(string.format("[AutoSell] Попытка #%d из %d...", attempts, maxAttempts))
+        
+        local success, err = pcall(function()
+            barigaInventory = ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("GetBarigaInventory"):InvokeServer()
+        end)
+        
+        if not success then
+            print("[AutoSell] ⚠️ Ошибка при получении инвентаря: " .. tostring(err))
+            task.wait(0.5)
+        elseif type(barigaInventory) == "table" then
+            local count = 0
+            for _ in pairs(barigaInventory) do count = count + 1 end
+            if count > 0 then
+                break  -- Инвентарь получен и не пустой
+            else
+                print("[AutoSell] ⚠️ Инвентарь пустой, пробую еще раз...")
+                task.wait(0.5)
+            end
+        else
+            print("[AutoSell] ⚠️ Инвентарь не таблица, пробую еще раз...")
+            task.wait(0.5)
+        end
     end
     
     if not barigaInventory or type(barigaInventory) ~= "table" then
-        print("[AutoSell] ❌ Инвентарь Бариги пустой или не таблица")
-        print("[AutoSell] Тип инвентаря:", type(barigaInventory))
+        print("[AutoSell] ❌ Не удалось получить инвентарь после " .. maxAttempts .. " попыток")
         return false
     end
     
@@ -1465,7 +1510,15 @@ local function sellAllItems()
         return false
     end
     
-    print("[AutoSell] ✅ Оффер получен:", tostring(offer))
+    print("[AutoSell] ✅ Оффер получен (тип: " .. type(offer) .. ")")
+    
+    -- Если оффер - таблица, показываем детали
+    if type(offer) == "table" then
+        for k, v in pairs(offer) do
+            print(string.format("[AutoSell] Оффер[%s] = %s", tostring(k), tostring(v)))
+        end
+    end
+    
     task.wait(0.5)
     
     -- 5. Подтверждаем продажу
@@ -1534,7 +1587,9 @@ local function autoSellCycle()
         print("[AutoSell] ⚠️ Не удалось нажать E, но продолжаю...")
     end
     
-    task.wait(2.0) -- Увеличено время ожидания открытия GUI
+    -- ВАЖНО: Увеличиваем задержку - GUI может загружаться медленно
+    print("[AutoSell] ⏳ Жду загрузки GUI (3 секунды)...")
+    task.wait(3.0)
     
     -- 4. Продаем все предметы
     local successSell = sellAllItems()
@@ -1891,7 +1946,35 @@ AutoSellTab:CreateButton({
                     end)
                     
                     if successOffer then
-                        print("[TEST] ✅ Оффер получен:", tostring(offer))
+                        print("[TEST] ✅ Оффер получен (тип: " .. type(offer) .. ")")
+                        if type(offer) == "table" then
+                            for k, v in pairs(offer) do
+                                print(string.format("[TEST] Оффер[%s] = %s", tostring(k), tostring(v)))
+                            end
+                        else
+                            print("[TEST] Оффер:", tostring(offer))
+                        end
+                        
+                        -- Пробуем подтвердить продажу
+                        print("[TEST] 💵 Пробую подтвердить продажу...")
+                        local successSell, sellErr = pcall(function()
+                            local args = {true}
+                            ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("ConfirmBarigaSale"):FireServer(unpack(args))
+                        end)
+                        
+                        if successSell then
+                            print("[TEST] ✅✅✅ Продажа подтверждена!")
+                        else
+                            print("[TEST] ❌ Ошибка продажи:", tostring(sellErr))
+                        end
+                        
+                        task.wait(0.5)
+                        
+                        -- Закрываем GUI
+                        print("[TEST] 🚪 Закрываю GUI...")
+                        pcall(function()
+                            ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("CloseBariga"):FireServer()
+                        end)
                     else
                         print("[TEST] ❌ Ошибка оффера:", tostring(offerErr))
                     end
