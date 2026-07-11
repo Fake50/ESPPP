@@ -1444,52 +1444,77 @@ local function sellAllItems()
     local function clickGuiElement(element)
         if not element then return false end
         
-        print("[AutoSell] 🖱️ Кликаю по: " .. element.Name)
+        print("[AutoSell] 🖱️ Кликаю по: " .. element.Name .. " (" .. element.ClassName .. ")")
         
-        -- Метод 1: getconnections (лучший метод)
-        if element:IsA("GuiButton") or element:IsA("TextButton") or element:IsA("ImageButton") then
-            local success = pcall(function()
-                for _, connection in pairs(getconnections(element.MouseButton1Click)) do
-                    connection:Fire()
-                end
-            end)
-            
-            if success then
-                print("[AutoSell] ✅ Клик успешен (MouseButton1Click)")
-                return true
-            end
-            
-            -- Альтернатива - MouseButton1Down
-            success = pcall(function()
-                for _, connection in pairs(getconnections(element.MouseButton1Down)) do
-                    connection:Fire()
-                end
-            end)
-            
-            if success then
-                print("[AutoSell] ✅ Клик успешен (MouseButton1Down)")
-                return true
-            end
-        end
-        
-        -- Метод 2: VirtualInputManager
-        local success2 = pcall(function()
+        -- Метод 1: VirtualInputManager (самый надёжный для любых элементов)
+        local success1 = pcall(function()
             local absPos = element.AbsolutePosition
             local absSize = element.AbsoluteSize
             local centerX = absPos.X + (absSize.X / 2)
             local centerY = absPos.Y + (absSize.Y / 2)
             
-            VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
-            task.wait(0.05)
-            VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
+            print(string.format("[AutoSell] Позиция клика: X=%.0f, Y=%.0f", centerX, centerY))
+            
+            -- Делаем несколько кликов для надёжности
+            for i = 1, 3 do
+                VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
+                task.wait(0.05)
+                VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
+                task.wait(0.05)
+            end
         end)
         
-        if success2 then
-            print("[AutoSell] ✅ Клик успешен (VirtualInputManager)")
+        if success1 then
+            print("[AutoSell] ✅ Клик успешен (VirtualInputManager x3)")
             return true
         end
         
-        print("[AutoSell] ⚠️ Клик не удался")
+        -- Метод 2: getconnections (если доступен)
+        if getconnections and (element:IsA("GuiButton") or element:IsA("TextButton") or element:IsA("ImageButton")) then
+            local success2 = pcall(function()
+                local connections = getconnections(element.MouseButton1Click)
+                if connections and #connections > 0 then
+                    for _, connection in pairs(connections) do
+                        connection:Fire()
+                    end
+                end
+            end)
+            
+            if success2 then
+                print("[AutoSell] ✅ Клик успешен (getconnections)")
+                return true
+            end
+        end
+        
+        -- Метод 3: Mouse1Click напрямую
+        if element:IsA("TextButton") or element:IsA("ImageButton") then
+            local success3 = pcall(function()
+                element.MouseButton1Click:Fire()
+            end)
+            
+            if success3 then
+                print("[AutoSell] ✅ Клик успешен (MouseButton1Click:Fire)")
+                return true
+            end
+        end
+        
+        -- Метод 4: Если это не кнопка, ищем кликабельного родителя
+        if not (element:IsA("GuiButton") or element:IsA("TextButton") or element:IsA("ImageButton")) then
+            print("[AutoSell] ⚠️ Элемент не кнопка, ищу родителя...")
+            local parent = element.Parent
+            local attempts = 0
+            
+            while parent and attempts < 3 do
+                if parent:IsA("TextButton") or parent:IsA("ImageButton") or parent:IsA("GuiButton") then
+                    print("[AutoSell] ✅ Нашел кликабельного родителя: " .. parent.Name)
+                    return clickGuiElement(parent)
+                end
+                parent = parent.Parent
+                attempts = attempts + 1
+            end
+        end
+        
+        print("[AutoSell] ⚠️ Все методы клика не сработали")
         return false
     end
     
@@ -1527,7 +1552,17 @@ local function sellAllItems()
     end
     
     if checkmarkButton then
-        clickGuiElement(checkmarkButton)
+        print(string.format("[AutoSell] ✅ Нашел галочку: %s (%s)", checkmarkButton.Name, checkmarkButton.ClassName))
+        print(string.format("[AutoSell] Позиция галочки: X=%.0f, Y=%.0f", checkmarkButton.AbsolutePosition.X, checkmarkButton.AbsolutePosition.Y))
+        print(string.format("[AutoSell] Размер галочки: %dx%d", checkmarkButton.AbsoluteSize.X, checkmarkButton.AbsoluteSize.Y))
+        print("[AutoSell] Visible:", checkmarkButton.Visible)
+        
+        local clickSuccess = clickGuiElement(checkmarkButton)
+        if clickSuccess then
+            print("[AutoSell] ✅ Галочка успешно нажата!")
+        else
+            print("[AutoSell] ❌ Не удалось нажать галочку!")
+        end
         task.wait(0.5)
     else
         print("[AutoSell] ⚠️ Галочка не найдена, пробую без неё...")
