@@ -256,6 +256,7 @@ local espEnabled = true
 local autoBuyEnabled = false
 local autoSellEnabled = false
 local autoBuySpeed = 21 -- Скорость полета
+local autoSellSpeed = 21 -- Скорость полета для автоселла
 
 local FILTER = {
     minPrice = 0,
@@ -656,7 +657,9 @@ local function clickObject(targetObj)
     camera.CameraType = Enum.CameraType.Scriptable
     camera.CFrame = CFrame.new(root.Position, targetPosition)
     
-    task.wait(0.2)
+    task.wait(0.3)
+    
+    local clickSuccess = false
     
     -- МЕТОД 1: Поиск ClickDetector (во всех потомках)
     local clickDetector = nil
@@ -669,99 +672,217 @@ local function clickObject(targetObj)
     end
     
     if clickDetector then
-        pcall(function()
-            fireclickdetector(clickDetector)
+        print("[AutoBuy] Пробую активировать ClickDetector...")
+        
+        -- Попытка 1: fireclickdetector с 2 параметрами (части)
+        if fireclickdetector then
+            local success1 = pcall(function()
+                fireclickdetector(clickDetector, 0)
+            end)
+            print("[AutoBuy] fireclickdetector(0):", success1)
+            
+            -- Попытка 2: fireclickdetector с 1 параметром
+            local success2 = pcall(function()
+                fireclickdetector(clickDetector)
+            end)
+            print("[AutoBuy] fireclickdetector():", success2)
+            
+            -- Попытка 3: с частями
+            local success3 = pcall(function()
+                fireclickdetector(clickDetector, 0, targetPart)
+            end)
+            print("[AutoBuy] fireclickdetector(part):", success3)
+            
+            if success1 or success2 or success3 then
+                clickSuccess = true
+            end
+        else
+            print("[AutoBuy] ⚠️ fireclickdetector недоступен")
+        end
+        
+        -- Попытка 4: через MouseClick event
+        local success4 = pcall(function()
+            clickDetector.MouseClick:Fire(player)
         end)
-        task.wait(0.3)
-        camera.CameraType = oldCameraType
-        return true
+        print("[AutoBuy] MouseClick:Fire():", success4)
+        if success4 then clickSuccess = true end
+        
+        -- Попытка 5: через Parent.MouseClick
+        local success5 = pcall(function()
+            if clickDetector.Parent then
+                local event = clickDetector.Parent:FindFirstChild("MouseClick")
+                if event then
+                    event:Fire(player)
+                end
+            end
+        end)
+        print("[AutoBuy] Parent.MouseClick:", success5)
+        if success5 then clickSuccess = true end
+        
+        task.wait(0.4)
     end
     
     -- МЕТОД 2: Поиск ProximityPrompt
-    local proximityPrompt = nil
-    for _, descendant in pairs(targetObj:GetDescendants()) do
-        if descendant:IsA("ProximityPrompt") then
-            proximityPrompt = descendant
-            print("[AutoBuy] ✅ Найден ProximityPrompt: " .. descendant:GetFullName())
-            break
+    if not clickSuccess then
+        local proximityPrompt = nil
+        for _, descendant in pairs(targetObj:GetDescendants()) do
+            if descendant:IsA("ProximityPrompt") then
+                proximityPrompt = descendant
+                print("[AutoBuy] ✅ Найден ProximityPrompt: " .. descendant:GetFullName())
+                break
+            end
         end
-    end
-    
-    if proximityPrompt then
-        pcall(function()
-            fireproximityprompt(proximityPrompt)
-        end)
-        task.wait(0.3)
-        camera.CameraType = oldCameraType
-        return true
-    end
-    
-    -- МЕТОД 3: Эквип как Tool (если это одежда в виде Tool)
-    if targetObj:IsA("Tool") or targetObj:FindFirstChildOfClass("Tool") then
-        print("[AutoBuy] Пробую экипировать как Tool...")
-        local tool = targetObj:IsA("Tool") and targetObj or targetObj:FindFirstChildOfClass("Tool")
-        if tool and humanoid then
-            pcall(function()
-                tool.Parent = player.Backpack
-                humanoid:EquipTool(tool)
+        
+        if proximityPrompt then
+            print("[AutoBuy] Пробую активировать ProximityPrompt...")
+            
+            -- Попытка 1: fireproximityprompt
+            if fireproximityprompt then
+                local success1 = pcall(function()
+                    fireproximityprompt(proximityPrompt)
+                end)
+                print("[AutoBuy] fireproximityprompt():", success1)
+                if success1 then clickSuccess = true end
+                
+                local success2 = pcall(function()
+                    fireproximityprompt(proximityPrompt, 0)
+                end)
+                print("[AutoBuy] fireproximityprompt(0):", success2)
+                if success2 then clickSuccess = true end
+            else
+                print("[AutoBuy] ⚠️ fireproximityprompt недоступен")
+            end
+            
+            -- Попытка 2: через InputHoldBegin/End
+            local success3 = pcall(function()
+                proximityPrompt:InputHoldBegin()
+                task.wait(0.1)
+                proximityPrompt:InputHoldEnd()
             end)
-            task.wait(0.3)
-            camera.CameraType = oldCameraType
-            return true
+            print("[AutoBuy] InputHold:", success3)
+            if success3 then clickSuccess = true end
+            
+            -- Попытка 3: через Triggered event
+            local success4 = pcall(function()
+                proximityPrompt.Triggered:Fire(player)
+            end)
+            print("[AutoBuy] Triggered:Fire():", success4)
+            if success4 then clickSuccess = true end
+            
+            -- Попытка 4: Устанавливаем HoldDuration = 0 и триггерим
+            local success5 = pcall(function()
+                local oldDuration = proximityPrompt.HoldDuration
+                proximityPrompt.HoldDuration = 0
+                proximityPrompt:InputHoldBegin()
+                task.wait(0.05)
+                proximityPrompt:InputHoldEnd()
+                proximityPrompt.HoldDuration = oldDuration
+            end)
+            print("[AutoBuy] HoldDuration=0:", success5)
+            if success5 then clickSuccess = true end
+            
+            task.wait(0.4)
         end
     end
     
-    -- МЕТОД 4: Поиск и активация через Humanoid.Touched
-    print("[AutoBuy] Пробую через касание...")
-    if humanoid and targetPart then
-        pcall(function()
-            -- Симулируем касание
-            firetouchinterest(root, targetPart, 0)
-            task.wait(0.1)
-            firetouchinterest(root, targetPart, 1)
-        end)
-        task.wait(0.2)
+    -- МЕТОД 3: Через Remote Events (если есть)
+    if not clickSuccess then
+        print("[AutoBuy] Ищу RemoteEvents...")
+        for _, remote in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+            if remote:IsA("RemoteEvent") or remote:IsA("RemoteFunction") then
+                local name = remote.Name:lower()
+                if name:find("click") or name:find("interact") or name:find("take") or name:find("buy") or name:find("purchase") then
+                    print("[AutoBuy] Нашел подозрительный Remote:", remote.Name)
+                    local success = pcall(function()
+                        if remote:IsA("RemoteEvent") then
+                            remote:FireServer(targetObj)
+                        else
+                            remote:InvokeServer(targetObj)
+                        end
+                    end)
+                    if success then
+                        print("[AutoBuy] ✅ Remote активирован:", remote.Name)
+                        clickSuccess = true
+                        break
+                    end
+                end
+            end
+        end
     end
     
-    -- МЕТОД 5: Визуальный клик с наведенной камерой
-    print("[AutoBuy] Выполняю визуальный клик с камерой...")
+    -- МЕТОД 4: Визуальный клик через мышь
+    print("[AutoBuy] Пробую визуальные методы клика...")
     local screenPos, onScreen = camera:WorldToScreenPoint(targetPosition)
     
     if onScreen then
-        -- Комбо из всех методов клика
-        pcall(function()
-            -- 1. mouse1click
-            local mouse = player:GetMouse()
-            mouse.Target = targetPart
-            mouse1click()
-        end)
-        print("[AutoBuy] ✅ Клик mouse1click")
+        -- 1. mouse1click
+        if mouse1click then
+            pcall(function()
+                mouse1click()
+            end)
+            print("[AutoBuy] ✅ mouse1click")
+        end
         task.wait(0.05)
         
-        -- 2. VirtualUser
+        -- 2. mouse1press + mouse1release
+        if mouse1press and mouse1release then
+            pcall(function()
+                mouse1press()
+                task.wait(0.05)
+                mouse1release()
+            end)
+            print("[AutoBuy] ✅ mouse1press/release")
+        end
+        task.wait(0.05)
+        
+        -- 3. VirtualUser
         pcall(function()
             local VirtualUser = game:GetService("VirtualUser")
+            VirtualUser:CaptureController()
             VirtualUser:ClickButton1(Vector2.new(screenPos.X, screenPos.Y))
         end)
-        print("[AutoBuy] ✅ Клик VirtualUser")
+        print("[AutoBuy] ✅ VirtualUser")
         task.wait(0.05)
         
-        -- 3. VirtualInputManager
+        -- 4. VirtualInputManager
         pcall(function()
             VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, true, game, 0)
-            task.wait(0.03)
+            task.wait(0.05)
             VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, false, game, 0)
         end)
-        print("[AutoBuy] ✅ Клик VirtualInputManager")
+        print("[AutoBuy] ✅ VirtualInputManager")
+        
+        -- 5. Через UserInputService
+        pcall(function()
+            local UserInputService = game:GetService("UserInputService")
+            UserInputService.InputBegan:Fire({
+                UserInputType = Enum.UserInputType.MouseButton1,
+                Position = Vector3.new(screenPos.X, screenPos.Y, 0)
+            }, false)
+            task.wait(0.05)
+            UserInputService.InputEnded:Fire({
+                UserInputType = Enum.UserInputType.MouseButton1,
+                Position = Vector3.new(screenPos.X, screenPos.Y, 0)
+            }, false)
+        end)
+        print("[AutoBuy] ✅ UserInputService")
         
         task.wait(0.3)
-        camera.CameraType = oldCameraType
-        return true
     end
     
+    -- МЕТОД 5: Касание через TouchTransmitter
+    pcall(function()
+        if firetouchinterest then
+            firetouchinterest(root, targetPart, 0)
+            task.wait(0.1)
+            firetouchinterest(root, targetPart, 1)
+            print("[AutoBuy] ✅ firetouchinterest")
+        end
+    end)
+    
     camera.CameraType = oldCameraType
-    print("[AutoBuy] ⚠️ Клик выполнен всеми методами")
-    return true  -- Возвращаем true чтобы продолжить
+    print("[AutoBuy] ⚠️ Все методы клика выполнены")
+    return true
 end
 
 -- Определение ShopZone для объекта (предмета или Seller)
@@ -1030,7 +1151,7 @@ local function autoBuyCycle()
         end
         
         -- 8. ПРОВЕРКА: Продался ли предмет?
-        task.wait(1.0)  -- Даем время на обработку покупки
+        task.wait(1.5)  -- Увеличено время ожидания для обработки на ПК
         
         -- Обновляем ESP и проверяем, остался ли предмет
         local itemsAfter = findAllItems()
@@ -1104,6 +1225,16 @@ end
 local autoBuyThread = nil
 local function startAutoBuy()
     if autoBuyThread then return end
+    
+    -- Диагностика доступных функций
+    print("[AutoBuy] 🔍 Проверка доступных функций:")
+    print("  fireclickdetector:", fireclickdetector ~= nil)
+    print("  fireproximityprompt:", fireproximityprompt ~= nil)
+    print("  firetouchinterest:", firetouchinterest ~= nil)
+    print("  mouse1click:", mouse1click ~= nil)
+    print("  mouse1press:", mouse1press ~= nil)
+    print("  mouse1release:", mouse1release ~= nil)
+    
     print("[AutoBuy] 🚀 AutoBuy запущен")
     autoBuyThread = task.spawn(function()
         while autoBuyEnabled do
@@ -1134,6 +1265,280 @@ local function stopAutoBuy()
     local camera = workspace.CurrentCamera
     camera.CameraType = Enum.CameraType.Custom
     print("[AutoBuy] 🛑 AutoBuy остановлен, камера восстановлена")
+end
+
+-- ============================================
+-- AUTOSELL ФУНКЦИИ
+-- ============================================
+
+local autoSellCounter = 0
+
+-- Поиск BarigaNPC в workspace
+local function findBarigaNPC()
+    print("[AutoSell] 🔍 Ищу BarigaNPC...")
+    
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj.Name == "BarigaNPC" and obj:IsA("Model") then
+            local humanoidRootPart = obj:FindFirstChild("HumanoidRootPart")
+            if humanoidRootPart then
+                print("[AutoSell] ✅ Нашел BarigaNPC!")
+                return obj
+            end
+        end
+    end
+    
+    print("[AutoSell] ❌ BarigaNPC не найден")
+    return nil
+end
+
+-- Плавный полет к BarigaNPC
+local function tweenToBariga(barigaNPC)
+    local char = player.Character
+    if not char then return false end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return false end
+    
+    local barigaRoot = barigaNPC:FindFirstChild("HumanoidRootPart")
+    if not barigaRoot then
+        print("[AutoSell] ❌ У BarigaNPC нет HumanoidRootPart")
+        return false
+    end
+    
+    local distance = (root.Position - barigaRoot.Position).Magnitude
+    local duration = distance / autoSellSpeed
+    
+    print(string.format("[AutoSell] ✈️ Лечу к BarigaNPC (%.0f м, %.1f сек)", distance, duration))
+    
+    local targetCFrame = CFrame.new(barigaRoot.Position) * CFrame.new(0, 3, 0)
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(root, tweenInfo, {CFrame = targetCFrame})
+    
+    tween:Play()
+    tween.Completed:Wait()
+    
+    print("[AutoSell] ✅ Прилетел к BarigaNPC")
+    return true
+end
+
+-- Нажатие E (активация ProximityPrompt)
+local function pressE(barigaNPC)
+    print("[AutoSell] 🖱️ Нажимаю E для открытия GUI...")
+    
+    -- Ищем ProximityPrompt
+    local proximityPrompt = nil
+    for _, descendant in pairs(barigaNPC:GetDescendants()) do
+        if descendant:IsA("ProximityPrompt") then
+            proximityPrompt = descendant
+            print("[AutoSell] ✅ Найден ProximityPrompt")
+            break
+        end
+    end
+    
+    if proximityPrompt then
+        -- Пробуем активировать ProximityPrompt
+        if fireproximityprompt then
+            local success = pcall(function()
+                fireproximityprompt(proximityPrompt)
+            end)
+            if success then
+                print("[AutoSell] ✅ ProximityPrompt активирован")
+                return true
+            end
+        end
+        
+        -- Альтернативный метод
+        local success = pcall(function()
+            proximityPrompt:InputHoldBegin()
+            task.wait(0.1)
+            proximityPrompt:InputHoldEnd()
+        end)
+        
+        if success then
+            print("[AutoSell] ✅ ProximityPrompt активирован (метод 2)")
+            return true
+        end
+    end
+    
+    -- Пробуем симуляцию клавиши E через VirtualInputManager
+    local success = pcall(function()
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+        task.wait(0.1)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+    end)
+    
+    if success then
+        print("[AutoSell] ✅ Нажал E через VirtualInputManager")
+        return true
+    end
+    
+    print("[AutoSell] ❌ Не удалось нажать E")
+    return false
+end
+
+-- Получение инвентаря и продажа всех предметов
+local function sellAllItems()
+    print("[AutoSell] 📦 Получаю инвентарь...")
+    
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    
+    -- 1. Запрашиваем инвентарь
+    task.spawn(function()
+        pcall(function()
+            ReplicatedStorage:WaitForChild("InventoryRemotes"):WaitForChild("RequestInventory"):FireServer()
+        end)
+    end)
+    
+    task.wait(0.5)
+    
+    -- 2. Получаем инвентарь Бариги
+    local barigaInventory = nil
+    local success = pcall(function()
+        barigaInventory = ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("GetBarigaInventory"):InvokeServer()
+    end)
+    
+    if not success or not barigaInventory then
+        print("[AutoSell] ❌ Не удалось получить инвентарь Бариги")
+        return false
+    end
+    
+    print("[AutoSell] ✅ Инвентарь Бариги получен")
+    
+    -- 3. Собираем все ID предметов для продажи
+    local itemIds = {}
+    
+    if type(barigaInventory) == "table" then
+        for itemId, itemData in pairs(barigaInventory) do
+            table.insert(itemIds, itemId)
+            print("[AutoSell] 📝 Добавляю предмет: " .. tostring(itemId))
+        end
+    end
+    
+    if #itemIds == 0 then
+        print("[AutoSell] ⚠️ Нет предметов для продажи")
+        return false
+    end
+    
+    print(string.format("[AutoSell] 📊 Найдено предметов для продажи: %d", #itemIds))
+    
+    -- 4. Получаем оффер для всех предметов
+    print("[AutoSell] 💰 Получаю оффер для предметов...")
+    local offer = nil
+    local successOffer = pcall(function()
+        offer = ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("GetBarigaOffer"):InvokeServer(itemIds)
+    end)
+    
+    if not successOffer or not offer then
+        print("[AutoSell] ❌ Не удалось получить оффер")
+        return false
+    end
+    
+    print("[AutoSell] ✅ Оффер получен: " .. tostring(offer))
+    task.wait(0.3)
+    
+    -- 5. Подтверждаем продажу
+    print("[AutoSell] ✅ Подтверждаю продажу...")
+    local successSell = pcall(function()
+        ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("ConfirmBarigaSale"):FireServer(true)
+    end)
+    
+    if not successSell then
+        print("[AutoSell] ❌ Не удалось подтвердить продажу")
+        return false
+    end
+    
+    print("[AutoSell] ✅✅✅ ПРОДАЖА ЗАВЕРШЕНА! ✅✅✅")
+    task.wait(0.3)
+    
+    -- 6. Закрываем GUI Бариги
+    print("[AutoSell] 🚪 Закрываю GUI...")
+    pcall(function()
+        ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("CloseBariga"):FireServer()
+    end)
+    
+    autoSellCounter = autoSellCounter + 1
+    print(string.format("[AutoSell] 📈 Всего продаж: %d", autoSellCounter))
+    
+    return true
+end
+
+-- Основной цикл автоселла
+local function autoSellCycle()
+    if not autoSellEnabled then return end
+    
+    print("\n[AutoSell] ═══════════════════════════════")
+    print("[AutoSell] 🔄 Цикл продажи #" .. (autoSellCounter + 1))
+    
+    -- 1. Находим BarigaNPC
+    local barigaNPC = findBarigaNPC()
+    if not barigaNPC then
+        print("[AutoSell] ❌ BarigaNPC не найден, жду...")
+        return
+    end
+    
+    -- 2. Летим к BarigaNPC
+    local successFly = tweenToBariga(barigaNPC)
+    if not successFly then
+        print("[AutoSell] ❌ Не удалось долететь до BarigaNPC")
+        return
+    end
+    
+    task.wait(0.5)
+    
+    -- 3. Нажимаем E для открытия GUI
+    local successPress = pressE(barigaNPC)
+    if not successPress then
+        print("[AutoSell] ❌ Не удалось открыть GUI")
+    end
+    
+    task.wait(1.0) -- Ждем открытия GUI
+    
+    -- 4. Продаем все предметы
+    local successSell = sellAllItems()
+    
+    if successSell then
+        print("[AutoSell] ✅ Цикл продажи завершен успешно")
+    else
+        print("[AutoSell] ⚠️ Цикл продажи завершен с ошибками")
+    end
+    
+    print("[AutoSell] ═══════════════════════════════\n")
+end
+
+-- Поток автоселла
+local autoSellThread = nil
+local function startAutoSell()
+    if autoSellThread then return end
+    
+    print("[AutoSell] 🚀 AutoSell запущен")
+    autoSellThread = task.spawn(function()
+        while autoSellEnabled do
+            local success, err = pcall(function()
+                autoSellCycle()
+            end)
+            
+            if not success then
+                print("[AutoSell] ⚠️ Ошибка в цикле: " .. tostring(err))
+            end
+            
+            -- Задержка между циклами (5 секунд)
+            task.wait(5)
+        end
+        autoSellThread = nil
+        print("[AutoSell] ⏹️ AutoSell остановлен")
+    end)
+end
+
+local function stopAutoSell()
+    autoSellEnabled = false
+    if autoSellThread then
+        task.cancel(autoSellThread)
+        autoSellThread = nil
+    end
+    
+    -- Возвращаем камеру в нормальный режим
+    local camera = workspace.CurrentCamera
+    camera.CameraType = Enum.CameraType.Custom
+    print("[AutoSell] 🛑 AutoSell остановлен, камера восстановлена")
 end
 
 -- ============================================
@@ -1285,6 +1690,83 @@ AutoBuyTab:CreateParagraph({
     Content = "1. Находит ближайший предмет с ESP\n2. Летит к нему плавно (Tween)\n3. Кликает по предмету (добавление в корзину)\n4. Находит Seller в том же магазине\n5. Летит к Seller\n6. Кликает по Seller (покупка)"
 })
 
+-- Вкладка AutoSell
+local AutoSellTab = Window:CreateTab("💰 AutoSell", 4483362458)
+local AutoSellSection = AutoSellTab:CreateSection("Автоматическая продажа")
+
+local AutoSellToggle = AutoSellTab:CreateToggle({
+    Name = "Включить AutoSell",
+    CurrentValue = autoSellEnabled,
+    Flag = "AutoSellEnabled",
+    Callback = function(Value)
+        autoSellEnabled = Value
+        if autoSellEnabled then
+            startAutoSell()
+            Rayfield:Notify({
+                Title = "AutoSell Включен",
+                Content = "Автоматическая продажа запущена",
+                Duration = 3,
+                Image = 4483362458,
+            })
+        else
+            stopAutoSell()
+            Rayfield:Notify({
+                Title = "AutoSell Выключен",
+                Content = "Автоматическая продажа остановлена",
+                Duration = 3,
+                Image = 4483362458,
+            })
+        end
+    end,
+})
+
+local SellSpeedSlider = AutoSellTab:CreateSlider({
+    Name = "Скорость полета",
+    Range = {10, 50},
+    Increment = 1,
+    Suffix = " м/с",
+    CurrentValue = autoSellSpeed,
+    Flag = "AutoSellSpeed",
+    Callback = function(Value)
+        autoSellSpeed = Value
+        Rayfield:Notify({
+            Title = "Скорость изменена",
+            Content = "Новая скорость: " .. Value .. " м/с",
+            Duration = 2,
+            Image = 4483362458,
+        })
+    end,
+})
+
+local ManualSellButton = AutoSellTab:CreateButton({
+    Name = "🔄 Выполнить один цикл продажи",
+    Callback = function()
+        if autoSellEnabled then
+            Rayfield:Notify({
+                Title = "Ошибка",
+                Content = "Сначала выключите AutoSell!",
+                Duration = 2,
+                Image = 4483362458,
+            })
+        else
+            Rayfield:Notify({
+                Title = "Запуск...",
+                Content = "Выполняю один цикл продажи",
+                Duration = 2,
+                Image = 4483362458,
+            })
+            task.spawn(function()
+                pcall(autoSellCycle)
+            end)
+        end
+    end,
+})
+
+AutoSellTab:CreateParagraph({
+    Title = "ℹ️ Как работает AutoSell",
+    Content = "1. Находит BarigaNPC в мире\n2. Летит к нему плавно (Tween)\n3. Нажимает E (открывает GUI)\n4. Получает список всех предметов\n5. Выбирает все предметы\n6. Подтверждает продажу\n7. Закрывает GUI"
+})
+
 -- Вкладка Статистика
 local StatsTab = Window:CreateTab("📊 Статистика", 4483362458)
 local StatsSection = StatsTab:CreateSection("Информация")
@@ -1292,6 +1774,7 @@ local StatsSection = StatsTab:CreateSection("Информация")
 local ItemCountLabel = StatsTab:CreateLabel("Предметов в базе: Загрузка...")
 local FoundItemsLabel = StatsTab:CreateLabel("Найдено предметов: 0")
 local BoughtItemsLabel = StatsTab:CreateLabel("Куплено предметов: 0")
+local SoldItemsLabel = StatsTab:CreateLabel("Продано циклов: 0")
 
 -- Обновление статистики
 task.spawn(function()
@@ -1306,6 +1789,7 @@ task.spawn(function()
         ItemCountLabel:Set("Предметов в базе: " .. totalItems)
         FoundItemsLabel:Set("Найдено предметов в мире: " .. foundItems)
         BoughtItemsLabel:Set("Куплено предметов: " .. autoBuyCounter)
+        SoldItemsLabel:Set("Продано циклов: " .. autoSellCounter)
         
         task.wait(5)
     end
