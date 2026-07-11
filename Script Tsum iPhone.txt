@@ -1507,9 +1507,17 @@ local function main()
         print("[AutoBuy] 🚀 AutoBuy запущен")
         autoBuyEnabled = true
         
-        -- Создаем GUI статистики
-        createAutoBuyStatsGUI()
-        updateAutoBuyStatsGUI()
+        -- Создаем GUI статистики с задержкой и проверкой
+        task.spawn(function()
+            task.wait(0.5) -- Небольшая задержка для загрузки
+            local success, err = pcall(function()
+                createAutoBuyStatsGUI()
+                updateAutoBuyStatsGUI()
+            end)
+            if not success then
+                warn("[AutoBuy] Не удалось создать GUI статистики:", err)
+            end
+        end)
         
         autoBuyThread = task.spawn(function()
             while autoBuyEnabled do
@@ -1548,13 +1556,21 @@ local function main()
 
     -- Функция создания GUI статистики AutoBuy
     local function createAutoBuyStatsGUI()
+        -- Проверяем что игра полностью загружена
+        if not game:IsLoaded() then
+            game.Loaded:Wait()
+        end
+        
         if autoBuyStatsGUI then
             autoBuyStatsGUI:Destroy()
         end
         
         local Players = game:GetService("Players")
         local player = Players.LocalPlayer
-        local playerGui = player:WaitForChild("PlayerGui")
+        if not player then return nil end
+        
+        local playerGui = player:WaitForChild("PlayerGui", 5)
+        if not playerGui then return nil end
         
         -- Создаем ScreenGui
         local screenGui = Instance.new("ScreenGui")
@@ -2331,7 +2347,9 @@ local function main()
         Name="📊 Показать/Скрыть статистику",
         Callback=function()
             if autoBuyStatsGUI then
-                autoBuyStatsGUI:Destroy()
+                pcall(function()
+                    autoBuyStatsGUI:Destroy()
+                end)
                 autoBuyStatsGUI = nil
                 Rayfield:Notify({
                     Title="👁️ Скрыто",
@@ -2339,13 +2357,23 @@ local function main()
                     Duration=2
                 })
             else
-                createAutoBuyStatsGUI()
-                updateAutoBuyStatsGUI()
-                Rayfield:Notify({
-                    Title="👁️ Показано",
-                    Content="Окно статистики открыто",
-                    Duration=2
-                })
+                local success, err = pcall(function()
+                    createAutoBuyStatsGUI()
+                    updateAutoBuyStatsGUI()
+                end)
+                if success then
+                    Rayfield:Notify({
+                        Title="👁️ Показано",
+                        Content="Окно статистики открыто",
+                        Duration=2
+                    })
+                else
+                    Rayfield:Notify({
+                        Title="❌ Ошибка",
+                        Content="Не удалось создать окно",
+                        Duration=2
+                    })
+                end
             end
         end
     })
