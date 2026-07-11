@@ -114,20 +114,32 @@ end
 -- ============================================
 local function main()
     -- 1. Проверка ключа (уже проверен в loader, но проверяем ещё раз для безопасности)
+    -- ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ТЕСТИРОВАНИЯ
+    --[[
     if not validateKey() then
         return
     end
+    ]]--
+    
+    print("[DEBUG] ⚠️ Валидация ключа ОТКЛЮЧЕНА для тестирования!")
     
     -- 2. Загрузка конфига
+    --[[
     local config = loadConfig()
     if not config then
         return
     end
+    ]]--
     
-    -- 3. Инициализация переменных
-    _G.ASSETS = config.ASSETS
-    _G.ACCESSORIES = config.ACCESSORIES
-    _G.SETTINGS = config.SETTINGS
+    print("[DEBUG] ⚠️ Загрузка конфига с сервера ОТКЛЮЧЕНА!")
+    print("[DEBUG] Используем локальные данные...")
+    
+    -- Используем существующие глобальные переменные _G.ASSETS и _G.ACCESSORIES
+    -- Они должны быть загружены loader'ом
+    if not _G.ASSETS or not _G.ACCESSORIES then
+        player:Kick("❌ Нет данных ASSETS/ACCESSORIES. Перезапусти loader!")
+        return
+    end
     
     print("🎉 ESP загружен успешно!")
     print("🔑 Ключ: " .. USER_KEY)
