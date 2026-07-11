@@ -1381,40 +1381,61 @@ local function sellAllItems()
     
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     
-    -- 1. Запрашиваем инвентарь
-    task.spawn(function()
-        pcall(function()
-            ReplicatedStorage:WaitForChild("InventoryRemotes"):WaitForChild("RequestInventory"):FireServer()
-        end)
+    -- 1. Запрашиваем инвентарь (дважды как в примере)
+    print("[AutoSell] 🔄 Запрашиваю инвентарь...")
+    local successInv1 = pcall(function()
+        ReplicatedStorage:WaitForChild("InventoryRemotes"):WaitForChild("RequestInventory"):FireServer()
     end)
+    print("[AutoSell] RequestInventory #1:", successInv1)
+    
+    task.wait(0.3)
+    
+    local successInv2 = pcall(function()
+        ReplicatedStorage:WaitForChild("InventoryRemotes"):WaitForChild("RequestInventory"):FireServer()
+    end)
+    print("[AutoSell] RequestInventory #2:", successInv2)
     
     task.wait(0.5)
     
     -- 2. Получаем инвентарь Бариги
+    print("[AutoSell] 🔄 Получаю инвентарь Бариги...")
     local barigaInventory = nil
-    local success = pcall(function()
+    local success, err = pcall(function()
         barigaInventory = ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("GetBarigaInventory"):InvokeServer()
     end)
     
-    if not success or not barigaInventory then
-        print("[AutoSell] ❌ Не удалось получить инвентарь Бариги")
+    if not success then
+        print("[AutoSell] ❌ Ошибка при получении инвентаря: " .. tostring(err))
         return false
     end
     
-    print("[AutoSell] ✅ Инвентарь Бариги получен")
+    if not barigaInventory or type(barigaInventory) ~= "table" then
+        print("[AutoSell] ❌ Инвентарь Бариги пустой или не таблица")
+        print("[AutoSell] Тип инвентаря:", type(barigaInventory))
+        return false
+    end
+    
+    print("[AutoSell] ✅ Инвентарь Бариги получен (тип: table)")
     
     -- 3. Собираем все ID предметов для продажи
     local itemIds = {}
     
-    if type(barigaInventory) == "table" then
-        for itemId, itemData in pairs(barigaInventory) do
-            table.insert(itemIds, itemId)
-            print("[AutoSell] 📝 Добавляю предмет: " .. tostring(itemId))
-        end
+    -- Отладка: показываем структуру инвентаря
+    local itemCount = 0
+    for itemId, itemData in pairs(barigaInventory) do
+        itemCount = itemCount + 1
+        print(string.format("[AutoSell] 📝 Предмет #%d: ID=%s, Data=%s", itemCount, tostring(itemId), tostring(itemData)))
+        table.insert(itemIds, tostring(itemId)) -- Преобразуем в строку
     end
     
     if #itemIds == 0 then
-        print("[AutoSell] ⚠️ Нет предметов для продажи")
+        print("[AutoSell] ⚠️ Нет предметов для продажи (инвентарь пуст)")
+        
+        -- Закрываем GUI перед выходом
+        pcall(function()
+            ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("CloseBariga"):FireServer()
+        end)
+        
         return false
     end
     
@@ -1422,32 +1443,54 @@ local function sellAllItems()
     
     -- 4. Получаем оффер для всех предметов
     print("[AutoSell] 💰 Получаю оффер для предметов...")
+    print("[AutoSell] Отправляю IDs:", table.concat(itemIds, ", "))
+    
     local offer = nil
-    local successOffer = pcall(function()
-        offer = ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("GetBarigaOffer"):InvokeServer(itemIds)
+    local successOffer, offerErr = pcall(function()
+        -- ВАЖНО: Используем unpack с вложенным массивом (как в примере)
+        -- local args = {{"id1", "id2", ...}}
+        -- InvokeServer(unpack(args)) -> InvokeServer({"id1", "id2", ...})
+        local args = {itemIds}
+        offer = ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("GetBarigaOffer"):InvokeServer(unpack(args))
     end)
     
-    if not successOffer or not offer then
-        print("[AutoSell] ❌ Не удалось получить оффер")
+    if not successOffer then
+        print("[AutoSell] ❌ Ошибка при получении оффера: " .. tostring(offerErr))
+        
+        -- Закрываем GUI перед выходом
+        pcall(function()
+            ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("CloseBariga"):FireServer()
+        end)
+        
         return false
     end
     
-    print("[AutoSell] ✅ Оффер получен: " .. tostring(offer))
-    task.wait(0.3)
+    print("[AutoSell] ✅ Оффер получен:", tostring(offer))
+    task.wait(0.5)
     
     -- 5. Подтверждаем продажу
-    print("[AutoSell] ✅ Подтверждаю продажу...")
-    local successSell = pcall(function()
-        ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("ConfirmBarigaSale"):FireServer(true)
+    print("[AutoSell] 💵 Подтверждаю продажу...")
+    local successSell, sellErr = pcall(function()
+        -- ВАЖНО: Используем unpack с вложенным массивом (как в примере)
+        -- local args = {true}
+        -- FireServer(unpack(args)) -> FireServer(true)
+        local args = {true}
+        ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("ConfirmBarigaSale"):FireServer(unpack(args))
     end)
     
     if not successSell then
-        print("[AutoSell] ❌ Не удалось подтвердить продажу")
+        print("[AutoSell] ❌ Ошибка при подтверждении продажи: " .. tostring(sellErr))
+        
+        -- Закрываем GUI перед выходом
+        pcall(function()
+            ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("CloseBariga"):FireServer()
+        end)
+        
         return false
     end
     
     print("[AutoSell] ✅✅✅ ПРОДАЖА ЗАВЕРШЕНА! ✅✅✅")
-    task.wait(0.3)
+    task.wait(0.5)
     
     -- 6. Закрываем GUI Бариги
     print("[AutoSell] 🚪 Закрываю GUI...")
@@ -1485,12 +1528,13 @@ local function autoSellCycle()
     task.wait(0.5)
     
     -- 3. Нажимаем E для открытия GUI
+    print("[AutoSell] 🖱️ Открываю GUI Бариги...")
     local successPress = pressE(barigaNPC)
     if not successPress then
-        print("[AutoSell] ❌ Не удалось открыть GUI")
+        print("[AutoSell] ⚠️ Не удалось нажать E, но продолжаю...")
     end
     
-    task.wait(1.0) -- Ждем открытия GUI
+    task.wait(2.0) -- Увеличено время ожидания открытия GUI
     
     -- 4. Продаем все предметы
     local successSell = sellAllItems()
@@ -1765,6 +1809,98 @@ local ManualSellButton = AutoSellTab:CreateButton({
 AutoSellTab:CreateParagraph({
     Title = "ℹ️ Как работает AutoSell",
     Content = "1. Находит BarigaNPC в мире\n2. Летит к нему плавно (Tween)\n3. Нажимает E (открывает GUI)\n4. Получает список всех предметов\n5. Выбирает все предметы\n6. Подтверждает продажу\n7. Закрывает GUI"
+})
+
+AutoSellTab:CreateButton({
+    Name = "🔍 Тест: Найти BarigaNPC",
+    Callback = function()
+        local bariga = findBarigaNPC()
+        if bariga then
+            Rayfield:Notify({
+                Title = "Успех!",
+                Content = "BarigaNPC найден: " .. bariga.Name,
+                Duration = 3,
+                Image = 4483362458,
+            })
+        else
+            Rayfield:Notify({
+                Title = "Ошибка",
+                Content = "BarigaNPC не найден",
+                Duration = 3,
+                Image = 4483362458,
+            })
+        end
+    end,
+})
+
+AutoSellTab:CreateButton({
+    Name = "🔍 Тест: Получить инвентарь",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "Тест...",
+            Content = "Проверяю инвентарь (смотри консоль F9)",
+            Duration = 3,
+            Image = 4483362458,
+        })
+        
+        task.spawn(function()
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            
+            -- Запрашиваем инвентарь дважды
+            print("[TEST] 🔄 Запрашиваю инвентарь...")
+            pcall(function()
+                ReplicatedStorage:WaitForChild("InventoryRemotes"):WaitForChild("RequestInventory"):FireServer()
+            end)
+            
+            task.wait(0.3)
+            
+            pcall(function()
+                ReplicatedStorage:WaitForChild("InventoryRemotes"):WaitForChild("RequestInventory"):FireServer()
+            end)
+            
+            task.wait(0.5)
+            
+            -- Получаем инвентарь Бариги
+            local barigaInventory = nil
+            local success, err = pcall(function()
+                barigaInventory = ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("GetBarigaInventory"):InvokeServer()
+            end)
+            
+            if success and barigaInventory then
+                print("[TEST] ✅ Инвентарь получен!")
+                print("[TEST] Тип:", type(barigaInventory))
+                
+                local itemIds = {}
+                local count = 0
+                if type(barigaInventory) == "table" then
+                    for id, data in pairs(barigaInventory) do
+                        count = count + 1
+                        table.insert(itemIds, tostring(id))
+                        print(string.format("[TEST] Предмет %d: %s = %s", count, tostring(id), tostring(data)))
+                    end
+                end
+                
+                print("[TEST] Всего предметов:", count)
+                
+                if count > 0 then
+                    print("[TEST] 💰 Пробую получить оффер...")
+                    local offer = nil
+                    local successOffer, offerErr = pcall(function()
+                        local args = {itemIds}
+                        offer = ReplicatedStorage:WaitForChild("BarigaRemotes"):WaitForChild("GetBarigaOffer"):InvokeServer(unpack(args))
+                    end)
+                    
+                    if successOffer then
+                        print("[TEST] ✅ Оффер получен:", tostring(offer))
+                    else
+                        print("[TEST] ❌ Ошибка оффера:", tostring(offerErr))
+                    end
+                end
+            else
+                print("[TEST] ❌ Ошибка:", tostring(err))
+            end
+        end)
+    end,
 })
 
 -- Вкладка Статистика
