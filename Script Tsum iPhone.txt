@@ -761,7 +761,7 @@ end)
 -- AUTOBUY ФУНКЦИИ
 -- ============================================
 
--- Плавный полет к объекту (ПРОСТОЙ И НАДЁЖНЫЙ МЕТОД)
+-- Плавный полет к объекту (С АНТИФЛАГОМ)
 local function tweenToObject(targetObj, checkForNewItems)
     local char = player.Character
     if not char then return false, nil end
@@ -785,13 +785,30 @@ local function tweenToObject(targetObj, checkForNewItems)
     local startPos = root.Position
     local targetPos = targetPart.Position + Vector3.new(0, 3, 0)
     local distance = (startPos - targetPos).Magnitude
-    local duration = distance / autoBuySpeed
     
-    print(string.format("[AutoBuy] ✈️ Лечу к цели (%.0f м, %.2f сек, %d м/с)", distance, duration, autoBuySpeed))
+    -- АНТИФЛАГ: Ограничиваем скорость в зависимости от расстояния
+    local safeSpeed = autoBuySpeed
+    if distance > 500 then
+        safeSpeed = math.min(autoBuySpeed, 150) -- Макс 150 на дальних расстояниях
+    elseif distance > 200 then
+        safeSpeed = math.min(autoBuySpeed, 200) -- Макс 200 на средних
+    end
     
-    -- Простой метод: Прямой CFrame телепорт небольшими шагами
-    local steps = math.ceil(duration * 30) -- 30 шагов в секунду
+    local duration = distance / safeSpeed
+    
+    print(string.format("[AutoBuy] ✈️ Лечу к цели (%.0f м, %.2f сек, %d м/с)", distance, duration, safeSpeed))
+    
+    -- АНТИФЛАГ: Используем меньше шагов на коротких расстояниях
+    local stepsPerSecond = 20 -- 20 шагов в секунду (мягче чем 30)
+    local steps = math.max(math.ceil(duration * stepsPerSecond), 5) -- Минимум 5 шагов
     local stepDelay = duration / steps
+    
+    -- АНТИФЛАГ: Добавляем небольшую рандомизацию к траектории
+    local function addRandomOffset(pos, factor)
+        local randomX = (math.random() - 0.5) * factor
+        local randomZ = (math.random() - 0.5) * factor
+        return pos + Vector3.new(randomX, 0, randomZ)
+    end
     
     for i = 1, steps do
         if not root or not root.Parent or not char.Parent then
@@ -799,21 +816,40 @@ local function tweenToObject(targetObj, checkForNewItems)
         end
         
         local alpha = i / steps
-        local currentPos = startPos:Lerp(targetPos, alpha)
+        
+        -- Плавная ease-функция (InOutSine) для естественности
+        local easeAlpha = -(math.cos(math.pi * alpha) - 1) / 2
+        
+        local currentPos = startPos:Lerp(targetPos, easeAlpha)
+        
+        -- АНТИФЛАГ: Добавляем микро-рандом (но не на последних шагах)
+        if i < steps - 2 then
+            currentPos = addRandomOffset(currentPos, 0.5)
+        end
         
         -- Телепортируем
         root.CFrame = CFrame.new(currentPos)
         
-        -- Небольшая задержка
+        -- АНТИФЛАГ: Имитируем "живого игрока" - обнуляем скорость периодически
+        if i % 5 == 0 then
+            root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        end
+        
+        -- Задержка между шагами
         task.wait(stepDelay)
     end
     
-    -- Финальная позиция
+    -- Финальная позиция (без рандома)
     if root and root.Parent then
         root.CFrame = CFrame.new(targetPos)
+        root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
     end
     
-    print("[AutoBuy] ✅ Прилетел к цели")
+    -- АНТИФЛАГ: Маленькая пауза после телепорта
+    task.wait(0.1)
+    
+    print("[AutoBuy] ✅ Прилетел к цели (антифлаг активен)")
     return true, nil
 end
 
@@ -1211,7 +1247,8 @@ local function autoBuyCycle()
         return
     end
     
-    task.wait(0.5)
+    -- АНТИФЛАГ: Случайная задержка перед взятием (0.5-1 сек)
+    task.wait(0.5 + math.random() * 0.5)
     
     -- 4. Берем предмет (клик)
     print("[AutoBuy] 🛒 Беру предмет в корзину...")
@@ -1221,7 +1258,9 @@ local function autoBuyCycle()
     end
     
     print("[AutoBuy] ✅ Предмет взят в корзину")
-    task.wait(0.5)
+    
+    -- АНТИФЛАГ: Случайная задержка после взятия (0.3-0.7 сек)
+    task.wait(0.3 + math.random() * 0.4)
     
     -- 5. Ищем Seller в том же магазине
     local excludedSeller = nil  -- Seller которого нужно исключить из поиска
@@ -1248,17 +1287,19 @@ local function autoBuyCycle()
             return
         end
         
-        task.wait(0.3)
+        -- АНТИФЛАГ: Случайная задержка перед покупкой (0.3-0.6 сек)
+        task.wait(0.3 + math.random() * 0.3)
         
         -- 7. Покупаем (клик по Seller)
-        print("[AutoBuy] � Покупаю предмет...")
+        print("[AutoBuy] 💰 Покупаю предмет...")
         if not clickObject(seller) then
             print("[AutoBuy] ❌ Не удалось кликнуть по Seller")
             return
         end
         
         -- 8. ПРОВЕРКА: Продался ли предмет?
-        task.wait(1.0)  -- Даем время на обработку покупки
+        -- АНТИФЛАГ: Даём больше времени на обработку (1-1.5 сек)
+        task.wait(1.0 + math.random() * 0.5)
         
         -- Обновляем ESP и проверяем, остался ли предмет
         local itemsAfter = findAllItems()
@@ -1332,7 +1373,7 @@ end
 local autoBuyThread = nil
 local function startAutoBuy()
     if autoBuyThread then return end
-    print("[AutoBuy] 🚀 AutoBuy запущен")
+    print("[AutoBuy] 🚀 AutoBuy запущен (антифлаг активен)")
     autoBuyThread = task.spawn(function()
         while autoBuyEnabled do
             local success, err = pcall(function()
@@ -1343,8 +1384,10 @@ local function startAutoBuy()
                 print("[AutoBuy] ⚠️ Ошибка в цикле: " .. tostring(err))
             end
             
-            -- Короткая задержка между циклами (1 секунда)
-            task.wait(1)
+            -- АНТИФЛАГ: Случайная задержка между циклами (2-4 сек)
+            local delay = 2 + math.random() * 2
+            print(string.format("[AutoBuy] ⏳ Пауза %.1f сек перед следующей покупкой...", delay))
+            task.wait(delay)
         end
         autoBuyThread = nil
         print("[AutoBuy] ⏹️ AutoBuy остановлен")
