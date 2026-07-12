@@ -251,7 +251,12 @@ end
 local function isAssetSelected(assetId)
     if not assetId then return false end
     -- Если ничего не выбрано, показываем все
-    if not next(selectedAssets) then return true end
+    local hasSelection = false
+    for _ in pairs(selectedAssets) do
+        hasSelection = true
+        break
+    end
+    if not hasSelection then return true end
     -- Иначе проверяем, есть ли в выбранных
     return selectedAssets[tostring(assetId)] ~= nil
 end
@@ -259,7 +264,12 @@ end
 local function isAccessorySelected(accessoryId)
     if not accessoryId then return false end
     -- Если ничего не выбрано, показываем все
-    if not next(selectedAccessories) then return true end
+    local hasSelection = false
+    for _ in pairs(selectedAccessories) do
+        hasSelection = true
+        break
+    end
+    if not hasSelection then return true end
     -- Иначе проверяем, есть ли в выбранных
     return selectedAccessories[tostring(accessoryId)] ~= nil
 end
@@ -1520,7 +1530,12 @@ local ESPSelectedAssetsToggle = ESPTab:CreateToggle({
     Callback = function(Value)
         pcall(function()
             if Value then
-                if not next(selectedAssets) then
+                local hasSelection = false
+                for _ in pairs(selectedAssets) do
+                    hasSelection = true
+                    break
+                end
+                if not hasSelection then
                     Rayfield:Notify({
                         Title = "Ошибка",
                         Content = "Сначала выберите вещи на вкладке 👕",
@@ -1578,7 +1593,12 @@ local ESPSelectedAccessoriesToggle = ESPTab:CreateToggle({
     Callback = function(Value)
         pcall(function()
             if Value then
-                if not next(selectedAccessories) then
+                local hasSelection = false
+                for _ in pairs(selectedAccessories) do
+                    hasSelection = true
+                    break
+                end
+                if not hasSelection then
                     Rayfield:Notify({
                         Title = "Ошибка",
                         Content = "Сначала выберите аксессуары на вкладке 👜",
