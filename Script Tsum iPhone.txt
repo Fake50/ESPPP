@@ -244,6 +244,27 @@ for id, data in pairs(ACCESSORIES_DATA) do
 end
 
 -- ============================================
+-- ФУНКЦИИ ПРОВЕРКИ ВЫБОРА (ДО findAllItems!)
+-- ============================================
+
+-- Функция проверки, выбран ли предмет по его asset ID
+local function isAssetSelected(assetId)
+    if not assetId then return false end
+    -- Если ничего не выбрано, показываем все
+    if not next(selectedAssets) then return true end
+    -- Иначе проверяем, есть ли в выбранных
+    return selectedAssets[tostring(assetId)] ~= nil
+end
+
+local function isAccessorySelected(accessoryId)
+    if not accessoryId then return false end
+    -- Если ничего не выбрано, показываем все
+    if not next(selectedAccessories) then return true end
+    -- Иначе проверяем, есть ли в выбранных
+    return selectedAccessories[tostring(accessoryId)] ~= nil
+end
+
+-- ============================================
 -- ОСНОВНОЙ КОД
 -- ============================================
 local HttpService = game:GetService("HttpService")
@@ -1425,23 +1446,6 @@ local function selectAllAccessories()
     if espEnabled then
         updateESP()
     end
-end
-
--- Функция проверки, выбран ли предмет по его asset ID
-local function isAssetSelected(assetId)
-    if not assetId then return false end
-    -- Если ничего не выбрано, показываем все
-    if not next(selectedAssets) then return true end
-    -- Иначе проверяем, есть ли в выбранных
-    return selectedAssets[tostring(assetId)] ~= nil
-end
-
-local function isAccessorySelected(accessoryId)
-    if not accessoryId then return false end
-    -- Если ничего не выбрано, показываем все
-    if not next(selectedAccessories) then return true end
-    -- Иначе проверяем, есть ли в выбранных
-    return selectedAccessories[tostring(accessoryId)] ~= nil
 end
 
 -- Загружаем конфиг при запуске
