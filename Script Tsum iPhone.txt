@@ -537,60 +537,49 @@ local function findAllItems()
             if assetId then
                 local itemData = findItemById(assetId)
                 if itemData then
-                    -- ФИЛЬТРАЦИЯ: Проверяем, выбран ли этот предмет
-                    local shouldInclude = false
+                    -- Определяем целевой объект
+                    local target = obj
                     
-                    if itemType == "Accessory" then
-                        shouldInclude = isAccessorySelected(assetId)
+                    if obj:IsA("Accessory") then
+                        -- Для аксессуаров проверяем, есть ли родительская Model
+                        if obj.Parent:IsA("Model") and obj.Parent ~= workspace then
+                            target = obj.Parent
+                        else
+                            target = obj  -- Сам аксессуар как цель
+                        end
+                    elseif obj:IsA("MeshPart") then
+                        -- Для MeshPart (Handle, Body, L, R) используем родительскую Model M_*
+                        if obj.Parent and obj.Parent:IsA("Model") then
+                            target = obj.Parent
+                        else
+                            target = obj
+                        end
                     else
-                        shouldInclude = isAssetSelected(assetId)
+                        -- Для одежды поднимаемся до Model
+                        target = obj.Parent
+                        while target and not target:IsA("Model") do
+                            target = target.Parent
+                            if target == workspace or target == game then
+                                target = nil
+                                break
+                            end
+                        end
                     end
                     
-                    if shouldInclude then
-                        -- Определяем целевой объект
-                        local target = obj
+                    -- Проверяем, что это не игрок и не дубликат
+                    if target and not isPlayerModel(target) and not processedModels[target] then
+                        processedModels[target] = true
                         
-                        if obj:IsA("Accessory") then
-                            -- Для аксессуаров проверяем, есть ли родительская Model
-                            if obj.Parent:IsA("Model") and obj.Parent ~= workspace then
-                                target = obj.Parent
-                            else
-                                target = obj  -- Сам аксессуар как цель
-                            end
-                        elseif obj:IsA("MeshPart") then
-                            -- Для MeshPart (Handle, Body, L, R) используем родительскую Model M_*
-                            if obj.Parent and obj.Parent:IsA("Model") then
-                                target = obj.Parent
-                            else
-                                target = obj
-                            end
-                        else
-                            -- Для одежды поднимаемся до Model
-                            target = obj.Parent
-                            while target and not target:IsA("Model") do
-                                target = target.Parent
-                                if target == workspace or target == game then
-                                    target = nil
-                                    break
-                                end
-                            end
-                        end
-                        
-                        -- Проверяем, что это не игрок и не дубликат
-                        if target and not isPlayerModel(target) and not processedModels[target] then
-                            processedModels[target] = true
-                            
-                            table.insert(results, {
-                                object = target,
-                                name = itemData.name,
-                                price = 0,
-                                resellMulti = 0,
-                                rarity = itemData.rarity,
-                                type = itemType,
-                                quality = "",
-                                assetId = assetId,
-                            })
-                        end
+                        table.insert(results, {
+                            object = target,
+                            name = itemData.name,
+                            price = 0,
+                            resellMulti = 0,
+                            rarity = itemData.rarity,
+                            type = itemType,
+                            quality = "",
+                            assetId = assetId,
+                        })
                     end
                 end
             end
@@ -712,11 +701,33 @@ end
 local function updateESP()
     clearESP()
     if not espEnabled then return end
+    
     local items = findAllItems()
+    
+    -- Применяем фильтрацию
+    local filteredItems = {}
     for _, item in pairs(items) do
+        local shouldShow = false
+        
+        if item.type == "Accessory" then
+            -- Проверяем аксессуары
+            shouldShow = isAccessorySelected(item.assetId)
+        else
+            -- Проверяем одежду
+            shouldShow = isAssetSelected(item.assetId)
+        end
+        
+        if shouldShow then
+            table.insert(filteredItems, item)
+        end
+    end
+    
+    -- Создаём ESP для отфильтрованных предметов
+    for _, item in pairs(filteredItems) do
         createESP(item.object, item)
     end
-    print("[ESP] Обновлено. Найдено предметов: " .. #items)
+    
+    print("[ESP] Обновлено. Найдено предметов: " .. #items .. ", показано: " .. #filteredItems)
 end
 
 workspace.DescendantRemoving:Connect(function(descendant)
