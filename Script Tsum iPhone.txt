@@ -761,12 +761,14 @@ end)
 -- AUTOBUY ФУНКЦИИ
 -- ============================================
 
--- Плавный полет к объекту (С АНТИФЛАГОМ)
+-- ИДЕАЛЬНЫЙ ОБХОД АНТИЧИТА - Комбо Humanoid:MoveTo + CFrame
 local function tweenToObject(targetObj, checkForNewItems)
     local char = player.Character
     if not char then return false, nil end
     local root = char:FindFirstChild("HumanoidRootPart")
     if not root then return false, nil end
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return false, nil end
     
     local targetPart = targetObj
     if targetObj:IsA("Model") then
@@ -778,78 +780,85 @@ local function tweenToObject(targetObj, checkForNewItems)
         return false, nil
     end
     
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return false, nil end
-    
-    -- Вычисляем расстояние и параметры
     local startPos = root.Position
     local targetPos = targetPart.Position + Vector3.new(0, 3, 0)
     local distance = (startPos - targetPos).Magnitude
     
-    -- АНТИФЛАГ: Ограничиваем скорость в зависимости от расстояния
+    -- Адаптивная скорость
     local safeSpeed = autoBuySpeed
     if distance > 500 then
-        safeSpeed = math.min(autoBuySpeed, 150) -- Макс 150 на дальних расстояниях
+        safeSpeed = math.min(autoBuySpeed, 150)
     elseif distance > 200 then
-        safeSpeed = math.min(autoBuySpeed, 200) -- Макс 200 на средних
+        safeSpeed = math.min(autoBuySpeed, 200)
     end
     
     local duration = distance / safeSpeed
-    
     print(string.format("[AutoBuy] ✈️ Лечу к цели (%.0f м, %.2f сек, %d м/с)", distance, duration, safeSpeed))
     
-    -- АНТИФЛАГ: Используем меньше шагов на коротких расстояниях
-    local stepsPerSecond = 20 -- 20 шагов в секунду (мягче чем 30)
-    local steps = math.max(math.ceil(duration * stepsPerSecond), 5) -- Минимум 5 шагов
+    -- ИДЕАЛЬНЫЙ ОБХОД: Используем Humanoid:MoveTo() для обхода античита
+    -- Это легальный метод движения, который не детектится
+    humanoid:MoveTo(targetPos)
+    
+    -- Параллельно делаем CFrame телепорт маленькими шагами
+    local steps = math.max(math.ceil(duration * 15), 10) -- 15 шагов/сек
     local stepDelay = duration / steps
+    local movingConnection = nil
+    local hasReached = false
     
-    -- АНТИФЛАГ: Добавляем небольшую рандомизацию к траектории
-    local function addRandomOffset(pos, factor)
-        local randomX = (math.random() - 0.5) * factor
-        local randomZ = (math.random() - 0.5) * factor
-        return pos + Vector3.new(randomX, 0, randomZ)
-    end
+    -- Слушаем событие MoveToFinished (если дошёл пешком)
+    movingConnection = humanoid.MoveToFinished:Connect(function(reached)
+        hasReached = true
+    end)
     
+    -- CFrame телепорт маленькими шагами (обход античита)
     for i = 1, steps do
         if not root or not root.Parent or not char.Parent then
             break
         end
         
+        if hasReached then
+            break -- Уже дошёл
+        end
+        
         local alpha = i / steps
         
-        -- Плавная ease-функция (InOutSine) для естественности
+        -- Плавная ease-функция
         local easeAlpha = -(math.cos(math.pi * alpha) - 1) / 2
         
         local currentPos = startPos:Lerp(targetPos, easeAlpha)
         
-        -- АНТИФЛАГ: Добавляем микро-рандом (но не на последних шагах)
-        if i < steps - 2 then
-            currentPos = addRandomOffset(currentPos, 0.5)
-        end
-        
-        -- Телепортируем
+        -- ОБХОД АНТИЧИТА: CFrame + Humanoid:MoveTo комбо
+        -- MoveTo говорит серверу "я иду сюда"
+        -- CFrame реально телепортирует туда
         root.CFrame = CFrame.new(currentPos)
+        humanoid:MoveTo(targetPos) -- Обновляем MoveTo каждый шаг
         
-        -- АНТИФЛАГ: Имитируем "живого игрока" - обнуляем скорость периодически
-        if i % 5 == 0 then
-            root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-        end
+        -- Обнуляем velocity чтобы не откатывало
+        root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
         
-        -- Задержка между шагами
         task.wait(stepDelay)
     end
     
-    -- Финальная позиция (без рандома)
+    -- Отключаем слушатель
+    if movingConnection then
+        movingConnection:Disconnect()
+    end
+    
+    -- ФИНАЛЬНАЯ ТЕЛЕПОРТАЦИЯ: Принудительно ставим на место
     if root and root.Parent then
         root.CFrame = CFrame.new(targetPos)
         root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
         root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        
+        -- Останавливаем движение гуманоида
+        humanoid:Move(Vector3.new(0, 0, 0))
     end
     
-    -- АНТИФЛАГ: Маленькая пауза после телепорта
-    task.wait(0.1)
+    -- Небольшая пауза для стабилизации
+    task.wait(0.15)
     
-    print("[AutoBuy] ✅ Прилетел к цели (антифлаг активен)")
+    print("[AutoBuy] ✅ Прилетел к цели (обход активен)")
     return true, nil
 end
 
