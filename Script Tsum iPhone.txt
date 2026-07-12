@@ -1475,113 +1475,117 @@ ESPTab:CreateParagraph({
 
 local ESPToggle = ESPTab:CreateToggle({
     Name = "🔍 ESP: Все вещи (одежда)",
-    CurrentValue = espEnabled and not next(selectedAssets),
+    CurrentValue = false,
     Flag = "ESPAllAssets",
     Callback = function(Value)
-        if Value then
-            -- Очищаем выбор одежды, чтобы показать ВСЁ
-            selectedAssets = {}
-            espEnabled = true
-            saveConfig()
-            updateESP()
-            Rayfield:Notify({
-                Title = "ESP: Все вещи",
-                Content = "Показывается вся одежда из базы",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        else
-            espEnabled = false
-            clearESP()
-        end
+        pcall(function()
+            if Value then
+                selectedAssets = {}
+                espEnabled = true
+                saveConfig()
+                updateESP()
+                Rayfield:Notify({
+                    Title = "ESP: Все вещи",
+                    Content = "Показывается вся одежда из базы",
+                    Duration = 3,
+                    Image = 4483362458,
+                })
+            else
+                espEnabled = false
+                clearESP()
+            end
+        end)
     end,
 })
 
 local ESPSelectedAssetsToggle = ESPTab:CreateToggle({
     Name = "👕 ESP: Выбранные вещи",
-    CurrentValue = espEnabled and next(selectedAssets) ~= nil,
+    CurrentValue = false,
     Flag = "ESPSelectedAssets",
     Callback = function(Value)
-        if Value then
-            -- Включаем ESP только для выбранных
-            if not next(selectedAssets) then
+        pcall(function()
+            if Value then
+                if not next(selectedAssets) then
+                    Rayfield:Notify({
+                        Title = "Ошибка",
+                        Content = "Сначала выберите вещи на вкладке 👕",
+                        Duration = 3,
+                        Image = 4483362458,
+                    })
+                    return
+                end
+                espEnabled = true
+                saveConfig()
+                updateESP()
                 Rayfield:Notify({
-                    Title = "Ошибка",
-                    Content = "Сначала выберите вещи на вкладке 👕",
+                    Title = "ESP: Выбранные вещи",
+                    Content = "Показываются только выбранные предметы одежды",
                     Duration = 3,
                     Image = 4483362458,
                 })
-                return
+            else
+                espEnabled = false
+                clearESP()
             end
-            espEnabled = true
-            saveConfig()
-            updateESP()
-            Rayfield:Notify({
-                Title = "ESP: Выбранные вещи",
-                Content = "Показываются только выбранные предметы одежды",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        else
-            espEnabled = false
-            clearESP()
-        end
+        end)
     end,
 })
 
 local ESPAllAccessoriesToggle = ESPTab:CreateToggle({
     Name = "🔍 ESP: Все аксессуары",
-    CurrentValue = espEnabled and not next(selectedAccessories),
+    CurrentValue = false,
     Flag = "ESPAllAccessories",
     Callback = function(Value)
-        if Value then
-            -- Очищаем выбор аксессуаров, чтобы показать ВСЁ
-            selectedAccessories = {}
-            espEnabled = true
-            saveConfig()
-            updateESP()
-            Rayfield:Notify({
-                Title = "ESP: Все аксессуары",
-                Content = "Показываются все аксессуары из базы",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        else
-            espEnabled = false
-            clearESP()
-        end
+        pcall(function()
+            if Value then
+                selectedAccessories = {}
+                espEnabled = true
+                saveConfig()
+                updateESP()
+                Rayfield:Notify({
+                    Title = "ESP: Все аксессуары",
+                    Content = "Показываются все аксессуары из базы",
+                    Duration = 3,
+                    Image = 4483362458,
+                })
+            else
+                espEnabled = false
+                clearESP()
+            end
+        end)
     end,
 })
 
 local ESPSelectedAccessoriesToggle = ESPTab:CreateToggle({
     Name = "👜 ESP: Выбранные аксессуары",
-    CurrentValue = espEnabled and next(selectedAccessories) ~= nil,
+    CurrentValue = false,
     Flag = "ESPSelectedAccessories",
     Callback = function(Value)
-        if Value then
-            -- Включаем ESP только для выбранных аксессуаров
-            if not next(selectedAccessories) then
+        pcall(function()
+            if Value then
+                if not next(selectedAccessories) then
+                    Rayfield:Notify({
+                        Title = "Ошибка",
+                        Content = "Сначала выберите аксессуары на вкладке 👜",
+                        Duration = 3,
+                        Image = 4483362458,
+                    })
+                    return
+                end
+                espEnabled = true
+                saveConfig()
+                updateESP()
                 Rayfield:Notify({
-                    Title = "Ошибка",
-                    Content = "Сначала выберите аксессуары на вкладке 👜",
+                    Title = "ESP: Выбранные аксессуары",
+                    Content = "Показываются только выбранные аксессуары",
                     Duration = 3,
                     Image = 4483362458,
                 })
-                return
+            else
+                espEnabled = false
+                clearESP()
             end
-            espEnabled = true
-            saveConfig()
-            updateESP()
-            Rayfield:Notify({
-                Title = "ESP: Выбранные аксессуары",
-                Content = "Показываются только выбранные аксессуары",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        else
-            espEnabled = false
-            clearESP()
-        end
+        end)
     end,
 })
 
@@ -1589,53 +1593,56 @@ ESPTab:CreateLabel("────────────────────
 
 local ESPAllToggle = ESPTab:CreateToggle({
     Name = "✨ ESP: ВСЁ (одежда + аксессуары)",
-    CurrentValue = espEnabled,
+    CurrentValue = false,
     Flag = "ESPAll",
     Callback = function(Value)
-        espEnabled = Value
-        if espEnabled then
-            -- Очищаем все фильтры
-            selectedAssets = {}
-            selectedAccessories = {}
-            saveConfig()
-            updateESP()
-            Rayfield:Notify({
-                Title = "ESP включен",
-                Content = "Показываются ВСЕ предметы (одежда + аксессуары)",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        else
-            clearESP()
-            Rayfield:Notify({
-                Title = "ESP выключен",
-                Content = "Все маркеры удалены",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        end
+        pcall(function()
+            espEnabled = Value
+            if espEnabled then
+                selectedAssets = {}
+                selectedAccessories = {}
+                saveConfig()
+                updateESP()
+                Rayfield:Notify({
+                    Title = "ESP включен",
+                    Content = "Показываются ВСЕ предметы (одежда + аксессуары)",
+                    Duration = 3,
+                    Image = 4483362458,
+                })
+            else
+                clearESP()
+                Rayfield:Notify({
+                    Title = "ESP выключен",
+                    Content = "Все маркеры удалены",
+                    Duration = 3,
+                    Image = 4483362458,
+                })
+            end
+        end)
     end,
 })
 
 local RefreshButton = ESPTab:CreateButton({
     Name = "🔄 Обновить ESP",
     Callback = function()
-        if espEnabled then 
-            updateESP()
-            Rayfield:Notify({
-                Title = "ESP Обновлен",
-                Content = "Список предметов обновлен",
-                Duration = 2,
-                Image = 4483362458,
-            })
-        else
-            Rayfield:Notify({
-                Title = "Ошибка",
-                Content = "Сначала включите ESP!",
-                Duration = 2,
-                Image = 4483362458,
-            })
-        end
+        pcall(function()
+            if espEnabled then 
+                updateESP()
+                Rayfield:Notify({
+                    Title = "ESP Обновлен",
+                    Content = "Список предметов обновлен",
+                    Duration = 2,
+                    Image = 4483362458,
+                })
+            else
+                Rayfield:Notify({
+                    Title = "Ошибка",
+                    Content = "Сначала включите ESP!",
+                    Duration = 2,
+                    Image = 4483362458,
+                })
+            end
+        end)
     end,
 })
 
@@ -1648,24 +1655,26 @@ local AutoBuyToggle = AutoBuyTab:CreateToggle({
     CurrentValue = autoBuyEnabled,
     Flag = "AutoBuyEnabled",
     Callback = function(Value)
-        autoBuyEnabled = Value
-        if autoBuyEnabled then
-            startAutoBuy()
-            Rayfield:Notify({
-                Title = "AutoBuy Включен",
-                Content = "Автоматическая покупка запущена",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        else
-            stopAutoBuy()
-            Rayfield:Notify({
-                Title = "AutoBuy Выключен",
-                Content = "Автоматическая покупка остановлена",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        end
+        pcall(function()
+            autoBuyEnabled = Value
+            if autoBuyEnabled then
+                startAutoBuy()
+                Rayfield:Notify({
+                    Title = "AutoBuy Включен",
+                    Content = "Автоматическая покупка запущена",
+                    Duration = 3,
+                    Image = 4483362458,
+                })
+            else
+                stopAutoBuy()
+                Rayfield:Notify({
+                    Title = "AutoBuy Выключен",
+                    Content = "Автоматическая покупка остановлена",
+                    Duration = 3,
+                    Image = 4483362458,
+                })
+            end
+        end)
     end,
 })
 
@@ -1677,38 +1686,42 @@ local SpeedSlider = AutoBuyTab:CreateSlider({
     CurrentValue = autoBuySpeed,
     Flag = "AutoBuySpeed",
     Callback = function(Value)
-        autoBuySpeed = Value
-        saveConfig()
-        Rayfield:Notify({
-            Title = "Скорость изменена",
-            Content = "Новая скорость: " .. Value .. " м/с (ULTRA FAST!)",
-            Duration = 2,
-            Image = 4483362458,
-        })
+        pcall(function()
+            autoBuySpeed = Value
+            saveConfig()
+            Rayfield:Notify({
+                Title = "Скорость изменена",
+                Content = "Новая скорость: " .. Value .. " м/с (ULTRA FAST!)",
+                Duration = 2,
+                Image = 4483362458,
+            })
+        end)
     end,
 })
 
 local ManualBuyButton = AutoBuyTab:CreateButton({
     Name = "🔄 Выполнить один цикл покупки",
     Callback = function()
-        if autoBuyEnabled then
-            Rayfield:Notify({
-                Title = "Ошибка",
-                Content = "Сначала выключите AutoBuy!",
-                Duration = 2,
-                Image = 4483362458,
-            })
-        else
-            Rayfield:Notify({
-                Title = "Запуск...",
-                Content = "Выполняю один цикл покупки",
-                Duration = 2,
-                Image = 4483362458,
-            })
-            task.spawn(function()
-                pcall(autoBuyCycle)
-            end)
-        end
+        pcall(function()
+            if autoBuyEnabled then
+                Rayfield:Notify({
+                    Title = "Ошибка",
+                    Content = "Сначала выключите AutoBuy!",
+                    Duration = 2,
+                    Image = 4483362458,
+                })
+            else
+                Rayfield:Notify({
+                    Title = "Запуск...",
+                    Content = "Выполняю один цикл покупки",
+                    Duration = 2,
+                    Image = 4483362458,
+                })
+                task.spawn(function()
+                    pcall(autoBuyCycle)
+                end)
+            end
+        end)
     end,
 })
 
@@ -1729,28 +1742,32 @@ AssetsTab:CreateParagraph({
 local SelectAllAssetsButton = AssetsTab:CreateButton({
     Name = "✅ Выбрать все предметы",
     Callback = function()
-        selectAllAssets()
-        Rayfield:Notify({
-            Title = "Выбраны все предметы",
-            Content = "ESP покажет всю одежду из базы",
-            Duration = 2,
-            Image = 4483362458,
-        })
+        pcall(function()
+            selectAllAssets()
+            Rayfield:Notify({
+                Title = "Выбраны все предметы",
+                Content = "ESP покажет всю одежду из базы",
+                Duration = 2,
+                Image = 4483362458,
+            })
+        end)
     end,
 })
 
 local ClearAssetsButton = AssetsTab:CreateButton({
     Name = "❌ Очистить выбор одежды",
     Callback = function()
-        selectedAssets = {}
-        saveConfig()
-        if espEnabled then updateESP() end
-        Rayfield:Notify({
-            Title = "Выбор очищен",
-            Content = "ESP покажет всю одежду",
-            Duration = 2,
-            Image = 4483362458,
-        })
+        pcall(function()
+            selectedAssets = {}
+            saveConfig()
+            if espEnabled then updateESP() end
+            Rayfield:Notify({
+                Title = "Выбор очищен",
+                Content = "ESP покажет всю одежду",
+                Duration = 2,
+                Image = 4483362458,
+            })
+        end)
     end,
 })
 
@@ -1771,17 +1788,19 @@ for i = 1, math.min(20, #topAssets) do
         CurrentValue = selectedAssets[asset.id] ~= nil,
         Flag = "Asset_" .. asset.id,
         Callback = function(Value)
-            if Value then
-                selectedAssets[asset.id] = true
-                print("[SELECTION] ✅ Добавлен предмет:", asset.name)
-            else
-                selectedAssets[asset.id] = nil
-                print("[SELECTION] ❌ Убран предмет:", asset.name)
-            end
-            saveConfig()
-            if espEnabled then
-                updateESP()
-            end
+            pcall(function()
+                if Value then
+                    selectedAssets[asset.id] = true
+                    print("[SELECTION] ✅ Добавлен предмет:", asset.name)
+                else
+                    selectedAssets[asset.id] = nil
+                    print("[SELECTION] ❌ Убран предмет:", asset.name)
+                end
+                saveConfig()
+                if espEnabled then
+                    updateESP()
+                end
+            end)
         end,
     })
 end
@@ -1798,28 +1817,32 @@ AccessoriesTab:CreateParagraph({
 local SelectAllAccessoriesButton = AccessoriesTab:CreateButton({
     Name = "✅ Выбрать все аксессуары",
     Callback = function()
-        selectAllAccessories()
-        Rayfield:Notify({
-            Title = "Выбраны все аксессуары",
-            Content = "ESP покажет все аксессуары из базы",
-            Duration = 2,
-            Image = 4483362458,
-        })
+        pcall(function()
+            selectAllAccessories()
+            Rayfield:Notify({
+                Title = "Выбраны все аксессуары",
+                Content = "ESP покажет все аксессуары из базы",
+                Duration = 2,
+                Image = 4483362458,
+            })
+        end)
     end,
 })
 
 local ClearAccessoriesButton = AccessoriesTab:CreateButton({
     Name = "❌ Очистить выбор аксессуаров",
     Callback = function()
-        selectedAccessories = {}
-        saveConfig()
-        if espEnabled then updateESP() end
-        Rayfield:Notify({
-            Title = "Выбор очищен",
-            Content = "ESP покажет все аксессуары",
-            Duration = 2,
-            Image = 4483362458,
-        })
+        pcall(function()
+            selectedAccessories = {}
+            saveConfig()
+            if espEnabled then updateESP() end
+            Rayfield:Notify({
+                Title = "Выбор очищен",
+                Content = "ESP покажет все аксессуары",
+                Duration = 2,
+                Image = 4483362458,
+            })
+        end)
     end,
 })
 
@@ -1840,17 +1863,19 @@ for i = 1, math.min(20, #topAccessories) do
         CurrentValue = selectedAccessories[accessory.id] ~= nil,
         Flag = "Accessory_" .. accessory.id,
         Callback = function(Value)
-            if Value then
-                selectedAccessories[accessory.id] = true
-                print("[SELECTION] ✅ Добавлен аксессуар:", accessory.name)
-            else
-                selectedAccessories[accessory.id] = nil
-                print("[SELECTION] ❌ Убран аксессуар:", accessory.name)
-            end
-            saveConfig()
-            if espEnabled then
-                updateESP()
-            end
+            pcall(function()
+                if Value then
+                    selectedAccessories[accessory.id] = true
+                    print("[SELECTION] ✅ Добавлен аксессуар:", accessory.name)
+                else
+                    selectedAccessories[accessory.id] = nil
+                    print("[SELECTION] ❌ Убран аксессуар:", accessory.name)
+                end
+                saveConfig()
+                if espEnabled then
+                    updateESP()
+                end
+            end)
         end,
     })
 end
@@ -1914,45 +1939,51 @@ ConfigTab:CreateParagraph({
 local SaveConfigButton = ConfigTab:CreateButton({
     Name = "💾 Сохранить конфиг вручную",
     Callback = function()
-        saveConfig()
-        Rayfield:Notify({
-            Title = "Конфиг сохранен",
-            Content = "Все настройки сохранены!",
-            Duration = 2,
-            Image = 4483362458,
-        })
+        pcall(function()
+            saveConfig()
+            Rayfield:Notify({
+                Title = "Конфиг сохранен",
+                Content = "Все настройки сохранены!",
+                Duration = 2,
+                Image = 4483362458,
+            })
+        end)
     end,
 })
 
 local LoadConfigButton = ConfigTab:CreateButton({
     Name = "📂 Перезагрузить конфиг",
     Callback = function()
-        loadConfig()
-        Rayfield:Notify({
-            Title = "Конфиг загружен",
-            Content = "Настройки восстановлены из файла",
-            Duration = 2,
-            Image = 4483362458,
-        })
+        pcall(function()
+            loadConfig()
+            Rayfield:Notify({
+                Title = "Конфиг загружен",
+                Content = "Настройки восстановлены из файла",
+                Duration = 2,
+                Image = 4483362458,
+            })
+        end)
     end,
 })
 
 local ResetConfigButton = ConfigTab:CreateButton({
     Name = "🗑️ Сбросить все настройки",
     Callback = function()
-        selectedAssets = {}
-        selectedAccessories = {}
-        autoBuySpeed = 150
-        espEnabled = false
-        autoBuyEnabled = false
-        saveConfig()
-        clearESP()
-        Rayfield:Notify({
-            Title = "Конфиг сброшен",
-            Content = "Все настройки вернулись к значениям по умолчанию",
-            Duration = 3,
-            Image = 4483362458,
-        })
+        pcall(function()
+            selectedAssets = {}
+            selectedAccessories = {}
+            autoBuySpeed = 150
+            espEnabled = false
+            autoBuyEnabled = false
+            saveConfig()
+            clearESP()
+            Rayfield:Notify({
+                Title = "Конфиг сброшен",
+                Content = "Все настройки вернулись к значениям по умолчанию",
+                Duration = 3,
+                Image = 4483362458,
+            })
+        end)
     end,
 })
 
@@ -1968,13 +1999,15 @@ AboutTab:CreateParagraph({
 AboutTab:CreateButton({
     Name = "Копировать Telegram",
     Callback = function()
-        setclipboard("@FirmaModeHub")
-        Rayfield:Notify({
-            Title = "Скопировано!",
-            Content = "Telegram ссылка в буфере обмена",
-            Duration = 3,
-            Image = 4483362458,
-        })
+        pcall(function()
+            setclipboard("@FirmaModeHub")
+            Rayfield:Notify({
+                Title = "Скопировано!",
+                Content = "Telegram ссылка в буфере обмена",
+                Duration = 3,
+                Image = 4483362458,
+            })
+        end)
     end,
 })
 
