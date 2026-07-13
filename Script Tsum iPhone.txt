@@ -1461,16 +1461,10 @@ loadConfig()
 -- Создаем окно WindUI
 local Window = WindUI:CreateWindow({
     Title = "🎯 ESP + AutoBuy | Firma Mode Hub",
-    Icon = "rbxassetid://4483362458",
+    Icon = "target",
     Author = "@FirmaModeHub",
     Folder = "FirmaESP",
     Size = UDim2.fromOffset(580, 460),
-    KeySystem = {
-        Key = "",
-        Note = "No Key System",
-        URL = "",
-        SaveKey = false
-    },
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 170,
